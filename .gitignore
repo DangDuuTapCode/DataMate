@@ -1,0 +1,60 @@
+# === Dữ liệu cuộc thi, đáp án, kết quả: KHÔNG đưa lên Git ===
+/data/*
+!/data/README.md
+/train/
+/public_test/
+/private_test/
+/result/
+/logs/
+*.log
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.xlsx
+*.xlsm
+*.xls
+*.csv
+*.sqlite
+*.sqlite3
+*.db
+*.jsonl
+*.parquet
+rulebook.md
+
+# === Trọng số mô hình: KHÔNG đưa lên Git (chỉ README.md và manifest.json) ===
+/models/*
+!/models/README.md
+!/models/manifest.json
+*.safetensors
+*.pt
+*.pth
+*.gguf
+*.ckpt
+*.onnx
+
+# === Bí mật / thông tin xác thực ===
+.env
+.env.*
+*.pem
+*.key
+id_rsa*
+credentials*.json
+secrets/
+
+# === Python / công cụ ===
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.DS_Store
+
+# === Dữ liệu GIẢ tự tạo phục vụ kiểm thử được phép ===
+!/tests/fixtures/
+!/tests/fixtures/**
