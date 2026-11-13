@@ -1,0 +1,2 @@
+# Chỉ gồm thư viện đang thực sự được dùng (tools/inventory.py). Thêm khi có mã dùng đến.
+openpyxl==3.1.5
