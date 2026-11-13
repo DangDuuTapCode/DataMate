@@ -10,7 +10,7 @@ Cập nhật: 13/11/2026. Nhãn: **VERIFIED** (đã kiểm tra trực tiếp tr�
 | D3 | Đọc rulebook/README theo từng split lúc chạy; không hard-code đáp án, id câu hỏi, id business, tên bảng/cột của business đã biết. | chỉ dẫn ban đầu của đội; Rule 4 |
 | D4 | Cấu trúc repo: `src/datamate/`, `tests/`, `docs/`, `tools/`, `data/` (chỉ README), `models/` (chỉ README và manifest). | đội xác nhận 13/11 |
 | D5 | Chỉ tạo module khi có mã thật. Module dự kiến: `ingest`, `canonical`, `rules`, `timeparse`, `understanding`, `metrics`, `verify`, `output`, `scoring`. Không tạo thư mục rỗng. | đội xác nhận 13/11 |
-| D6 | Chưa tạo `predict.sh`, `Dockerfile`, mã trong `training_code/` cho đến khi đối chiếu Docker Guide (phần 3 bên dưới) và đội xác nhận bắt đầu. | đội xác nhận 13/11 |
+| D6 | Đã tạo predict.sh và Dockerfile baseline sau khi đối chiếu Docker Guide và người dùng yêu cầu bắt đầu. Base CPU chỉ kiểm giao diện; image final phải CUDA >=12.8/RTX 5090-compatible và được kiểm chứng offline. | code feature/offline-core, 13/11 |
 | D7 | Chỉ thêm dependency thực sự cần (hiện: `openpyxl`). | đội xác nhận 13/11 |
 | D8 | Không đưa dataset, câu hỏi/đáp án, rulebook cuộc thi, trọng số, credentials vào Git. Dữ liệu giả tự tạo cho kiểm thử được phép ở `tests/fixtures/`. | đội xác nhận 13/11 |
 | D9 | Commit nhỏ, thông điệp rõ; liệt kê file thay đổi trước mỗi commit/push; không force push; không push khi chưa có xác nhận. | đội xác nhận 13/11 |

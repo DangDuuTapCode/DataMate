@@ -4,6 +4,12 @@
 - Phiên A (M0–M1): đọc luật và đề, kiểm kê train + public, phân tích rulebook và câu hỏi.
 - Báo cáo đầy đủ: Claude Doc “DataMate – Báo cáo Giai đoạn 1 (M0–M1)”.
 - Công cụ: `inventory.py` (kiểm kê dữ liệu), `qstats.py` (thống kê câu hỏi và đáp án).
+- Phiên B1 (feature/offline-core): ingest CSV/XLSX streaming/SQLite, time parser Gregorian, rule planner, allowlist executor subset (doanh thu/số lượng/số đơn/tỉ lệ huỷ/top bán chạy), verifier, output validator, test synthetic, predict.sh/Dockerfile baseline.
+
+## Trạng thái hiện tại 13/11/2026
+- VERIFIED: unit tests synthetic cho rule subset; output JSONL deterministic; reader XLSX streaming không cần nạp nguyên sheet.
+- UNVERIFIED: chạy full train/public, Docker build/run, score, SLM/LLM model/weights, tất cả rules phức tạp.
+- Không dùng public/private test để tuning. Không commit dataset/output/weights.
 
 ## Chạy lại (cần train.zip, public_test.zip đã giải nén)
 ```

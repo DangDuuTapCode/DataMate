@@ -2,7 +2,7 @@
 
 Hệ thống trả lời câu hỏi tiếng Việt trên dữ liệu doanh nghiệp nhỏ (CSV, XLSX, SQLite). Mục tiêu của đội: hệ thống SLM (tổng tham số ≤ 15B) tổng quát hoá sang doanh nghiệp và ngành chưa từng gặp.
 
-**Trạng thái:** mới khởi tạo repository. Chưa có tính năng nào được triển khai; chưa có `predict.sh`, `Dockerfile` và `training_code/`.
+**Trạng thái:** baseline offline đang hoạt động cho ingest CSV/XLSX/SQLite, planning xác định, executor allowlist, kiểm chứng và JSONL output. Đây chưa phải solution cạnh tranh hoàn chỉnh: join phức tạp, kho/công nợ/lô, lịch âm, và SLM thực tế còn chưa hoàn thiện.
 
 ## Hướng tiếp cận đã thống nhất
 Kết hợp: SLM hiểu câu hỏi và lập kế hoạch; Python/SQL tính toán xác định; rule engine áp dụng rulebook; bước kiểm chứng; biết abstain hoặc báo unanswerable khi thiếu dữ liệu. Mô hình ngôn ngữ không được tự tạo số liệu. Chi tiết và trạng thái từng quyết định: [`docs/decisions.md`](docs/decisions.md).
@@ -10,7 +10,7 @@ Kết hợp: SLM hiểu câu hỏi và lập kế hoạch; Python/SQL tính toá
 ## Cấu trúc repository
 | Thư mục | Nội dung |
 |---|---|
-| `src/datamate/` | mã nguồn (hiện chỉ có khung gói) |
+| `src/datamate/` | ingest, time parse, planner, executor, verifier, output |
 | `tests/` | kiểm thử; `tests/fixtures/` chỉ chứa dữ liệu GIẢ tự tạo |
 | `docs/` | quyết định kiến trúc, bảng trạng thái bằng chứng |
 | `tools/` | script phân tích dữ liệu (`inventory.py`, `qstats.py`) và `STATE.md` |
@@ -27,10 +27,14 @@ Các module dự kiến trong `src/datamate/` (chỉ tạo khi có mã thật): 
 5. Commit nhỏ, thông điệp rõ (`chore:`, `docs:`, `feat:`, `test:`); trước mỗi commit hoặc push, liệt kê file thay đổi và mục đích.
 6. Không force push; `main` luôn ở trạng thái chạy được; làm việc trên nhánh `feature/<tên>`.
 
-## Kiểm tra
+## Chạy cục bộ và kiểm tra
 ```
 python -m unittest discover -s tests -v
 ```
+
+Runtime không gọi API hay mạng. Rule planner là fallback an toàn; JsonPlanAdapter là extension point để nhận JSON từ SLM/LLM chạy local trong image, kiểm tra strict schema và chỉ cho executor allowlist chạy. Mô hình, weights, license, revision và tổng parameter phải khai báo ở models/manifest.json trước khi tích hợp.
+
+Docker guideline yêu cầu gọi /code/predict.sh, đọc /data và ghi /result/submission.jsonl. Dockerfile hiện là baseline CPU để test giao diện; phải thay base image bằng image CUDA >=12.8 tương thích RTX 5090 và kiểm chứng offline trước khi final.
 Bài kiểm tra vệ sinh repo (`tests/test_repo_hygiene.py`) từ chối file dữ liệu, trọng số, file quá lớn hoặc chuỗi giống khoá bí mật trong các file đang được Git theo dõi.
 
 ## Công cụ phân tích (cần dữ liệu cục bộ)

@@ -1,3 +1,3 @@
-"""DataMate: trả lời câu hỏi tiếng Việt trên dữ liệu doanh nghiệp nhỏ (khung gói, chưa có tính năng)."""
+"""Offline, deterministic Vietnamese tabular QA primitives for DataMate."""
 
-__version__ = "0.0.0"
+__version__ = "0.1.0"
