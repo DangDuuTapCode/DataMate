@@ -5,6 +5,7 @@
 - Báo cáo đầy đủ: Claude Doc “DataMate – Báo cáo Giai đoạn 1 (M0–M1)”.
 - Công cụ: `inventory.py` (kiểm kê dữ liệu), `qstats.py` (thống kê câu hỏi và đáp án).
 - Phiên B1 (feature/offline-core): ingest CSV/XLSX streaming/SQLite, time parser Gregorian, rule planner, allowlist executor subset (doanh thu/số lượng/số đơn/tỉ lệ huỷ/top bán chạy), verifier, output validator, test synthetic, predict.sh/Dockerfile baseline.
+- Phiên B2: API nội bộ không mạng, scorer local kiểu output, trace log từng câu ở /result/logs/trace.jsonl theo Docker Guide.
 
 ## Trạng thái hiện tại 13/11/2026
 - VERIFIED: unit tests synthetic cho rule subset; output JSONL deterministic; reader XLSX streaming không cần nạp nguyên sheet.
