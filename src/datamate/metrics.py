@@ -1,6 +1,7 @@
 import datetime as dt
-from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from decimal import Decimal, ROUND_HALF_UP
 
+from .normalization import parse_date, parse_decimal
 from .normalise import fold, tokens
 from .rules import cancelled_status, valid_revenue_status
 
@@ -25,23 +26,15 @@ def _column(headers, choices):
 
 
 def _decimal(value):
-    try:
-        return Decimal(str(value).replace("₫", "").replace("đ", "").replace(".", "").replace(",", "").strip())
-    except (ValueError, InvalidOperation):
-        return None
+    result = parse_decimal(value)
+    return result.value if result.ok else None
 
 
 def _date(value):
-    if isinstance(value, dt.datetime):
-        return value.date()
-    if isinstance(value, dt.date):
-        return value
-    for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%Y/%m/%d", "%Y-%m-%d %H:%M:%S"):
-        try:
-            return dt.datetime.strptime(str(value).strip(), fmt).date()
-        except ValueError:
-            pass
-    return None
+    # Vietnamese dates in the current competition data are day-first. The
+    # general parser itself remains strict unless a caller supplies a policy.
+    result = parse_date(value, day_first=True)
+    return result.value if result.ok else None
 
 
 def _money(value):

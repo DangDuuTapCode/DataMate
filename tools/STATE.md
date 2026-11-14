@@ -1,5 +1,12 @@
 # STATE.md — DataMate (Zalo AI Challenge 2026) · cập nhật 12/11/2026
 
+## Checkpoint DF-1 — 14/11/2026
+- Đã thêm parser số/ngày strict có trạng thái `ok`/`empty`/`invalid`/`ambiguous`, giữ raw value và `SourceLocation`.
+- Đã thêm provenance theo dòng cho CSV/XLSX/SQLite; CSV không còn tạo thêm bản sao `list(csv.reader(...))`; SQLite vẫn mở `mode=ro`.
+- XLSX phát hiện header không đủ hoặc có cấu trúc nhiều hàng/gộp ô và trả lỗi rõ ràng thay vì tự gộp cột. Chưa có chính sách header theo từng nguồn.
+- Đã chạy 17 test cũ với `PYTHONPATH=src` và smoke test parser; chưa kịp thêm test parser/ingest bền vững vì người dùng yêu cầu dừng và push ngay.
+- Việc tiếp theo: thêm test synthetic cho parser và ingestion trước khi chuyển sang iterator/streaming descriptor hoặc Data Discovery.
+
 ## Đã xong
 - Phiên A (M0–M1): đọc luật và đề, kiểm kê train + public, phân tích rulebook và câu hỏi.
 - Báo cáo đầy đủ: Claude Doc “DataMate – Báo cáo Giai đoạn 1 (M0–M1)”.
