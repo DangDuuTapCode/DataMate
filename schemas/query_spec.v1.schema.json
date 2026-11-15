@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://datamate.local/schemas/query_spec.v1.schema.json",
+  "title": "DataMate QuerySpec v1",
+  "description": "Normalized question intent and temporal/evidence scope. Null values mean the parser did not infer that slot safely.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "raw_question", "business_id", "intent", "metric", "time",
+    "confidence", "entity", "unit", "sort", "top_k", "dimensions", "filters",
+    "evidence", "ambiguity_flags", "unsupported_reason", "executable"
+  ],
+  "properties": {
+    "schema_version": {"type": "string", "const": "1.0.0"},
+    "raw_question": {"type": "string", "minLength": 1},
+    "business_id": {"type": ["string", "null"], "minLength": 1},
+    "intent": {"type": "string", "minLength": 1},
+    "metric": {"type": ["string", "null"]},
+    "time": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["kind", "start", "end", "as_of", "comparison_start", "comparison_end"],
+      "properties": {
+        "kind": {"type": "string", "enum": ["period", "as_of", "comparison"]},
+        "start": {"type": ["string", "null"], "format": "date"},
+        "end": {"type": ["string", "null"], "format": "date"},
+        "as_of": {"type": ["string", "null"], "format": "date"},
+        "comparison_start": {"type": ["string", "null"], "format": "date"},
+        "comparison_end": {"type": ["string", "null"], "format": "date"}
+      }
+    },
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "entity": {"type": ["string", "null"]},
+    "unit": {"type": ["string", "null"]},
+    "sort": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["field", "direction"],
+      "properties": {
+        "field": {"type": "string", "minLength": 1},
+        "direction": {"type": "string", "enum": ["asc", "desc"]}
+      }
+    },
+    "top_k": {"type": "integer", "minimum": 1, "maximum": 100},
+    "dimensions": {"type": "array", "items": {"type": "string"}},
+    "filters": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 2,
+        "items": {"type": "string"}
+      }
+    },
+    "evidence": {"type": "array", "items": {"type": "string"}},
+    "ambiguity_flags": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "enum": ["implicit_time_scope", "entity_unresolved"]}
+    },
+    "unsupported_reason": {
+      "type": ["string", "null"],
+      "enum": ["intent_not_allowlisted", "temporal_scope_not_executable", null]
+    },
+    "executable": {"type": "boolean"}
+  }
+}

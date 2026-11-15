@@ -1,0 +1,292 @@
+{
+  "schema_version": 1,
+  "repository": "https://github.com/DangDuuTapCode/DataMate",
+  "base_branch": "feature/offline-core",
+  "base_commit": "24cfa0908bd20f6e5b210366e956cae0d665b56e",
+  "release_git_commit": null,
+  "release_git_commit_note": "No release commit was created; this is an isolated source package.",
+  "source_tree_sha256": "104bad85a16177bf5ca96d261d9ba5aefe1115e079e55cd81b3799259d105688",
+  "file_count": 54,
+  "files": [
+    {
+      "path": ".dockerignore",
+      "bytes": 172,
+      "sha256": "fb8bfa426d0b912966660c34a013e1bbd62eca27d22466262f187672440558e4"
+    },
+    {
+      "path": ".gitignore",
+      "bytes": 835,
+      "sha256": "0c62585b685c5971716e1e9794cefe4d960dcb59aa23d734701a04591c99ff24"
+    },
+    {
+      "path": "Dockerfile",
+      "bytes": 569,
+      "sha256": "93b348e1e289a01d70428150873b0819ec23bd1a401330878fe1d7eea9e6a434"
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "bytes": 1377,
+      "sha256": "de87448f87c0804fca07a08e3e530ac36b282d28efae70d1c5dda49c500b708d"
+    },
+    {
+      "path": "docs/LIMITATIONS.md",
+      "bytes": 1059,
+      "sha256": "b3fbbe7b4930a91e4d25f1870dedd7ca6c836c9055c7cc44abf801843a75a57c"
+    },
+    {
+      "path": "docs/RELEASE_VERIFICATION.md",
+      "bytes": 743,
+      "sha256": "c88c3dd9400055b03e1b0eab6fe35a9d61e119e042cc1a423885cdbe3b879c3c"
+    },
+    {
+      "path": "docs/VALIDATION.md",
+      "bytes": 1133,
+      "sha256": "f04e05cde105ccdd675553acc6a0b3d5c34fd7ade722b12c025a7a98bfd88449"
+    },
+    {
+      "path": "models/manifest.json",
+      "bytes": 220,
+      "sha256": "5703084d168480d56584e1d4d9ec304f1c81c57ad25d0fa12f977c5a65bd2e22"
+    },
+    {
+      "path": "predict.sh",
+      "bytes": 204,
+      "sha256": "460a350534ce9fb59155f338b2c45e84f3a9dfc74244e977f99fc7728760862f"
+    },
+    {
+      "path": "README.md",
+      "bytes": 3588,
+      "sha256": "704d2bcb9da1ead9b4843f85a7f97575ba3b819de2f7bec0b5c33bc8cc32336c"
+    },
+    {
+      "path": "requirements.txt",
+      "bytes": 129,
+      "sha256": "868d29af384283a529fa80fe939fe8e404f6cf35bdbcaffb8cc2a039425a41e4"
+    },
+    {
+      "path": "schemas/query_spec.v1.schema.json",
+      "bytes": 2704,
+      "sha256": "f597e8484fa927ae2af9525146b9aef538b2db4ad0e48a1da70dd050f4b97e5a"
+    },
+    {
+      "path": "src/datamate/__init__.py",
+      "bytes": 102,
+      "sha256": "8f2b6540b8c33dc7ab6949969e9c48aa279f5461453c761b4715ae1805555047"
+    },
+    {
+      "path": "src/datamate/api.py",
+      "bytes": 579,
+      "sha256": "1b52d258c9e7310d695571756cc3356525a08f2847f4922b9bbf5cdafc7efe0d"
+    },
+    {
+      "path": "src/datamate/ingest.py",
+      "bytes": 16799,
+      "sha256": "05ec50679147e2e67622e392deb07b3176516c04a29997bdbf48da1f6ca4f7ba"
+    },
+    {
+      "path": "src/datamate/main.py",
+      "bytes": 3449,
+      "sha256": "a631e7ffa98595853573ae68eae33105592d020b8b4f309139e23120ceda0fbc"
+    },
+    {
+      "path": "src/datamate/metrics.py",
+      "bytes": 6453,
+      "sha256": "321d258e2ad2f28e24568fe4e34c85b63f22ffe3c82b3fb610bfe9cabecc7308"
+    },
+    {
+      "path": "src/datamate/normalise.py",
+      "bytes": 434,
+      "sha256": "f44eea918bc350502091e6b97040bf7f0ff98d57c53ef6c98b9af427187d3b26"
+    },
+    {
+      "path": "src/datamate/normalization.py",
+      "bytes": 13736,
+      "sha256": "1ab469b9ac7f67965ceba247de1663c15b4de01ff6ce8a64b3a6425f46040152"
+    },
+    {
+      "path": "src/datamate/output.py",
+      "bytes": 1553,
+      "sha256": "74034da12d6941af63bb6f09f1d81b68741a99e55e0d37c4b4c8dd072f1304b7"
+    },
+    {
+      "path": "src/datamate/query_schema.py",
+      "bytes": 4089,
+      "sha256": "091cafb4e43bd4ae27a95ddee6f5cb558cd5439d5498e3d1bace0d220051b113"
+    },
+    {
+      "path": "src/datamate/rules.py",
+      "bytes": 327,
+      "sha256": "dbe4ac43bae4006bc5ec43f3ff769a00acd2817059c798983dc70d3c207b9875"
+    },
+    {
+      "path": "src/datamate/scoring.py",
+      "bytes": 2518,
+      "sha256": "6e28dbb6d5d98e047a9a6adda405ea6d47d01a7f5a4d2b1a5599ab353353d4ea"
+    },
+    {
+      "path": "src/datamate/timeparse.py",
+      "bytes": 10973,
+      "sha256": "ea890116e57afb5885dcb7831acabb2b96b4a943d03bf0e7af5bc465ad8fd2c0"
+    },
+    {
+      "path": "src/datamate/types.py",
+      "bytes": 3032,
+      "sha256": "2e66104d088dde8f316dff07021b8fb9ba4527620ab7265b97ece6a3717b53d0"
+    },
+    {
+      "path": "src/datamate/understanding.py",
+      "bytes": 17257,
+      "sha256": "c4721bf01ad10ff24262e103af278eaa9b09237d700f67d0a346196ca420ab15"
+    },
+    {
+      "path": "src/datamate/verify.py",
+      "bytes": 477,
+      "sha256": "52e66ee5f39429bad06dbbaffba14afaaf322afd5349dcd38a20f0e93bde8f1c"
+    },
+    {
+      "path": "tests/fixtures/README.md",
+      "bytes": 165,
+      "sha256": "e4f518278afb06609babfefe93b503dca46838663eea64364c59079cf7377e34"
+    },
+    {
+      "path": "tests/test_api.py",
+      "bytes": 3762,
+      "sha256": "14c5d668cb74c6fba15965abc08a66bab7dbc0b638a9d4aa78f5372f924154a8"
+    },
+    {
+      "path": "tests/test_business_profiles.py",
+      "bytes": 1854,
+      "sha256": "fc1d06a5af03af5e8cb766db9e6ba34481956d701d759f45da0d4b11b56e1e2b"
+    },
+    {
+      "path": "tests/test_ingest.py",
+      "bytes": 12916,
+      "sha256": "38c79b627af6ee1a53f34a6b569960c0b10f3710960c10b24dd680be57552b43"
+    },
+    {
+      "path": "tests/test_normalization.py",
+      "bytes": 4617,
+      "sha256": "702d0ff9ecdb4b06047d4a4adeb3beebb62da945d6bc00048793f17b08e4d405"
+    },
+    {
+      "path": "tests/test_output.py",
+      "bytes": 616,
+      "sha256": "1028ea62e6ede2020eea555c372e80a0e1e1c72bf489f76a9083e7a87944ea18"
+    },
+    {
+      "path": "tests/test_pipeline.py",
+      "bytes": 2032,
+      "sha256": "c9be5e97a91e16d2188d68804ef5394e7f62e6d04db806376fd52f3372e8f0ba"
+    },
+    {
+      "path": "tests/test_query_schema.py",
+      "bytes": 4958,
+      "sha256": "2b2ad96c7e5ba2e90461adad6c69dda0527e6d4d705c5345906483da564ad332"
+    },
+    {
+      "path": "tests/test_queryspec_eval.py",
+      "bytes": 7983,
+      "sha256": "df9e4e9a0e7be45fe82fed9129b4aee9f4c19e66e6f6dbdba0a94b0e999132d8"
+    },
+    {
+      "path": "tests/test_repo_hygiene.py",
+      "bytes": 2164,
+      "sha256": "51c6835940628b496d65969698ba00d51ec4222a8b12c5ad1f16c6ebd558c68f"
+    },
+    {
+      "path": "tests/test_scoring.py",
+      "bytes": 1086,
+      "sha256": "285e783988f4bd6519018292100156fb2472583937f0ded309ed797cbb3d7598"
+    },
+    {
+      "path": "tests/test_timeparse.py",
+      "bytes": 9287,
+      "sha256": "ad49a26d70497f58ddce3be4b30fce0fff594fd53a2b053694ec37944f9b3bfb"
+    },
+    {
+      "path": "tests/test_understanding.py",
+      "bytes": 8876,
+      "sha256": "0a77476f9709834220903772e843da7b99a3873bd6fb704eff4b114c3d06d281"
+    },
+    {
+      "path": "tools/create_source_manifest.py",
+      "bytes": 3065,
+      "sha256": "e928e636c58247736dd2bdf1001a5eaaeb42dfe2e9fed0698d3d0fc8bb46e687"
+    },
+    {
+      "path": "tools/evaluate_ingestion.py",
+      "bytes": 4841,
+      "sha256": "81892f9c0f46b2fc72ad2f64602b0033caca5fadb5b356b0915d59d0eb3a076d"
+    },
+    {
+      "path": "tools/evaluate_queryspec_holdout.py",
+      "bytes": 8811,
+      "sha256": "1936bf2a67212e2c9047b626ce80057869cbd6307393da64cff9e2572671d4ae"
+    },
+    {
+      "path": "tools/evaluate_understanding.py",
+      "bytes": 2876,
+      "sha256": "ad16200ad76a2edcd78bc174242a9c131164ee138d950956b2aa0f794cd7bc27"
+    },
+    {
+      "path": "tools/inventory.py",
+      "bytes": 5970,
+      "sha256": "74cabf33e78c40d750ded4a1dcbda970a8922d89b834dddca161ddbabebf0555"
+    },
+    {
+      "path": "tools/prepare_docker_context.py",
+      "bytes": 4128,
+      "sha256": "3b8ed7d2ea3ffa64c52640599977e101050001a8d9319496f1a5fa81f123df63"
+    },
+    {
+      "path": "tools/prepare_queryspec_holdout.py",
+      "bytes": 3299,
+      "sha256": "7c1cd4b3cba1d1359d7935dcf1407cd9454d60d1e8dc00a2e347c4ec6a82913a"
+    },
+    {
+      "path": "tools/profile_businesses.py",
+      "bytes": 10596,
+      "sha256": "4ce7b0036dd0e5a5d84b1a52c11873c8d20228882517efe71ce397384ad685ec"
+    },
+    {
+      "path": "tools/qstats.py",
+      "bytes": 5993,
+      "sha256": "3b351af3ee54fb2a977c418777c4a6d3cae5d11192de7754708aa366352f8878"
+    },
+    {
+      "path": "tools/render_business_matrix.py",
+      "bytes": 4412,
+      "sha256": "edb6687d1920910e7e84d14fa3450c854616a9972e64c0d0524325fd818071bd"
+    },
+    {
+      "path": "tools/validate_submission.py",
+      "bytes": 1238,
+      "sha256": "d31169e5ef54560e60a447b29a48fc2702f5818268b3e9fad1b8d784660b2c04"
+    },
+    {
+      "path": "training_code/data_manifest.json",
+      "bytes": 385,
+      "sha256": "029c257debbcba1d56261463e5a52471cb36b8c5db3a2877aaebf485464a24e6"
+    },
+    {
+      "path": "training_code/README.md",
+      "bytes": 889,
+      "sha256": "41c8dfcc9f8c5679d245affee9c596134103f36e26488276c2163506627bb98f"
+    },
+    {
+      "path": "training_code/requirements.txt",
+      "bytes": 70,
+      "sha256": "1124cacf3149f1a26411033d5754d3caf4b43106f685b409821f4b2a75466ab9"
+    }
+  ],
+  "model_declaration": {
+    "inference_mode": "deterministic_rule_engine",
+    "models": [],
+    "total_parameters": 0,
+    "uses_hosted_api": false,
+    "weights_packaged": false,
+    "note": "No language model was used or trained for this baseline."
+  },
+  "training_performed": false,
+  "competition_datasets_in_source_package": false
+}

@@ -1,0 +1,10 @@
+{
+  "source": "Zalo AI Challenge 2026 DataMate training split (provided train.zip)",
+  "archive_path_in_image": "/code/training_code/data/train.zip",
+  "archive_sha256": "c1adbc654a301c30e4cf20b55d301381025f49db1162d88322b552d7472fea01",
+  "archive_bytes": 128118095,
+  "questions": 3000,
+  "businesses": 30,
+  "training_performed": false,
+  "public_or_private_test_included": false
+}

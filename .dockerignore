@@ -1,0 +1,13 @@
+.git
+**/.git
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/logs/
+**/public_test.zip
+**/public_test/
+**/private_test/
+**/*.tar
+**/*.tar.gz
+*.zip
+!training_code/data/train.zip

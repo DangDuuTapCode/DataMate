@@ -1,0 +1,8 @@
+{
+  "inference_mode": "deterministic_rule_engine",
+  "models": [],
+  "total_parameters": 0,
+  "uses_hosted_api": false,
+  "weights_packaged": false,
+  "note": "No language model was used or trained for this baseline."
+}

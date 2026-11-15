@@ -29,6 +29,12 @@ def valid_record(record):
 def write_jsonl(records, path):
     with open(path, "w", encoding="utf-8", newline="\n") as handle:
         for record in records:
-            if not valid_record(record):
-                raise ValueError(f"invalid output record: {record!r}")
-            handle.write(json.dumps(record, ensure_ascii=False, allow_nan=False, separators=(",", ":")) + "\n")
+            write_record(handle, record)
+
+
+def write_record(handle, record):
+    """Validate and persist one answer so completed work survives later errors."""
+    if not valid_record(record):
+        raise ValueError(f"invalid output record: {record!r}")
+    handle.write(json.dumps(record, ensure_ascii=False, allow_nan=False, separators=(",", ":")) + "\n")
+    handle.flush()

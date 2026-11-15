@@ -166,6 +166,42 @@ def parse_decimal(value, *, decimal_separator: str | None = None,
                    None if parsed is not None else "invalid decimal", location)
 
 
+def infer_decimal_separator(values) -> str | None:
+    """Infer a column decimal mark only when values give decisive evidence.
+
+    A lone ``1.234`` cannot distinguish a decimal from a grouping mark. Mixed
+    separators, non-three-digit fractional tails, or repeated valid grouping
+    marks can establish a consistent column convention. Ambiguous-only or
+    conflicting columns remain unresolved.
+    """
+    candidates = set()
+    for value in values:
+        if not isinstance(value, str):
+            continue
+        _, body = _strip_currency(value)
+        separators = {character for character in body if character in ".,"}
+        if not separators:
+            continue
+        if len(separators) == 2:
+            decimal = "." if body.rfind(".") > body.rfind(",") else ","
+            if not parse_decimal(value).ok:
+                return None
+            candidates.add(decimal)
+            continue
+
+        separator = next(iter(separators))
+        occurrences = body.count(separator)
+        if occurrences > 1:
+            if not _valid_grouped_integer(body, separator):
+                return None
+            candidates.add("," if separator == "." else ".")
+            continue
+        integer, fraction = body.split(separator)
+        if integer.isdigit() and fraction.isdigit() and len(fraction) != 3:
+            candidates.add(separator)
+    return next(iter(candidates)) if len(candidates) == 1 else None
+
+
 def parse_excel_date(value, *, date_system: str = "1900",
                      location: SourceLocation | None = None) -> ParseResult[dt.date]:
     """Parse an Excel date serial with an explicit 1900 or 1904 workbook epoch."""
@@ -182,9 +218,15 @@ def parse_excel_date(value, *, date_system: str = "1900",
             return _result(value, None, ParseStatus.INVALID,
                            "Excel serial 60 is the non-existent date 1900-02-29", location)
         offset = whole_days - 1 if whole_days > 60 else whole_days
-        parsed = dt.date(1899, 12, 31) + dt.timedelta(days=offset)
+        epoch = dt.date(1899, 12, 31)
     else:
-        parsed = dt.date(1904, 1, 1) + dt.timedelta(days=whole_days)
+        offset = whole_days
+        epoch = dt.date(1904, 1, 1)
+    try:
+        parsed = epoch + dt.timedelta(days=offset)
+    except OverflowError:
+        return _result(value, None, ParseStatus.INVALID,
+                       "Excel serial is outside the supported date range", location)
     return _result(value, parsed, ParseStatus.OK, location=location)
 
 
