@@ -1,8 +1,10 @@
 """Deterministic question understanding and a strict local-SLM extension point."""
 import json
 import re
+import unicodedata
 from typing import Protocol
 
+from .normalization import parse_decimal
 from .normalise import fold
 from .timeparse import resolve, resolve_as_of, resolve_comparison
 from .types import QueryPlan, QuerySpec, SortSpec, TemporalScope
@@ -15,11 +17,18 @@ class Planner(Protocol):
 class RulePlanner:
     """Parse broad query intent; only emit executable plans from the allowlist."""
 
-    EXECUTABLE = {"revenue", "quantity", "order_count", "cancellation_rate", "sales_ranking"}
+    EXECUTABLE = {
+        "revenue", "collected_amount", "quantity", "order_count", "cancellation_rate",
+        "sales_ranking", "daily_revenue_threshold_count",
+    }
     RANKING_INTENTS = {
         "sales_ranking", "customer_ranking", "debt_ranking", "period_ranking",
         "seller_ranking", "supplier_ranking", "best_sales_day", "profit_ranking", "slow_sellers",
     }
+
+    def __init__(self, solar_lunar_calendar=None, split_rules=None):
+        self.solar_lunar_calendar = solar_lunar_calendar
+        self.split_rules = split_rules
 
     @staticmethod
     def _top_k(question):
@@ -70,6 +79,79 @@ class RulePlanner:
         return None
 
     @staticmethod
+    def _daily_revenue_threshold(question):
+        """Parse only explicit inclusive revenue thresholds; ambiguous values fail closed."""
+        preserved = unicodedata.normalize("NFD", str(question)).replace("đ", "d").replace("Đ", "D")
+        preserved = "".join(char for char in preserved if unicodedata.category(char) != "Mn")
+        q = re.sub(r"[^a-z0-9.,>=]+", " ", preserved.lower())
+        number = r"(?P<number>\d[\d.,]*(?:\s*(?:trieu|tr))?)(?:\s*(?P<currency>vnd|dong|d))?"
+        patterns = (
+            rf"(?:>=|at least|at minimum|it nhat|toi thieu|lon hon hoac bang|greater than or equal(?: to)?|tu)\s*(?:vnd\s*)?{number}\s*(?:vnd|dong|d)?\s*(?:tro len|tro di)?\b",
+            rf"{number}\s*(?:vnd|dong|d)?\s*(?:tro len|tro di)\b",
+        )
+        matches = []
+        for pattern in patterns:
+            matches.extend(re.finditer(pattern, q))
+        if not matches:
+            return None
+        parsed_values = set()
+        for match in matches:
+            amount = match.group("number")
+            if match.group("currency"):
+                amount += " VND"
+            parsed = parse_decimal(amount)
+            if not parsed.ok or parsed.value <= 0:
+                return None
+            parsed_values.add(format(parsed.value, "f"))
+        return parsed_values.pop() if len(parsed_values) == 1 else None
+
+    @staticmethod
+    def _has_unresolved_entity_filter(question):
+        """Detect explicit entity filters that need a profile-backed match."""
+        raw = str(question)
+        q = fold(raw)
+        if re.search(r"\b(?:cua|cho)\s+(?!cua\b|hang\b|thang\b|ngay\b|don\b|shop\b)[a-z0-9]+", q):
+            return True
+        if re.search(r"\b(?:nhom|loai|thuoc ke don)\s+[a-z0-9]+", q):
+            return True
+        named_product = re.search(r"\b(?:san pham|mat hang|hang hoa)\s+([a-z0-9]+)", q)
+        if named_product and named_product.group(1) not in {
+            "nao", "ban", "nhieu", "nhat", "top", "tung", "theo", "thang", "ngay",
+            "la", "gi", "tot", "hot", "dang", "bi", "het", "con",
+        }:
+            return True
+        named_item = re.search(r"\b(?:mon an|mon|tien ban)\s+([a-z0-9]+)", q)
+        if named_item and named_item.group(1) not in {
+            "nao", "an", "ban", "hang", "duoc", "dc", "nhieu", "nhat", "tong", "total",
+            "bao", "bn", "bnhiu", "thang", "ngay", "hom", "hnay", "bua", "nay", "qua",
+        }:
+            return True
+        sold_item = re.search(r"\bban\s+([a-z0-9]+)(?:\s+[a-z0-9]+){0,4}\s+(?:duoc|dc)\b", q)
+        if sold_item and sold_item.group(1) not in {
+            "duoc", "dc", "ra", "qua", "tai", "theo", "nhieu", "chay", "hang", "tong", "total",
+        }:
+            return True
+        if re.search(
+            r"\b(?:vien|hop|chai|thung|kg|gram|ml|lit|ly|lon)\s+[A-Z][A-Za-z0-9-]+",
+            raw,
+        ):
+            return True
+        if re.search(r"\b(?:bao nhieu|bao nhiu)\s+(?:vien|hop|chai|thung|kg|gram|ml|lit|ly|lon)\s+[a-z0-9]+", q):
+            return True
+        return False
+
+    @staticmethod
+    def _has_unimplemented_breakdown(question):
+        q = fold(question)
+        return any(term in q for term in (
+            "moi loai", "theo phuong thuc", "theo hinh thuc", "theo nhom", "theo loai",
+            "theo san pham", "theo tung san pham", "theo mat hang", "theo tung mat hang",
+            "moi san pham", "moi mat hang", "qua dien thoai", "ban qua dien thoai",
+            "tai quay", "ban tai quay", "tra bang ck", "bang ck", "bang cod", "cod va", "tien mat", "chuyen khoan",
+            "quet the", "the ngan hang",
+        ))
+
+    @staticmethod
     def _resolve_entity(question, entity_catalog):
         """Resolve only unique aliases supplied by a business profile."""
         if not entity_catalog:
@@ -104,20 +186,28 @@ class RulePlanner:
             or "kh" in tokens
         )
         product = (
-            any(term in q for term in ("mat hang", "san pham", "hang hoa", "ten hang"))
+            any(term in q for term in ("mat hang", "san pham", "hang hoa", "ten hang", "mon an"))
+            or "mon" in tokens
             or "sp" in tokens
             or ("hang" in tokens and "cua hang" not in q)
         )
         ranking = any(term in q for term in (
             "top", "ban chay", "chay nhat", "ban nhieu nhat", "nhieu tien nhat", "mua nhieu nhat",
-            "nhiu tien nhat", "chi tieu nhieu nhat", "chi tieu cao nhat", "cao nhat", "lon nhat",
-            "dat nhat", "loi nhat", "nhieu don nhat", "nhieu don hang nhat", "nhiu don hang nhat", "nhieu nhat", "hot nhat",
+            "nhiu tien nhat", "nhiu nhat", "nhieeuf nhat", "chi tieu nhieu nhat", "chi tieu cao nhat", "cao nhat", "lon nhat",
+            "dat nhat", "loi nhat", "cao nhaats", "nhieu don nhat", "nhieu don hang nhat", "nhiu don hang nhat", "nhieu nhat", "hot nhat",
         ))
 
-        debt = any(term in q for term in ("cong no", "con no", "dang no", "khach no", "ghi no", "mua chiu"))
-        debt_payment = any(term in q for term in (
-            "tra no", "tra bot no", "khach thanh toan", "khach tra tien", "thu tien no", "thu hoi",
+        day_count = bool(re.search(r"\b(?:co\s+)?(?:may|bao nhieu|so)\s+ngay\b", q))
+        daily_revenue_cue = any(term in q for term in (
+            "doanh thu", "doanh so", "dthu", "revenue", "tien ban", "ban duoc", "ban duoc bao nhieu tien",
         ))
+        if day_count and daily_revenue_cue:
+            return "daily_revenue_threshold_count", (), "daily_revenue"
+
+        debt = any(term in q for term in ("cong no", "con no", "dang no", "khach no", "ghi no", "mua chiu"))
+        debt_payment = any(term in q for term in ("tra no", "tra bot no", "thu tien no", "thu hoi")) or (
+            debt and any(term in q for term in ("khach thanh toan", "khach tra tien", "da tra"))
+        )
 
         if canceled and (has_percent_mark or any(term in q for term in ("ti le", "ty le", "phan tram", "bao nhieu phan tram"))):
             return "cancellation_rate", (), "cancellation_rate"
@@ -135,6 +225,21 @@ class RulePlanner:
             return "debt_payment", (), "debt_payment"
         if debt:
             return "debt_outstanding", (), "debt_outstanding"
+        collection_cue = any(term in q for term in (
+            "thuc thu", "tien da thu", "da thu", "tien thu duoc", "thu duoc bao nhieu tien",
+            "thu ve", "da thanh toan", "tien thanh toan", "khach da tra", "tien khach tra",
+            "paid amount", "amount paid", "collected amount", "cash received", "money received",
+        ))
+        gross_revenue_cue = any(term in q for term in (
+            "doanh thu", "doanh so", "dthu", "revenue", "gia tri don", "order value", "order total",
+        ))
+        asks_for_both_metrics = any(term in q for term in (" va ", " so voi ", " chenhlech ", " compared to ", " and "))
+        if collection_cue and gross_revenue_cue and (comparison or asks_for_both_metrics):
+            return "financial_metric_comparison", ("metric",), "revenue_and_collected_amount"
+        if collection_cue and ranking:
+            return "collected_amount_ranking", ("period",), "collected_amount"
+        if collection_cue:
+            return "collected_amount", (), "collected_amount"
         if ranking and customer:
             return "customer_ranking", ("customer",), "customer_spend"
         customer_order_frequency = any(term in q for term in (
@@ -156,15 +261,23 @@ class RulePlanner:
         if (ranking and any(term in q for term in ("nha cung cap", "ncc"))
                 and any(term in q for term in ("hang nhap", "phieu nhap", "tien nhap", "mua vao"))):
             return "supplier_ranking", ("supplier",), "supplier_purchase_amount"
-        if "ngay nao" in q and any(term in q for term in ("tien", "doanh thu", "doanh so", "dthu", "ban duoc")) and ranking:
+        day_question = re.search(r"\bngay nao(?:f)?\b", q)
+        if day_question and any(term in q for term in ("tien", "doanh thu", "doanh so", "dthu", "revenue", "ban duoc")) and ranking:
             return "best_sales_day", ("date",), "daily_revenue"
+        total_revenue = any(term in q for term in ("tong doanh thu", "tong dthu", "tong doanh so"))
+        share_cue = any(term in q for term in ("chiem", "dong gop", "ti trong", "ty trong", "co cau"))
+        category_subject = any(term in q for term in ("nhom", "loai", "thuoc", "san pham", "mat hang"))
+        channel_subject = any(term in q for term in ("kenh", "don ban qua", "ban qua dien thoai", "qua dien thoai", "tai quay"))
+        payment_subject = any(term in q for term in ("tra bang ck", "bang ck", "chuyen khoan", "cod", "tien mat", "quet the"))
         if ("ti trong" in q or "ty trong" in q or "co cau doanh thu" in q or "phan tram doanh thu" in q
                 or (has_percent_mark and "tong doanh thu" in q and any(term in q for term in ("nhom", "thuoc", "san pham", "kenh", "don ban qua")))
                 or (has_percent_mark and "doanh thu" in q
                     and any(term in q for term in ("chiem", "dong gop"))
                     and any(term in q for term in ("nhom", "thuoc", "san pham", "kenh", "loai")))
-                or ("ti le" in q and "doanh thu" in q and any(term in q for term in ("nhom", "thuoc", "san pham")))):
-            return "revenue_share", ("category",), "revenue_share"
+                or ("ti le" in q and "doanh thu" in q and any(term in q for term in ("nhom", "thuoc", "san pham")))
+                or (percent_query and total_revenue and share_cue and (category_subject or channel_subject or payment_subject))):
+            dimension = "payment_method" if payment_subject else "channel" if channel_subject else "category"
+            return "revenue_share", (dimension,), "revenue_share"
         if comparison:
             if any(term in q for term in ("so luong", "ban ra", "ban duoc", "ban dc", "kg", "cai", "chai", "ly", "vien")):
                 return "quantity_change", (), "quantity_change"
@@ -178,6 +291,9 @@ class RulePlanner:
         if (any(term in q for term in ("gia tri trung binh mot don", "trung binh mot don", "gia tri tb don"))
                 or ("trung binh" in q and "don" in tokens and any(term in q for term in ("doanh thu", "dthu", "revenue", "tien")))):
             return "average_order_value", (), "average_order_value"
+        if (any(term in q for term in ("trung binh", "binh quan"))
+                and any(term in q for term in ("doanh thu", "doanh so", "dthu", "revenue"))):
+            return "average_revenue", (), "average_revenue"
         if (("gia von" in q or "gia nhap" in q) and
                 any(term in q for term in ("ton kho", "trong kho", "con ton", "nam trong kho"))):
             return "inventory_value", ("product",), "inventory_value"
@@ -216,7 +332,10 @@ class RulePlanner:
             return "cancellation_count", (), "cancellation_count"
         if any(term in q for term in ("ti le khach", "ty le khach")):
             return "customer_repeat_rate", ("customer",), "customer_repeat_rate"
-        if any(term in q for term in ("doanh thu", "doanh so", "dthu", "revenue", "tien ban", "thu ve", "total", "ban duoc bao nhieu tien", "bao nhiu tien")) or (
+        if any(term in q for term in (
+            "doanh thu", "doanh so", "dthu", "revenue", "tien ban", "total",
+            "ban duoc bao nhieu tien", "bao nhiu tien", "gia tri don", "order value", "order total", "order amount",
+        )) or (
             "ban" in tokens and "tien" in tokens
         ):
             return "revenue", (), "revenue"
@@ -234,8 +353,20 @@ class RulePlanner:
         if detected is None:
             return None
         intent, dimensions, metric = detected
-        comparison = resolve_comparison(question, as_of_date)
-        period = resolve(question, as_of_date)
+        tet_lunar_window = getattr(self.split_rules, "tet_lunar_window", None)
+        tet_preceding_comparison_supported = getattr(
+            self.split_rules, "tet_preceding_comparison_supported", False
+        )
+        comparison = resolve_comparison(
+            question,
+            as_of_date,
+            self.solar_lunar_calendar,
+            tet_lunar_window,
+            tet_preceding_comparison_supported,
+        )
+        period = resolve(
+            question, as_of_date, self.solar_lunar_calendar, tet_lunar_window
+        )
         point = resolve_as_of(question, as_of_date)
         q = fold(question)
         point_context = any(term in q for term in ("tinh den", "den het", "cuoi ngay", "ton kho ngay"))
@@ -254,20 +385,35 @@ class RulePlanner:
             scope = TemporalScope(kind="as_of", as_of=point.isoformat())
         else:
             scope = TemporalScope(kind="as_of", as_of=as_of_date)
-        executable = intent in self.EXECUTABLE and scope.kind == "period"
+        entity, entity_ambiguous = self._resolve_entity(question, entity_catalog)
+        explicit_entity_filter = self._has_unresolved_entity_filter(question)
+        unresolved_entity = entity_ambiguous or (explicit_entity_filter and entity is None)
+        unsupported_breakdown = self._has_unimplemented_breakdown(question)
+        threshold = (
+            self._daily_revenue_threshold(question)
+            if intent == "daily_revenue_threshold_count" else None
+        )
+        executable = (
+            intent in self.EXECUTABLE
+            and scope.kind == "period"
+            and not unresolved_entity
+            and not unsupported_breakdown
+            and (intent != "daily_revenue_threshold_count" or threshold is not None)
+        )
         evidence = (f"rule:{intent}", f"time:{scope.kind}")
         explicit_time = comparison is not None or period is not None or point is not None
-        entity, entity_ambiguous = self._resolve_entity(question, entity_catalog)
         ambiguity_flags = []
         if not explicit_time:
             ambiguity_flags.append("implicit_time_scope")
-        if entity_ambiguous:
+        if unresolved_entity:
             ambiguity_flags.append("entity_unresolved")
+        filters = (("revenue_gte", threshold),) if threshold is not None and intent == "daily_revenue_threshold_count" else ()
         unsupported_reason = None
         if not executable:
             unsupported_reason = (
                 "intent_not_allowlisted" if intent not in self.EXECUTABLE
-                else "temporal_scope_not_executable"
+                else "temporal_scope_not_executable" if scope.kind != "period"
+                else "unresolved_filter"
             )
         return QuerySpec(
             intent=intent,
@@ -282,6 +428,7 @@ class RulePlanner:
             business_id=business_id,
             entity=entity,
             metric=metric,
+            filters=filters,
             unit=self._explicit_unit(question),
             sort=SortSpec(metric, "desc") if intent in self.RANKING_INTENTS else None,
             ambiguity_flags=tuple(ambiguity_flags),
@@ -303,6 +450,7 @@ class RulePlanner:
             evidence=spec.evidence,
             compare_start=spec.time.comparison_start,
             compare_end=spec.time.comparison_end,
+            threshold=dict(spec.filters).get("revenue_gte"),
         )
 
 
@@ -316,7 +464,7 @@ class JsonPlanAdapter:
             data = json.loads(payload) if isinstance(payload, str) else payload
             allowed_fields = {
                 "intent", "start", "end", "confidence", "entity", "top_k", "evidence",
-                "compare_start", "compare_end",
+                "compare_start", "compare_end", "threshold",
             }
             if not isinstance(data, dict) or set(data) - allowed_fields:
                 return None

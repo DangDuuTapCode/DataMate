@@ -60,7 +60,7 @@
     },
     "unsupported_reason": {
       "type": ["string", "null"],
-      "enum": ["intent_not_allowlisted", "temporal_scope_not_executable", null]
+      "enum": ["intent_not_allowlisted", "temporal_scope_not_executable", "unresolved_filter", null]
     },
     "executable": {"type": "boolean"}
   }

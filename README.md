@@ -1,56 +1,54 @@
-# DataMate — Source Release
+# DataMate — Zalo AI Challenge 2026
 
-## Solution declaration
+Hệ thống trả lời câu hỏi tiếng Việt trên dữ liệu doanh nghiệp nhỏ (CSV, XLSX, SQLite). Mục tiêu của đội: hệ thống SLM (tổng tham số ≤ 15B) tổng quát hoá sang doanh nghiệp và ngành chưa từng gặp.
 
-This release is a deterministic Python rule-based baseline for Vietnamese questions over business tables. It uses no LLM or SLM, hosted API, model weights, or inference-time network access. The declared parameter count is zero. No model training or synthetic-data generation was performed.
+**Trạng thái:** baseline offline đang hoạt động cho ingest CSV/XLSX/SQLite, planning xác định, executor allowlist, kiểm chứng và JSONL output. Đây chưa phải solution cạnh tranh hoàn chỉnh: join phức tạp, kho/công nợ/lô, lịch âm, và SLM thực tế còn chưa hoàn thiện.
 
-The system parses a question into a constrained query representation, reads permitted CSV, XLSX, and SQLite inputs, computes answers deterministically, applies verification and abstention rules, then writes answer and trace JSONL records. Unsupported or insufficiently grounded cases may be abstained.
+## Hướng tiếp cận đã thống nhất
+Kết hợp: SLM hiểu câu hỏi và lập kế hoạch; Python/SQL tính toán xác định; rule engine áp dụng rulebook; bước kiểm chứng; biết abstain hoặc báo unanswerable khi thiếu dữ liệu. Mô hình ngôn ngữ không được tự tạo số liệu. Chi tiết và trạng thái từng quyết định: [`docs/decisions.md`](docs/decisions.md).
 
-## Runtime layout
+## Cấu trúc repository
+| Thư mục | Nội dung |
+|---|---|
+| `src/datamate/` | ingest, time parse, planner, executor, verifier, output |
+| `tests/` | kiểm thử; `tests/fixtures/` chỉ chứa dữ liệu GIẢ tự tạo |
+| `docs/` | quyết định kiến trúc, bảng trạng thái bằng chứng |
+| `tools/` | script phân tích dữ liệu (`inventory.py`, `qstats.py`) và `STATE.md` |
+| `data/` | chỉ có `README.md`; dữ liệu cuộc thi đặt cục bộ, bị `.gitignore` chặn |
+| `models/` | chỉ có `README.md` (và `manifest.json` khi cần); KHÔNG chứa weights |
 
-The competition runner provides business data beneath /data/data/<business_id>, along with shared question, rulebook, and calendar inputs under /data. The entry point reads the question file and writes:
+Các module dự kiến trong `src/datamate/` (chỉ tạo khi có mã thật): `ingest`, `canonical`, `rules`, `timeparse`, `understanding`, `metrics`, `verify`, `output`, `scoring`. Thư mục `configs/` và `training_code/` tạo khi cần.
 
-- /result/submission.jsonl: one JSON answer record per input question, in input order.
-- /result/logs/: one trace record per question, including the answer, integer elapsed time, and execution evidence where applicable.
+## Quy tắc phát triển
+1. Không đưa lên Git: dataset gốc, câu hỏi/đáp án (train, public, private), rulebook của cuộc thi, kết quả chạy, log, trọng số mô hình, khoá/thông tin đăng nhập. Chỉ dữ liệu giả tự tạo mới được vào `tests/fixtures/`.
+2. Không huấn luyện hay tinh chỉnh trên dữ liệu public/private test; không hard-code đáp án, id câu hỏi hoặc id business.
+3. Mọi con số do code xác định tính; không để mô hình sinh số liệu.
+4. Ghi nhãn bằng chứng trong tài liệu: VERIFIED, INFERRED, PROPOSED, UNVERIFIED.
+5. Commit nhỏ, thông điệp rõ (`chore:`, `docs:`, `feat:`, `test:`); trước mỗi commit hoặc push, liệt kê file thay đổi và mục đích.
+6. Không force push; `main` luôn ở trạng thái chạy được; làm việc trên nhánh `feature/<tên>`.
 
-The Python entry point is datamate.main. Parsing, normalization, time interpretation, query schema, execution, scoring, verification, and serialization are separated under src/datamate/.
+## Chạy cục bộ và kiểm tra
+```
+python -m unittest discover -s tests -v
+```
 
-## Install and run locally
+Runtime không gọi API hay mạng. Rule planner là fallback an toàn; JsonPlanAdapter là extension point để nhận JSON từ SLM/LLM chạy local trong image, kiểm tra strict schema và chỉ cho executor allowlist chạy. Mô hình, weights, license, revision và tổng parameter phải khai báo ở models/manifest.json trước khi tích hợp.
 
-Use Python 3.11 or newer. From this directory:
+Docker guideline yêu cầu gọi `/code/predict.sh`, đọc `/data` và ghi `/result/submission.jsonl`. Dockerfile dùng base image được hướng dẫn (`vllm/vllm-openai:v0.10.1.1`) và nhắm tới `linux/amd64`. Build Docker, tính tương thích GPU mục tiêu và chạy container offline vẫn phải được xác minh trên môi trường có Docker và GPU trước khi nộp.
+Bài kiểm tra vệ sinh repo (`tests/test_repo_hygiene.py`) từ chối file dữ liệu, trọng số, file quá lớn hoặc chuỗi giống khoá bí mật trong các file đang được Git theo dõi.
 
-~~~sh
-python -m venv .venv
-. .venv/bin/activate
-python -m pip install -r requirements.txt
-PYTHONPATH=src python -m datamate.main --data /path/to/input --output /path/to/result/submission.jsonl --logs /path/to/result/logs
-~~~
+## Công cụ phân tích (cần dữ liệu cục bộ)
+```
+pip install -r requirements.txt
+python tools/inventory.py <thư_mục_split> <inventory.json> --titles
+python tools/qstats.py <thư_mục_split> 40
+```
 
-On Windows PowerShell, activate the environment with .venv\Scripts\Activate.ps1; the PYTHONPATH=src syntax above is for POSIX shells.
 
-## Tests
+## Submission build declaration
 
-~~~sh
-PYTHONPATH=src python -m unittest discover -s tests -v
-~~~
+This is a deterministic, rule-based baseline. It uses no SLM/LLM, no hosted API, and no model weights; inference reads only the mounted `/data` package. No training or synthetic-data generation was performed. The supplied training archive is packaged under `/code/training_code/data/` for reproducibility and organizer verification and is not opened by the inference entry point. Model metadata is recorded in `models/manifest.json`.
 
-The tests use synthetic fixtures or isolated temporary data. They do not include competition question or answer files.
+The intended image targets `linux/amd64` from `vllm/vllm-openai:v0.10.1.1`, runs `/code/predict.sh` without arguments, and reads `/data` without writing to it. Answer lines and per-question trace logs are flushed incrementally so completed answers remain available if a later question fails. The image has not yet been built or run in Docker; this is an unverified build candidate, not a validated submission artifact.
 
-## Docker build context
-
-The source release intentionally excludes the competition training archive. The official Docker guide requires the training archive and its manifest inside the submitted image, even though this baseline does not train or read that archive during inference. Prepare a separate context from the official train.zip:
-
-~~~sh
-python tools/prepare_docker_context.py --source . --train-archive /path/to/train.zip --output /path/to/DataMate_Docker_Build_Context
-docker build --platform linux/amd64 -t zaic2026_datamate_<team_name>:final /path/to/DataMate_Docker_Build_Context
-~~~
-
-The helper verifies the archive against the SHA-256 recorded in training_code/data_manifest.json, refuses to overwrite an existing output directory, excludes test splits, and writes submission_manifest.json. Replace <team_name> with the exact registered team slug.
-
-The Dockerfile uses the guide's recommended vllm/vllm-openai:v0.10.1.1 base and sets the offline flags. A successful Docker build, export, offline container run, size check, and RTX 5090 compatibility test have not been established in this release environment. See docs/LIMITATIONS.md and the parent release reports for current evidence.
-
-## Model and data declarations
-
-models/manifest.json declares zero inference models and zero parameters. training_code/README.md records that training was not performed. The official training archive is included only in the separately prepared Docker build context; it is excluded from this source directory and its source checksums.
-
-No public-test question file, public-test label, private-test file, API credential, or model weight is included in this source release.
+The prepared build context must contain `training_code/data/train.zip` and a generated `submission_manifest.json`. Build with `docker build --platform linux/amd64 -t zaic2026_datamate_<team>:final .`. Run offline with the official two-GPU, `--shm-size=16g`, read-only `/data` scoring invocation. The image must pass a real Docker build and offline smoke run before using the portal Test Solution slot.

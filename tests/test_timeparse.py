@@ -1,10 +1,101 @@
 import unittest
 
-from datamate.timeparse import resolve, resolve_as_of, resolve_comparison
+from datamate.timeparse import SolarLunarCalendar, resolve, resolve_as_of, resolve_comparison
 from datamate.understanding import RulePlanner
+from datamate.split_rules import SplitRules
+
+
+def tet_test_rules(start_day=23, end_day=10, comparison=True):
+    comparison_text = (
+        "So với trước Tết = cùng số ngày ngay trước 23 tháng Chạp."
+        if comparison else "Không quy định so sánh trước Tết."
+    )
+    return SplitRules.from_text(
+        "| Tết năm Y, dịp Tết, mùa Tết | "
+        f"Từ ngày dương của **{start_day} tháng Chạp** (năm âm Y − 1) đến "
+        f"**hết** ngày dương của **mùng {end_day} tháng Giêng** (năm âm Y). "
+        f"{comparison_text} Tra lịch âm trong calendar.csv. |\n"
+    )
 
 
 class PeriodParsingTests(unittest.TestCase):
+    def test_tet_period_uses_the_split_solar_lunar_calendar(self):
+        calendar = SolarLunarCalendar.from_text(
+            "date,weekday,lunar_day,lunar_month,lunar_year,lunar_leap,holiday\n"
+            "2026-02-10,2,23,12,2025,false,\n"
+            "2026-02-26,4,10,1,2026,false,\n"
+            "2026-05-31,7,15,4,2026,false,\n"
+        )
+        expected = ("2026-02-10", "2026-02-26")
+        rules = tet_test_rules()
+        self.assertEqual(rules.tet_lunar_window, (23, 12, -1, 10, 1, 0))
+        self.assertTrue(rules.tet_preceding_comparison_supported)
+        self.assertEqual(
+            resolve("doanh thu Tết năm 2026", "2026-05-31", calendar, rules.tet_lunar_window),
+            expected,
+        )
+        self.assertEqual(
+            resolve("doanh thu dịp Tết", "2026-05-31", calendar, rules.tet_lunar_window),
+            expected,
+        )
+        self.assertEqual(
+            resolve(
+                "doanh thu giỏ quà Tết tháng này", "2026-05-31", calendar,
+                rules.tet_lunar_window,
+            ),
+            ("2026-05-01", "2026-05-31"),
+        )
+
+    def test_pre_tet_comparison_uses_equal_length_preceding_window(self):
+        calendar = SolarLunarCalendar.from_text(
+            "date,weekday,lunar_day,lunar_month,lunar_year,lunar_leap,holiday\n"
+            "2026-02-10,2,23,12,2025,false,\n"
+            "2026-02-26,4,10,1,2026,false,\n"
+            "2026-05-31,7,15,4,2026,false,\n"
+        )
+        question = "doanh thu dịp Tết năm 2026 so với trước Tết"
+        rules = tet_test_rules()
+        self.assertEqual(
+            resolve_comparison(
+                question,
+                "2026-05-31",
+                calendar,
+                rules.tet_lunar_window,
+                rules.tet_preceding_comparison_supported,
+            ),
+            ("2026-02-10", "2026-02-26", "2026-01-24", "2026-02-09"),
+        )
+
+    def test_tet_window_comes_from_rulebook_and_comparison_requires_explicit_rule(self):
+        calendar = SolarLunarCalendar.from_text(
+            "date,weekday,lunar_day,lunar_month,lunar_year,lunar_leap,holiday\n"
+            "2026-02-07,6,20,12,2025,false,\n"
+            "2026-02-21,6,5,1,2026,false,\n"
+            "2026-05-31,7,15,4,2026,false,\n"
+        )
+        rules = tet_test_rules(start_day=20, end_day=5, comparison=False)
+        self.assertEqual(rules.tet_lunar_window, (20, 12, -1, 5, 1, 0))
+        self.assertEqual(
+            resolve("doanh thu Tết năm 2026", "2026-05-31", calendar, rules.tet_lunar_window),
+            ("2026-02-07", "2026-02-21"),
+        )
+        self.assertIsNone(resolve_comparison(
+            "doanh thu dịp Tết năm 2026 so với trước Tết",
+            "2026-05-31",
+            calendar,
+            rules.tet_lunar_window,
+            rules.tet_preceding_comparison_supported,
+        ))
+
+    def test_tet_fails_closed_when_calendar_does_not_cover_requested_lunar_year(self):
+        calendar = SolarLunarCalendar.from_text(
+            "date,weekday,lunar_day,lunar_month,lunar_year,lunar_leap,holiday\n"
+            "2026-05-31,7,15,4,2026,false,\n"
+        )
+        rules = tet_test_rules()
+        self.assertIsNone(resolve("doanh thu Tết năm 2026", "2026-05-31", calendar, rules.tet_lunar_window))
+        self.assertIsNone(resolve("doanh thu dịp Tết", "2030-01-01", calendar, rules.tet_lunar_window))
+
     def test_explicit_month_quarter_year_and_relative_calendar_periods(self):
         today = "2026-03-04"
         self.assertEqual(resolve("doanh thu tháng 7/2025", today), ("2025-07-01", "2025-07-31"))

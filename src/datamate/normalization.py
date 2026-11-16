@@ -58,6 +58,16 @@ def _strip_currency(text: str) -> tuple[str, str]:
     return sign, working.strip()
 
 
+def _has_explicit_vnd_marker(text: str) -> bool:
+    working = str(text).strip().replace("\u00a0", " ")
+    return bool(re.search(r"(?i)^(?:vnd|vnđ)\s*|(?:₫|đ|vnd|vnđ)\s*$", working))
+
+
+def _million_coefficient(text: str) -> str | None:
+    match = re.fullmatch(r"(\d[\d.,]*)\s*(?:tr|triệu)", text, flags=re.IGNORECASE)
+    return match.group(1) if match else None
+
+
 def _valid_grouped_integer(value: str, separator: str) -> bool:
     groups = value.split(separator)
     return (
@@ -85,7 +95,10 @@ def parse_decimal(value, *, decimal_separator: str | None = None,
     A lone separator followed by exactly three digits is ambiguous by default:
     ``1.234`` can mean either one point two three four or one thousand two
     hundred thirty-four. Pass ``decimal_separator="."`` or ``","`` when a
-    source-specific policy is known.
+    source-specific policy is known. Explicit VND markers resolve a valid
+    single three-digit separator as grouping. Vietnamese ``tr``/``triệu``
+    suffixes scale a parsed coefficient by one million; three-digit tails in
+    that coefficient still require a column policy.
     """
     if decimal_separator not in (None, ".", ","):
         raise ValueError("decimal_separator must be '.', ',' or None")
@@ -107,9 +120,33 @@ def parse_decimal(value, *, decimal_separator: str | None = None,
     text = str(value).strip()
     if not text:
         return _result(value, None, ParseStatus.EMPTY, "value is empty", location)
+    explicit_vnd = _has_explicit_vnd_marker(text)
     sign, body = _strip_currency(text)
     if not body or not re.fullmatch(r"\d[\d.,]*", body):
+        compact_million = re.fullmatch(r"(\d+)tr(\d{3})", body, flags=re.IGNORECASE)
+        if compact_million:
+            whole_millions = _decimal_from_parts(sign, compact_million.group(1), None)
+            extra_thousands = _decimal_from_parts("", compact_million.group(2), None)
+            if whole_millions is not None and extra_thousands is not None:
+                amount = whole_millions * Decimal("1000000") + extra_thousands * Decimal("1000")
+                return _result(value, amount, ParseStatus.OK, location=location)
+        coefficient = _million_coefficient(body)
+        if coefficient is not None:
+            signed_coefficient = f"{sign}{coefficient}"
+            parsed = parse_decimal(signed_coefficient, decimal_separator=decimal_separator, location=location)
+            if not parsed.ok:
+                return _result(value, None, parsed.status, parsed.error, location)
+            return _result(value, parsed.value * Decimal("1000000"), ParseStatus.OK, location=location)
         return _result(value, None, ParseStatus.INVALID, "unsupported numeric syntax", location)
+
+    if decimal_separator is None and explicit_vnd:
+        separators = {character for character in body if character in ".,"}
+        if len(separators) == 1:
+            separator = next(iter(separators))
+            if body.count(separator) == 1:
+                _, fraction = body.split(separator)
+                if len(fraction) == 3 and _valid_grouped_integer(body, separator):
+                    decimal_separator = "," if separator == "." else "."
 
     separators = {character for character in body if character in ".,"}
     if not separators:
@@ -179,6 +216,7 @@ def infer_decimal_separator(values) -> str | None:
         if not isinstance(value, str):
             continue
         _, body = _strip_currency(value)
+        body = _million_coefficient(body) or body
         separators = {character for character in body if character in ".,"}
         if not separators:
             continue

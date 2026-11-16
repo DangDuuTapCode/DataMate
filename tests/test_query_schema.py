@@ -24,6 +24,14 @@ class QuerySpecSchemaTests(unittest.TestCase):
                 self.assertEqual(payload["raw_question"], question)
                 self.assertEqual(payload["business_id"], business_id)
 
+    def test_collected_amount_intent_serializes_with_separate_metric(self):
+        spec = self.planner.interpret("tiền thực thu tháng này", "2026-03-04", "biz_127")
+        payload = query_spec_payload(spec)
+        self.assertEqual(payload["intent"], "collected_amount")
+        self.assertEqual(payload["metric"], "collected_amount")
+        self.assertTrue(payload["executable"])
+        self.assertEqual(validate_query_spec_payload(payload), [])
+
     def test_ranking_and_default_time_slots_are_explicit(self):
         ranked = self.planner.interpret("top 3 khách hàng mua nhiều tiền nhất tháng 5/2026", "2026-03-04")
         self.assertEqual(query_spec_payload(ranked)["sort"], {"field": "customer_spend", "direction": "desc"})

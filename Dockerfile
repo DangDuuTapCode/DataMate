@@ -1,4 +1,5 @@
-FROM vllm/vllm-openai:v0.10.1.1
+FROM python:3.11-slim
+
 ENTRYPOINT []
 ENV HF_HUB_OFFLINE=1 \
     TRANSFORMERS_OFFLINE=1 \

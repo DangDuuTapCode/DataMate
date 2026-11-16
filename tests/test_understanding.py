@@ -14,6 +14,7 @@ class QuerySpecTests(unittest.TestCase):
             ("hom nay co bao nhieu don", "order_count"),
             ("ti le don huy thang nay", "cancellation_rate"),
             ("thang 7/2025 ban duoc bao nhieu chai", "quantity"),
+            ("tháng 2/2026 có mấy ngày doanh thu từ 15.000.000 đồng trở lên", "daily_revenue_threshold_count"),
         ]
         for question, intent in cases:
             with self.subTest(question=question):
@@ -22,6 +23,64 @@ class QuerySpecTests(unittest.TestCase):
                 self.assertEqual(spec.intent, intent)
                 self.assertTrue(spec.executable)
                 self.assertEqual(plan.intent, intent)
+        threshold_plan = self.planner.plan(
+            "tháng 2/2026 có mấy ngày doanh thu từ 15.000.000 đồng trở lên", "2026-03-04"
+        )
+        self.assertEqual(threshold_plan.threshold, "15000000")
+
+    def test_daily_revenue_threshold_requires_one_unambiguous_positive_threshold(self):
+        for question in (
+            "tháng 2/2026 có mấy ngày doanh thu từ 15.000 trở lên",
+            "tháng 2/2026 có mấy ngày doanh thu đạt ngưỡng",
+            "tháng 2/2026 có mấy ngày doanh thu từ 0 đồng trở lên",
+        ):
+            with self.subTest(question=question):
+                spec = self.planner.interpret(question, "2026-03-04")
+                self.assertEqual(spec.intent, "daily_revenue_threshold_count")
+                self.assertFalse(spec.executable)
+                self.assertEqual(spec.unsupported_reason, "unresolved_filter")
+                self.assertIsNone(self.planner.plan(question, "2026-03-04"))
+
+    def test_daily_revenue_threshold_accepts_explicit_currency_and_rejects_conflicts(self):
+        cases = (
+            ("tháng 2/2026 có mấy ngày doanh thu từ 15.000 đồng trở lên", "15000"),
+            ("tháng 2/2026 có mấy ngày doanh thu >= 15,000,000 VND", "15000000"),
+        )
+        for question, threshold in cases:
+            with self.subTest(question=question):
+                plan = self.planner.plan(question, "2026-03-04")
+                self.assertIsNotNone(plan)
+                self.assertEqual(plan.threshold, threshold)
+        conflicting = "tháng 2/2026 có mấy ngày doanh thu từ 10 triệu đến 15 triệu trở lên"
+        spec = self.planner.interpret(conflicting, "2026-03-04")
+        self.assertEqual(spec.intent, "daily_revenue_threshold_count")
+        self.assertFalse(spec.executable)
+
+    def test_collected_money_is_separate_from_after_discount_revenue(self):
+        cases = [
+            ("doanh thu tháng này", "revenue"),
+            ("giá trị đơn sau giảm tháng này", "revenue"),
+            ("tiền thực thu tháng này", "collected_amount"),
+            ("doanh thu đã thu tháng này", "collected_amount"),
+            ("số tiền đã thanh toán tháng này", "collected_amount"),
+        ]
+        for question, expected in cases:
+            with self.subTest(question=question):
+                spec = self.planner.interpret(question, "2026-03-04")
+                self.assertEqual(spec.intent, expected)
+                self.assertTrue(spec.executable)
+                self.assertEqual(self.planner.plan(question, "2026-03-04").intent, expected)
+
+    def test_collected_english_cue_is_structured_but_needs_resolved_period(self):
+        spec = self.planner.interpret("collected amount this month", "2026-03-04")
+        self.assertEqual(spec.intent, "collected_amount")
+        self.assertFalse(spec.executable)
+        self.assertEqual(spec.unsupported_reason, "temporal_scope_not_executable")
+
+    def test_request_for_revenue_and_collected_amount_is_not_collapsed(self):
+        spec = self.planner.interpret("doanh thu và tiền thực thu tháng này", "2026-03-04")
+        self.assertEqual(spec.intent, "financial_metric_comparison")
+        self.assertFalse(spec.executable)
 
     def test_revenue_abbreviation_preserves_specific_metric_intents(self):
         cases = [
@@ -50,6 +109,100 @@ class QuerySpecTests(unittest.TestCase):
         self.assertEqual(spec.sort.field, "supplier_purchase_amount")
         self.assertFalse(spec.executable)
         self.assertIsNone(self.planner.plan(question, "2026-04-10"))
+
+    def test_unresolved_entity_and_group_filters_do_not_compile(self):
+        cases = [
+            "doanh thu của Trà sữa Mây tháng 5/2026 là bao nhiêu",
+            "tháng 10/2025 cửa hàng bán được bao nhiêu viên Zyrtec 10mg",
+        ]
+        for question in cases:
+            with self.subTest(question=question):
+                spec = self.planner.interpret(question, "2026-11-16", "biz_synthetic")
+                self.assertIn("entity_unresolved", spec.ambiguity_flags)
+                self.assertEqual(spec.unsupported_reason, "unresolved_filter")
+                self.assertFalse(spec.executable)
+                self.assertIsNone(self.planner.plan(question, "2026-11-16"))
+
+        payment = self.planner.interpret(
+            "doanh thu theo hình thức COD và tiền mặt mỗi loại tháng 5/2026 là bao nhiêu",
+            "2026-06-01",
+            "biz_synthetic",
+        )
+        self.assertEqual(payment.intent, "revenue")
+        self.assertEqual(payment.unsupported_reason, "unresolved_filter")
+        self.assertFalse(payment.executable)
+
+    def test_named_product_and_product_breakdown_fail_closed(self):
+        named = self.planner.interpret("doanh thu mặt hàng Trà sữa Mây tháng này", "2026-11-16")
+        self.assertEqual(named.intent, "revenue")
+        self.assertIn("entity_unresolved", named.ambiguity_flags)
+        self.assertFalse(named.executable)
+        self.assertEqual(named.unsupported_reason, "unresolved_filter")
+
+        grouped = self.planner.interpret("doanh thu theo từng sản phẩm tháng này", "2026-11-16")
+        self.assertEqual(grouped.intent, "revenue")
+        self.assertFalse(grouped.executable)
+        self.assertEqual(grouped.unsupported_reason, "unresolved_filter")
+
+    def test_product_mentions_without_product_type_word_are_unresolved(self):
+        cases = [
+            "doanh thu món cơm gà tháng này",
+            "tháng này bán bánh mì bơ tỏi được bao nhiêu tiền",
+            "tiền bán giỏ quà tết tháng này",
+        ]
+        for question in cases:
+            with self.subTest(question=question):
+                spec = self.planner.interpret(question, "2026-11-16")
+                self.assertIn("entity_unresolved", spec.ambiguity_flags)
+                self.assertFalse(spec.executable)
+
+    def test_counter_service_channel_and_generic_item_phrases(self):
+        counter = self.planner.interpret("doanh thu các đơn bán tại quầy tháng này", "2026-11-16")
+        self.assertEqual(counter.intent, "revenue")
+        self.assertFalse(counter.executable)
+        self.assertEqual(counter.unsupported_reason, "unresolved_filter")
+
+        total = self.planner.interpret("doanh thu tiền bán tháng này", "2026-11-16")
+        ranking = self.planner.interpret("món ăn nào bán chạy nhất tháng này", "2026-11-16")
+        self.assertTrue(total.executable)
+        self.assertEqual(ranking.intent, "sales_ranking")
+        self.assertTrue(ranking.executable)
+
+    def test_revenue_share_channel_payment_and_category_are_structured_unsupported(self):
+        cases = [
+            ("nhóm hàng khai vị chiếm bao nhiêu phần trăm tổng doanh thu tháng 5/2026", "category"),
+            ("doanh thu các đơn bán qua điện thoại chiếm bao nhiêu phần trăm tổng doanh thu tháng 2/2026", "channel"),
+            ("doanh thu các đơn trả bằng CK chiếm bao nhiêu phần trăm tổng doanh thu tháng 4/2025", "payment_method"),
+        ]
+        for question, dimension in cases:
+            with self.subTest(question=question):
+                spec = self.planner.interpret(question, "2026-11-16")
+                self.assertEqual(spec.intent, "revenue_share")
+                self.assertEqual(spec.dimensions, (dimension,))
+                self.assertFalse(spec.executable)
+                self.assertEqual(spec.unsupported_reason, "intent_not_allowlisted")
+
+    def test_best_sales_day_recognizes_common_typos_and_english_metric(self):
+        cases = [
+            "ngày naof trong tháng 6/2025 dthu cao nhaats",
+            "ngay nao trong thang 9/2025 revenue cao nhat",
+        ]
+        for question in cases:
+            with self.subTest(question=question):
+                spec = self.planner.interpret(question, "2026-11-16")
+                self.assertEqual(spec.intent, "best_sales_day")
+                self.assertFalse(spec.executable)
+
+    def test_average_revenue_is_not_misread_as_total_revenue(self):
+        spec = self.planner.interpret("doanh thu bình quân tháng này", "2026-11-16")
+        self.assertEqual(spec.intent, "average_revenue")
+        self.assertFalse(spec.executable)
+
+    def test_common_noisy_ranking_spelling_stays_a_ranking(self):
+        question = "check giùm sp bán dc nhieeuf nhất tháng 5 năm 2026"
+        spec = self.planner.interpret(question, "2026-06-01")
+        self.assertEqual(spec.intent, "sales_ranking")
+        self.assertTrue(spec.executable)
 
     def test_top_k_uses_ranking_syntax_not_date_or_quantity_numbers(self):
         top_five = self.planner.interpret("top 5 mat hang ban nhieu nhat thang 7/2025", "2026-03-04")

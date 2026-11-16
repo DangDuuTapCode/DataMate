@@ -30,6 +30,41 @@ class DecimalNormalizationTests(unittest.TestCase):
         self.assertEqual(parse_decimal("1.234", decimal_separator=".").value, Decimal("1.234"))
         self.assertEqual(parse_decimal("1.234", decimal_separator=",").value, Decimal("1234"))
 
+    def test_explicit_vnd_marker_resolves_three_digit_grouping(self):
+        cases = (
+            ("10.000đ", Decimal("10000")),
+            ("10.000 ₫", Decimal("10000")),
+            ("VND 10.000", Decimal("10000")),
+            ("-2,500đ", Decimal("-2500")),
+        )
+        for raw, expected in cases:
+            with self.subTest(raw=raw):
+                result = parse_decimal(raw)
+                self.assertEqual(result.status, ParseStatus.OK)
+                self.assertEqual(result.value, expected)
+        self.assertEqual(parse_decimal("10.000").status, ParseStatus.AMBIGUOUS)
+        self.assertEqual(parse_decimal("10.000đ", decimal_separator=".").value, Decimal("10.000"))
+
+    def test_vietnamese_million_suffix_and_column_separator_inference(self):
+        cases = (
+            ("1tr", Decimal("1000000")),
+            ("1tr040", Decimal("1040000")),
+            ("2tr500", Decimal("2500000")),
+            ("1,04tr", Decimal("1040000")),
+            ("1.8tr", Decimal("1800000")),
+        )
+        for raw, expected in cases:
+            with self.subTest(raw=raw):
+                result = parse_decimal(raw)
+                self.assertEqual(result.status, ParseStatus.OK)
+                self.assertEqual(result.value, expected)
+
+        self.assertEqual(parse_decimal("1,156tr").status, ParseStatus.AMBIGUOUS)
+        self.assertIsNone(infer_decimal_separator(["1,156tr"]))
+        policy = infer_decimal_separator(["1tr", "1,04tr", "1,8tr", "1,156tr"])
+        self.assertEqual(policy, ",")
+        self.assertEqual(parse_decimal("1,156tr", decimal_separator=policy).value, Decimal("1156000"))
+
     def test_column_separator_inference_requires_consistent_evidence(self):
         self.assertIsNone(infer_decimal_separator(["51,000", "45,000", "12"]))
         policy = infer_decimal_separator(["1.234,56", "51.000", "45.000"])

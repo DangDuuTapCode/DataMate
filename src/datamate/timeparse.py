@@ -1,13 +1,103 @@
 """Deterministic Gregorian period, point-date, and comparison parsing."""
 import calendar
+import csv
 import datetime as dt
+import io
 import re
+from pathlib import Path
 
 from .normalise import fold
 from .normalization import parse_date
 
 
 _DATE = r"(\d{1,2})\s+(\d{1,2})\s+(\d{4})"
+
+
+class SolarLunarCalendar:
+    """Read-only solar/lunar date map supplied with one competition split."""
+
+    def __init__(self, solar_to_lunar, lunar_to_solar):
+        self.solar_to_lunar = solar_to_lunar
+        self.lunar_to_solar = lunar_to_solar
+
+    @staticmethod
+    def _leap(value):
+        return str(value).strip().casefold() in {"true", "1", "yes"}
+
+    @classmethod
+    def from_text(cls, text):
+        reader = csv.DictReader(io.StringIO(text))
+        required = {"date", "lunar_day", "lunar_month", "lunar_year", "lunar_leap"}
+        if not reader.fieldnames or not required.issubset(reader.fieldnames):
+            raise ValueError("calendar.csv lacks required solar/lunar columns")
+        solar_to_lunar, lunar_to_solar = {}, {}
+        for line_number, row in enumerate(reader, start=2):
+            try:
+                solar = dt.date.fromisoformat(row["date"].strip())
+                lunar = (
+                    int(row["lunar_year"]), int(row["lunar_month"]),
+                    int(row["lunar_day"]), cls._leap(row["lunar_leap"]),
+                )
+            except (AttributeError, TypeError, ValueError) as error:
+                raise ValueError(f"invalid calendar.csv row {line_number}") from error
+            if not 1 <= lunar[1] <= 12 or not 1 <= lunar[2] <= 30:
+                raise ValueError(f"invalid lunar date at calendar.csv row {line_number}")
+            previous_solar = lunar_to_solar.get(lunar)
+            if previous_solar is not None and previous_solar != solar:
+                raise ValueError(f"duplicate lunar date at calendar.csv row {line_number}")
+            solar_to_lunar[solar] = lunar
+            lunar_to_solar[lunar] = solar
+        if not solar_to_lunar:
+            raise ValueError("calendar.csv contains no dates")
+        return cls(solar_to_lunar, lunar_to_solar)
+
+    @classmethod
+    def read(cls, path):
+        return cls.from_text(Path(path).read_text(encoding="utf-8-sig"))
+
+    def lunar_date(self, solar):
+        return self.solar_to_lunar.get(solar)
+
+    def solar_date(self, year, month, day, leap=False):
+        return self.lunar_to_solar.get((year, month, day, leap))
+
+
+def _resolve_tet(question, as_of_date, solar_lunar_calendar, tet_lunar_window):
+    if solar_lunar_calendar is None or tet_lunar_window is None:
+        return None
+    q = fold(question)
+    explicit_year = re.search(r"\btet(?:\s+nam)?\s+(\d{4})\b", q)
+    if explicit_year:
+        year = int(explicit_year.group(1))
+    else:
+        lunar_today = solar_lunar_calendar.lunar_date(dt.date.fromisoformat(as_of_date))
+        if lunar_today is None:
+            return None
+        year = lunar_today[0]
+    start_day, start_month, start_year_offset, end_day, end_month, end_year_offset = tet_lunar_window
+    start = solar_lunar_calendar.solar_date(
+        year + start_year_offset, start_month, start_day, False
+    )
+    end = solar_lunar_calendar.solar_date(
+        year + end_year_offset, end_month, end_day, False
+    )
+    if start is None or end is None:
+        return None
+    return _window(start, end)
+
+
+def _has_explicit_gregorian_period(q):
+    # A seasonal word can also be part of a product/entity name (e.g. "giỏ
+    # quà Tết tháng này"). Keep explicit Gregorian scope ahead of that noun.
+    without_tet_year = re.sub(r"\btet\s+(?:nam\s+)?\d{4}\b", " ", q)
+    return bool(
+        re.search(r"\bthang\s*(?:nay|truoc|roi|vua\s+roi|\d{1,2})\b", without_tet_year)
+        or re.search(r"\b(?:quy|q)\s*[1-4]\b", without_tet_year)
+        or re.search(r"\b(?:tuan|ngay)\s+(?:nay|truoc|roi|qua|gan nhat|\d+)\b", without_tet_year)
+        or re.search(r"\bnam\s+\d{4}\b", without_tet_year)
+        or re.search(rf"\bngay\s+{_DATE}(?!\d)", without_tet_year)
+        or re.search(rf"(?<!\d){_DATE}\s+den\s+(?:het\s+)?(?:ngay\s+)?{_DATE}(?!\d)", without_tet_year)
+    )
 
 
 def _window(start, end):
@@ -21,7 +111,13 @@ def _day_first_date(day, month, year):
     return parsed.value if parsed.ok else None
 
 
-def resolve_comparison(question, as_of_date):
+def resolve_comparison(
+    question,
+    as_of_date,
+    solar_lunar_calendar=None,
+    tet_lunar_window=None,
+    tet_preceding_comparison_supported=False,
+):
     """Resolve explicit date windows and supported relative calendar comparisons.
 
     The returned tuple is (primary_start, primary_end, comparison_start,
@@ -30,6 +126,19 @@ def resolve_comparison(question, as_of_date):
     """
     q = fold(question)
     today = dt.date.fromisoformat(as_of_date)
+    if (
+        tet_preceding_comparison_supported
+        and "tet" in q
+        and "truoc tet" in q
+        and re.search(r"\b(?:so\s+voi|vs)\b", q)
+    ):
+        primary = _resolve_tet(question, as_of_date, solar_lunar_calendar, tet_lunar_window)
+        if primary is not None:
+            start, end = (dt.date.fromisoformat(value) for value in primary)
+            days = (end - start).days + 1
+            comparison_end = start - dt.timedelta(days=1)
+            comparison_start = comparison_end - dt.timedelta(days=days - 1)
+            return (*primary, comparison_start.isoformat(), comparison_end.isoformat())
     if (
         today.year > 1
         and "tu dau nam" in q
@@ -160,7 +269,7 @@ def resolve_as_of(question, as_of_date):
     return None
 
 
-def resolve(question, as_of_date):
+def resolve(question, as_of_date, solar_lunar_calendar=None, tet_lunar_window=None):
     """Resolve one supported period; unsupported or invalid expressions abstain.
 
     Dates without a year in a period use the year in `as_of_date`. Specific
@@ -172,6 +281,9 @@ def resolve(question, as_of_date):
         q, today = fold(question), dt.date.fromisoformat(as_of_date)
     except (TypeError, ValueError):
         return None
+
+    if "tet" in q and not _has_explicit_gregorian_period(q):
+        return _resolve_tet(question, as_of_date, solar_lunar_calendar, tet_lunar_window)
 
     between = re.search(
         rf"(?:tu\s+ngay\s+)?{_DATE}\s+den\s+(?:het\s+)?(?:ngay\s+)?{_DATE}(?!\d)", q

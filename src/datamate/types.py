@@ -64,6 +64,7 @@ class QueryPlan:
     evidence: tuple[str, ...] = field(default_factory=tuple)
     compare_start: str | None = None
     compare_end: str | None = None
+    threshold: str | None = None
 
 
 @dataclass(frozen=True)

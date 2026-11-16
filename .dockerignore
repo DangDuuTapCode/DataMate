@@ -9,5 +9,3 @@
 **/private_test/
 **/*.tar
 **/*.tar.gz
-*.zip
-!training_code/data/train.zip

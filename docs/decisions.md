@@ -14,6 +14,7 @@ Cập nhật: 13/11/2026. Nhãn: **VERIFIED** (đã kiểm tra trực tiếp tr�
 | D7 | Chỉ thêm dependency thực sự cần (hiện: `openpyxl`). | đội xác nhận 13/11 |
 | D8 | Không đưa dataset, câu hỏi/đáp án, rulebook cuộc thi, trọng số, credentials vào Git. Dữ liệu giả tự tạo cho kiểm thử được phép ở `tests/fixtures/`. | đội xác nhận 13/11 |
 | D9 | Commit nhỏ, thông điệp rõ; liệt kê file thay đổi trước mỗi commit/push; không force push; không push khi chưa có xác nhận. | đội xác nhận 13/11 |
+| D10 | **Đã bị quy tắc cuộc thi theo split thay thế.** Trước đó đội chọn tổng đơn sau giảm và gộp hủy/trả/giao thất bại vào quy ước riêng. Khi chạy bài thi, phải đọc `rulebook.md`: doanh thu dùng thành tiền từng dòng sau giảm, loại đơn hủy/trả theo luật split; tỷ lệ đơn hủy dùng đúng tử số/mẫu số của rulebook. Trạng thái nguồn vẫn giữ riêng; trạng thái không được luật diễn giải thì abstain. | người dùng xác nhận trước đó; nội dung cuộc thi được người dùng gửi 16/11 |
 
 ## 2. Chưa quyết định (không coi là sự thật)
 - **PROPOSED**: kiến trúc chi tiết (loader, canonicalizer, thẻ luật, planner với Query Spec, executor, verifier, writer); lớp chuẩn hoá thực thể; lộ trình theo phiên; phân công.
