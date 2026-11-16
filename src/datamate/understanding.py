@@ -19,7 +19,7 @@ class RulePlanner:
 
     EXECUTABLE = {
         "revenue", "collected_amount", "quantity", "order_count", "cancellation_rate",
-        "sales_ranking", "daily_revenue_threshold_count",
+        "sales_ranking", "daily_revenue_threshold_count", "order_revenue_threshold_count",
     }
     RANKING_INTENTS = {
         "sales_ranking", "customer_ranking", "debt_ranking", "period_ranking",
@@ -138,6 +138,14 @@ class RulePlanner:
             return True
         if re.search(r"\b(?:bao nhieu|bao nhiu)\s+(?:vien|hop|chai|thung|kg|gram|ml|lit|ly|lon)\s+[a-z0-9]+", q):
             return True
+        if "hoat chat" in q:
+            return True
+        if (
+            re.search(r"\b(?:khong|ko|k|hok)\s+(?:can\s+)?ke\s+don\b", q)
+            or re.search(r"\b(?:khong|ko|k|hok)\s+can\s+(?:don|toa)(?:\s+bac\s+si)?\b", q)
+            or "khong co don bac si" in q
+        ):
+            return True
         return False
 
     @staticmethod
@@ -148,8 +156,22 @@ class RulePlanner:
             "theo san pham", "theo tung san pham", "theo mat hang", "theo tung mat hang",
             "moi san pham", "moi mat hang", "qua dien thoai", "ban qua dien thoai",
             "tai quay", "ban tai quay", "tra bang ck", "bang ck", "bang cod", "cod va", "tien mat", "chuyen khoan",
-            "quet the", "the ngan hang",
+            "quet the", "the ngan hang", "ca sang", "ca chieu",
         ))
+
+    @staticmethod
+    def _has_unimplemented_monthly_output(question):
+        q = fold(question)
+        if not any(term in q for term in ("doanh thu", "doanh so", "dthu", "revenue", "tien ban")):
+            return False
+        asks_series = any(term in q for term in (
+            "moi thang", "tung thang", "ghi 3 so", "theo thu tu thoi gian",
+        ))
+        asks_trend = any(term in q for term in (
+            "tang lien tuc", "thang sau cao hon", "cao hon thang", "revenue trend",
+        ))
+        asks_best_month = "thang nao" in q and any(term in q for term in ("cao nhat", "nhieu nhat", "lon nhat"))
+        return asks_series or asks_trend or asks_best_month
 
     @staticmethod
     def _resolve_entity(question, entity_catalog):
@@ -194,10 +216,12 @@ class RulePlanner:
         ranking = any(term in q for term in (
             "top", "ban chay", "chay nhat", "ban nhieu nhat", "nhieu tien nhat", "mua nhieu nhat",
             "nhiu tien nhat", "nhiu nhat", "nhieeuf nhat", "chi tieu nhieu nhat", "chi tieu cao nhat", "cao nhat", "lon nhat",
-            "dat nhat", "loi nhat", "cao nhaats", "nhieu don nhat", "nhieu don hang nhat", "nhiu don hang nhat", "nhieu nhat", "hot nhat",
+            "dat nhat", "loi nhat", "cao nhaats", "nhieu don nhat", "nhiu don nhat",
+            "nhieu don hang nhat", "nhiu don hang nhat",
+            "mua nhieu lan nhat", "mua nhiu lan nhat", "nhieu lan nhat", "nhiu lan nhat", "nhieu nhat", "hot nhat",
         ))
 
-        day_count = bool(re.search(r"\b(?:co\s+)?(?:may|bao nhieu|so)\s+ngay\b", q))
+        day_count = bool(re.search(r"\b(?:co\s+)?(?:may|nhieu|nhiu|bao nhieu|bao nhiu|so)\s+ngay\b", q))
         daily_revenue_cue = any(term in q for term in (
             "doanh thu", "doanh so", "dthu", "revenue", "tien ban", "ban duoc", "ban duoc bao nhieu tien",
         ))
@@ -252,14 +276,13 @@ class RulePlanner:
             return "customer_order_count", ("customer",), "customer_order_count"
         if customer and "don" in tokens and any(term in q for term in ("so khach", "dem so khach", "dem khach")):
             return "customer_order_count", ("customer",), "customer_order_count"
-        if ranking and "thang nao" in q and any(term in q for term in ("doanh thu", "doanh so", "ban duoc", "tien")):
+        if ranking and "thang nao" in q and any(term in q for term in ("doanh thu", "doanh so", "dthu", "ban duoc", "tien")):
             return "period_ranking", ("period",), "period_revenue"
         if ranking and any(term in q for term in ("nguoi ban", "nhan vien ban", "nhan vien")) and any(
             term in q for term in ("doanh thu", "doanh so", "tien ban")
         ):
             return "seller_ranking", ("seller",), "seller_revenue"
-        if (ranking and any(term in q for term in ("nha cung cap", "ncc"))
-                and any(term in q for term in ("hang nhap", "phieu nhap", "tien nhap", "mua vao"))):
+        if ranking and any(term in q for term in ("nha cung cap", "ncc")):
             return "supplier_ranking", ("supplier",), "supplier_purchase_amount"
         day_question = re.search(r"\bngay nao(?:f)?\b", q)
         if day_question and any(term in q for term in ("tien", "doanh thu", "doanh so", "dthu", "revenue", "ban duoc")) and ranking:
@@ -333,14 +356,22 @@ class RulePlanner:
         if any(term in q for term in ("ti le khach", "ty le khach")):
             return "customer_repeat_rate", ("customer",), "customer_repeat_rate"
         if any(term in q for term in (
+            "so don", "may don", "bao nhieu don", "bao nhiu don", "bnhiu don", "nhiu don",
+            "dem don", "bao nhieu bill", "so bill",
+        )):
+            threshold_requested = any(term in q for term in ("tro len", "tro di", "toi thieu", "at least")) or any(
+                symbol in str(question) for symbol in (">=", "≥")
+            )
+            if threshold_requested:
+                return "order_revenue_threshold_count", (), "order_count_at_revenue_threshold"
+            return "order_count", (), "order_count"
+        if any(term in q for term in (
             "doanh thu", "doanh so", "dthu", "revenue", "tien ban", "total",
             "ban duoc bao nhieu tien", "bao nhiu tien", "gia tri don", "order value", "order total", "order amount",
         )) or (
             "ban" in tokens and "tien" in tokens
         ):
             return "revenue", (), "revenue"
-        if any(term in q for term in ("so don", "may don", "bao nhieu don", "bao nhiu don", "dem don", "bao nhieu bill", "so bill")):
-            return "order_count", (), "order_count"
         if any(term in q for term in ("so luong", "ban duoc", "ban dc", "ban ra", "bao nhieu kg", "bao nhieu chai", "bao nhieu ly", "bao nhieu vien")):
             return "quantity", (), "sales_quantity"
         if customer and any(term in q for term in ("mua", "khach hang", "kh ")):
@@ -389,16 +420,18 @@ class RulePlanner:
         explicit_entity_filter = self._has_unresolved_entity_filter(question)
         unresolved_entity = entity_ambiguous or (explicit_entity_filter and entity is None)
         unsupported_breakdown = self._has_unimplemented_breakdown(question)
+        unsupported_monthly_output = self._has_unimplemented_monthly_output(question)
         threshold = (
             self._daily_revenue_threshold(question)
-            if intent == "daily_revenue_threshold_count" else None
+            if intent in {"daily_revenue_threshold_count", "order_revenue_threshold_count"} else None
         )
         executable = (
             intent in self.EXECUTABLE
             and scope.kind == "period"
             and not unresolved_entity
             and not unsupported_breakdown
-            and (intent != "daily_revenue_threshold_count" or threshold is not None)
+            and not unsupported_monthly_output
+            and (intent not in {"daily_revenue_threshold_count", "order_revenue_threshold_count"} or threshold is not None)
         )
         evidence = (f"rule:{intent}", f"time:{scope.kind}")
         explicit_time = comparison is not None or period is not None or point is not None
@@ -407,12 +440,15 @@ class RulePlanner:
             ambiguity_flags.append("implicit_time_scope")
         if unresolved_entity:
             ambiguity_flags.append("entity_unresolved")
-        filters = (("revenue_gte", threshold),) if threshold is not None and intent == "daily_revenue_threshold_count" else ()
+        filters = (("revenue_gte", threshold),) if threshold is not None and intent in {
+            "daily_revenue_threshold_count", "order_revenue_threshold_count",
+        } else ()
         unsupported_reason = None
         if not executable:
             unsupported_reason = (
                 "intent_not_allowlisted" if intent not in self.EXECUTABLE
                 else "temporal_scope_not_executable" if scope.kind != "period"
+                else "multi_period_not_executable" if unsupported_monthly_output
                 else "unresolved_filter"
             )
         return QuerySpec(

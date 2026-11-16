@@ -15,7 +15,7 @@ def classify_order_status(value):
     if " cancel " in padded or status.startswith("cancel") or " huy " in padded:
         return "cancelled"
     if any(phrase in status for phrase in (
-        "tra hang", "doi tra", "hoan tra", "return", "returned",
+        "tra hang", "doi tra", "hoan tra", "hoan hang", "hang tra ve", "return", "returned",
     )):
         return "returned"
     if any(phrase in status for phrase in (
@@ -32,8 +32,8 @@ def classify_order_status(value):
         "dang chuan bi", "pending", "processing",
     )):
         return "pending"
-    if status in {"xong", "ok", "success", "successful", "complete", "completed", "delivered"} or any(
-        phrase in status for phrase in ("thanh cong", "hoan thanh", "da giao")
+    if status in {"xong", "ok", "success", "successful", "complete", "completed", "delivered", "da lay"} or any(
+        phrase in status for phrase in ("thanh cong", "hoan thanh", "da giao", "da lay hang")
     ):
         return "successful"
     return None

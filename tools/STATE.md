@@ -1,4 +1,12 @@
-# CURRENT STATE — 2026-11-16 — targeted rule review and P6 replay in progress
+# CURRENT STATE — 2026-11-16 — summary-row bug fixed; P6 error reduction continues
+
+## Latest completed bounded fix — 21:49 GMT+7
+
+- Fixed double-counting of exported `TỔNG NGÀY` / `Tổng tháng` rows embedded in sales detail. Root cause, exact row/sum evidence, tests and replay hashes: `tools/checkpoints/2026-11-16T2149+07-00_P6_SUMMARY_ROW_DOUBLE_COUNT_FIX_COMPLETE.md`.
+- Full suite: 174 run, 171 passed, 3 Git-dependent skips. v22 validated then scored on train: 181 correct, 54 wrong, 2,765 abstain / 3,000; answered accuracy 77.02%, penalized accuracy 4.233%, zero runtime errors. In-sample diagnostic only.
+- Compared with v21: +12 correct and −12 wrong, same abstentions. biz_130 ordinary monthly/day revenue was corrected; remaining errors mainly show unsupported count thresholds, multi-month output operators and silently ignored business filters.
+- Next: implement generic order/threshold count semantics; fail closed for unsupported active-ingredient/OTC filters and multi-month scalar misroutes; add regressions. Profile the v22 p95 increase (664 ms vs 494 ms) and optimize summary-row checks safely.
+- Current code changes in this slice: `src/datamate/metrics.py`, `tests/test_pipeline.py`. No Git repository exists in this isolated snapshot; no commit/push/official checkout changes.
 
 ## Active P6 work item — daily revenue threshold day count — started 17:08 GMT+7
 
@@ -10,11 +18,17 @@
 - Completed at 17:17 GMT+7: the new intent groups rulebook-supported line revenue by date and counts dates meeting an explicit positive inclusive threshold. Added strict threshold parsing, QueryPlan transport, execution, verifier support, and regressions. Also fixed the previously undefined payment status alias and excluded pending/nonsettled payment events from collected totals.
 - Verification: focused understanding/pipeline tests 71 passed; complete suite 160 run, 157 passed, 3 Git-dependent skips, exit 0. Completion record: `tools/checkpoints/2026-11-16T1717+07-00_P6_DAILY_REVENUE_THRESHOLD_COUNT_COMPLETE.md`.
 - Next: create fresh v17 replay from the frozen metadata-complete train input; validate all hashes before train-only evaluation. Preserve v16 and do not open public/private labels.
+- Latest targeted fix completed: documented unique-key line-to-invoice join, exact duplicate-line handling, workbook Excel date-epoch propagation, and decisive source-column decimal policy. Synthetic regressions cover fail-closed duplicate/unmatched keys, missing epoch, and ambiguous-only number columns. biz_124 inference smoke now answers 8 days from its actual line/invoice data. Full suite: 164 run, 161 passed, 3 Git-dependent skips. Evidence: `tools/checkpoints/2026-11-16T1752+07-00_P6_EXCEL_JOIN_AND_COLUMN_POLICY_COMPLETE.md`.
+- Next: freeze v18 using a fresh replay folder and unchanged metadata-complete train inputs; validate all hashes before train-only evaluation. Then extract only public inputs (never labels) to a new workspace directory and create/validate `public_submission.jsonl`. Latest user direction: fix reproducible bugs only; avoid unrelated refactors.
+- v18 generation start: `tools/checkpoints/2026-11-16T1755+07-00_P6_V18_TRAIN_REPLAY_START.md`; use only new output directory `work/evaluation/p6-train-replay-v18-revenue-join-dates-2026-11-16/`.
+- v18 completed and passed freeze validation for 3,000 predictions/traces, IDs/order/schema, source/input/output checksums, and metadata inclusion; generator confirms labels untouched. Hashes/evidence: `tools/checkpoints/2026-11-16T2018+07-00_P6_V18_TRAIN_FREEZE_VALIDATED.md`. Train-only evaluator may run; it revalidates before opening labels. Public archive was separately checked by central directory: 113 members, 97 public files, no answer member; extracted 1,000-question/14-business public input to `work/evaluation/public-input-2026-11-16-v1/`, with no answer file.
+- v18 train evaluation: 28 correct, 10 wrong, 2,962 abstain / 3,000; 1.2667% coverage, 73.68% answered accuracy, PA 0.600%, p95 14ms, no runtime errors. Worse PA than v17, so no improvement claim. False answers reveal a generic bug: purchases entered sales-ranking selection, and biz_126 chose raw quantity instead of README base-unit `SL lẻ`. Start fix checkpoint `tools/checkpoints/2026-11-16T2024+07-00_P6_SALES_SOURCE_AND_BASE_QUANTITY_FIX_START.md`. Fix before public inference.
 - v17 generation start checkpoint: `tools/checkpoints/2026-11-16T1718+07-00_P6_V17_TRAIN_REPLAY_START.md`; output must be the new `work/evaluation/p6-train-replay-v17-daily-revenue-threshold-2026-11-16/` directory.
 - v17 replay completed for 3,000 questions/30 businesses with `answer_labels_accessed=false`. Freeze validator passed code/input/prediction/trace checks, IDs/order/schema, and rulebook/calendar inclusion. Hashes and evidence: `tools/checkpoints/2026-11-16T1728+07-00_P6_V17_TRAIN_FREEZE_VALIDATED.md`. Train-only evaluator may now run; it revalidates before reading answers.
 - v17 evaluator completed after revalidation: 26 correct, 3 wrong, 2,971 abstain / 3,000; coverage 0.9667%, answered accuracy 89.66%, penalized accuracy 0.7667%, p95 22 ms, runtime errors 0. Daily-threshold intent parsed the biz_124 question but correctly abstained `missing_column` because date/status are on the invoice table, separate from line amounts.
 - Structural scan (README + workbook headers/keys, no answer use) found a safe join path: unique nonblank invoice IDs and 100% line-ID coverage for 97,033 line rows. Start checkpoint for the bounded fail-closed join: `tools/checkpoints/2026-11-16T1736+07-00_P6_DAILY_REVENUE_SAFE_JOIN_START.md`. Next: implement, test, and create a fresh replay only after the focused/full suite.
 - Safe join is implemented and synthetic regressions pass, but the biz_124 real-data smoke still abstains. Root cause: executor dropped Excel `date_system`; scan found 31,997 invoice dates stored as numeric serials. `ingest._xlsx` and `parse_date` already expose the necessary epoch, but metrics did not propagate it. Start checkpoint: `tools/checkpoints/2026-11-16T1742+07-00_P6_EXCEL_DATE_SYSTEM_PROPAGATION_START.md`. Next: propagate workbook epoch through `_period` and joined table, add a fail-closed regression, test, then smoke again.
+- After epoch propagation, the remaining abstention is numeric ambiguity in the line-amount column. Read-only scan of biz_124 `Thanh tien` found 97,033 populated strings, 89,638 per-cell ambiguous; full-column inference finds a consistent `.` decimal policy and makes all 97,033 parse. This is the current bounded bugfix; start record `tools/checkpoints/2026-11-16T1747+07-00_P6_REVENUE_COLUMN_SEPARATOR_FIX_START.md`. Keep scope to evidenced parse/execution defects; no broad refactor.
 
 ## P1 targeted rules review — 14:46 GMT+7
 
@@ -502,3 +516,17 @@ python qstats.py public_test/ 15
 - Public output is not a Test Solution image. Docker/Test Solution remains BLOCKED (no Docker-family runtime); no image/tar/Google upload/portal attempt.
 - No local CI workflow or GitHub Actions run/build was found; no paid/remote builder was invoked.
 - P3 remains NOT PASSED; P4–P8 and the full nine-workstream objective remain active. Details: tools/checkpoints/2026-11-15_PUBLIC_SUBMISSION_GENERATION_COMPLETE.md.
+
+
+## 2026-11-16 20:35 GMT+7 — active targeted bugfix checkpoint
+
+- User asked for evidence-based bug fixes only; no unrelated refactoring. Current source is the isolated snapshot at `work/rehydrated-2026-11-15-P3/source`, without `.git`. `sources/` is read-only; official checkout untouched.
+- `metrics.py`: introduced inbound purchase ledger exclusion in revenue, daily-revenue line discovery, quantity/sales ranking/order count/cancellation source selection; prioritized normalized base quantity columns before raw/package quantity.
+- `tests/test_pipeline.py`: 3 new regressions for purchase-ledger false positives and normalized quantity ranking.
+- Focused pipeline tests: 56 passed. Full suite: 167 run, 164 passed, 3 Git-dependent hygiene skips, exit 0.
+- Train replay v19 freeze: 3,000 predictions/traces, answer_labels_accessed=false at generation. Code manifest `0e341e7d913b4c4219d155724297bd9f403551428de177abfc1c6f7cc4dcd12f`; input manifest `942cb0084bd88015a484b15821b302c1e987192a8159617f10241f81798739a3`; prediction `5f168fe9b624a78c9b99e314020acbe28ae0e04677346a3f1750bd6676c73805`; trace `f8fdcad5b1e525fb58b8df574cca7d4b47c2bbb637eca9934ee6b70ac791c358`.
+- After frozen replay validation, train evaluator scored 30 correct / 4 wrong / 2,966 abstain; PA 0.8667%, answered accuracy 88.24%, p95 21 ms, runtime errors 0. v18 was 28/10/2,962, PA 0.6%; improvement measured in-sample only. Errors: cancellation_rate 3, sales_ranking 1. Public labels were not read.
+- Current public inference process: output under `work/submission-build/public-submission-2026-11-16-v19/`; finish, run submission validator, count answers/abstentions/runtime errors, hash and record artifact. No accuracy claim without labels.
+- Source hashes: `metrics.py` SHA256 `C624C373FE31F90FD70DEA4F781CDFCFD3C6968394BCD3EA3CD53769A485BBBD`; `tests/test_pipeline.py` SHA256 `A65B5E4C25D448B87AD48B7EC6C213B18F32DA2131FB56557B651B87C120D566`.
+- Checkpoint: `tools/checkpoints/2026-11-16T2035+07-00_P6_V19_PURCHASE_BASE_QUANTITY_FIX_TRAIN_COMPLETE.md`.
+

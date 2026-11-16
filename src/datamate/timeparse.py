@@ -281,6 +281,8 @@ def resolve(question, as_of_date, solar_lunar_calendar=None, tet_lunar_window=No
         q, today = fold(question), dt.date.fromisoformat(as_of_date)
     except (TypeError, ValueError):
         return None
+    # A frequent keyboard transposition in informal Vietnamese is "nawm" for "nam".
+    q = re.sub(r"\bnawm\b", "nam", q)
 
     if "tet" in q and not _has_explicit_gregorian_period(q):
         return _resolve_tet(question, as_of_date, solar_lunar_calendar, tet_lunar_window)

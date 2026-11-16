@@ -217,6 +217,14 @@ class AsOfAndComparisonTests(unittest.TestCase):
         self.assertEqual((spec.time.start, spec.time.end), expected)
         self.assertNotIn("implicit_time_scope", spec.ambiguity_flags)
 
+    def test_typo_in_year_does_not_turn_year_to_date_into_one_day(self):
+        question = "số đơn từ đầu nawm tới hết bữa nay là bao nhiêu"
+        expected = ("2025-01-01", "2025-05-08")
+        self.assertEqual(resolve(question, "2025-05-08"), expected)
+        spec = RulePlanner().interpret(question, "2025-05-08")
+        self.assertEqual(spec.time.kind, "period")
+        self.assertEqual((spec.time.start, spec.time.end), expected)
+
     def test_explicit_before_after_comparison_windows(self):
         result = resolve_comparison(
             "So 14 ngày kể từ ngày 31/05/2026 với 14 ngày ngay trước đó", "2026-06-20"

@@ -68,6 +68,11 @@ def _million_coefficient(text: str) -> str | None:
     return match.group(1) if match else None
 
 
+def _thousand_coefficient(text: str) -> str | None:
+    match = re.fullmatch(r"(\d[\d.,]*)\s*(?:k|nghìn|ngàn|nghin|ngan)", text, flags=re.IGNORECASE)
+    return match.group(1) if match else None
+
+
 def _valid_grouped_integer(value: str, separator: str) -> bool:
     groups = value.split(separator)
     return (
@@ -123,6 +128,16 @@ def parse_decimal(value, *, decimal_separator: str | None = None,
     explicit_vnd = _has_explicit_vnd_marker(text)
     sign, body = _strip_currency(text)
     if not body or not re.fullmatch(r"\d[\d.,]*", body):
+        thousand_coefficient = _thousand_coefficient(body)
+        if thousand_coefficient is not None:
+            parsed = parse_decimal(
+                f"{sign}{thousand_coefficient}",
+                decimal_separator=decimal_separator,
+                location=location,
+            )
+            if not parsed.ok:
+                return _result(value, None, parsed.status, parsed.error, location)
+            return _result(value, parsed.value * Decimal("1000"), ParseStatus.OK, location=location)
         compact_million = re.fullmatch(r"(\d+)tr(\d{3})", body, flags=re.IGNORECASE)
         if compact_million:
             whole_millions = _decimal_from_parts(sign, compact_million.group(1), None)
@@ -216,7 +231,7 @@ def infer_decimal_separator(values) -> str | None:
         if not isinstance(value, str):
             continue
         _, body = _strip_currency(value)
-        body = _million_coefficient(body) or body
+        body = _million_coefficient(body) or _thousand_coefficient(body) or body
         separators = {character for character in body if character in ".,"}
         if not separators:
             continue

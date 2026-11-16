@@ -66,6 +66,7 @@ def verify_with_reason(question_id, candidate, plan, *, spec=None, error=None, e
         "order_count": "number",
         "cancellation_rate": "percent",
         "daily_revenue_threshold_count": "number",
+        "order_revenue_threshold_count": "number",
     }.get(plan.intent)
     if plan.intent == "sales_ranking":
         expected_type = "string" if plan.top_k == 1 else "list"

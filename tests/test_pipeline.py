@@ -53,28 +53,102 @@ class PipelineTests(unittest.TestCase):
         candidate = Executor([orders]).execute(plan, "doanh thu tháng này")
         self.assertEqual(candidate["answer"], 120000)
 
-    def test_daily_revenue_threshold_infers_consistent_vnd_thousands_grouping_from_column(self):
-        table = Table("sales_lines", ["Mã đơn", "Ngày đặt", "Trạng thái", "Tên sản phẩm", "Thành tiền"], [
-            ["A", "2026-02-01", "completed", "Trà", "9,000,000"],
-            ["B", "2026-02-01", "completed", "Cà phê", "6,000,000"],
-            ["C", "2026-02-02", "completed", "Bánh", "14,999,999"],
-            ["D", "2026-02-03", "completed", "Sữa", "15,000,000"],
-            ["E", "2026-02-04", "completed", "Kẹo", "800"],
-        ])
-        question = "tháng 2/2026 có mấy ngày doanh thu từ 15.000.000 đồng trở lên?"
+    def test_revenue_uses_documented_order_detail_header_aliases(self):
+        detail = Table(
+            "DonHang_ChiTiet:2026-03",
+            ["Mã đơn hàng", "Ngày đặt hàng", "Trạng thái đơn hàng", "Tên sản phẩm", "Tổng tiền"],
+            [
+                ["A", "2026-03-01", "Hoàn thành", "Trà", 65000],
+                ["B", "2026-03-02", "Đã hủy", "Cà phê", 90000],
+            ],
+            source="DonHang_ChiTiet.xlsx",
+        )
+        question = "doanh thu tháng này"
         plan = self.planner.plan(question, "2026-03-04")
-        candidate = Executor([table]).execute(plan, question)
-        self.assertEqual(candidate["answer"], 2)
+        self.assertEqual(Executor([detail]).execute(plan, question)["answer"], 65000)
 
-    def test_daily_revenue_threshold_fails_closed_on_mixed_money_separators(self):
-        table = Table("sales_lines", ["Mã đơn", "Ngày đặt", "Trạng thái", "Tên sản phẩm", "Thành tiền"], [
-            ["A", "2026-02-01", "completed", "Trà", "15,000"],
-            ["B", "2026-02-02", "completed", "Cà phê", "15.25"],
-        ])
-        question = "tháng 2/2026 có mấy ngày doanh thu từ 15.000 đồng trở lên?"
+    def test_revenue_accepts_sole_day_header_on_named_sales_detail(self):
+        detail = Table(
+            "So_chi_tiet_ban_hang:Sheet1",
+            ["Ngày", "Mã đơn hàng", "Tên hàng hóa", "Thành tiền", "Trạng thái"],
+            [["2026-03-01", "A", "Trà", 65000, "Hoàn thành"]],
+            source="So_chi_tiet_ban_hang.xlsx",
+        )
+        question = "doanh thu tháng này"
         plan = self.planner.plan(question, "2026-03-04")
-        candidate = Executor([table]).execute(plan, question)
-        self.assertIsNone(candidate)
+        self.assertEqual(Executor([detail]).execute(plan, question)["answer"], 65000)
+
+    def test_revenue_fills_merged_order_metadata_for_line_items_only(self):
+        detail = Table(
+            "DonHang_ChiTiet:2026-03",
+            ["Mã đơn hàng", "Ngày đặt hàng", "Trạng thái đơn hàng", "Tên sản phẩm", "Tổng tiền"],
+            [
+                ["A", "2026-03-01", "Hoàn thành", "Trà", 65000],
+                ["", "", "", "Cà phê", 12000],
+                ["B", "2026-03-02", "Đã hủy", "Trà", 90000],
+                ["", "", "", "Cà phê", 20000],
+            ],
+            source="DonHang_ChiTiet.xlsx",
+        )
+        question = "doanh thu tháng này"
+        plan = self.planner.plan(question, "2026-03-04")
+        original_rows = [list(row) for row in detail.rows]
+        self.assertEqual(Executor([detail]).execute(plan, question)["answer"], 77000)
+        self.assertEqual(detail.rows, original_rows)
+
+    def test_revenue_skips_exported_daily_and_monthly_summary_rows(self):
+        detail = Table(
+            "So_chi_tiet_ban_hang:Sheet1",
+            ["Ngày", "Mã đơn hàng", "Tên hàng hóa", "Thành tiền", "Trạng thái"],
+            [
+                ["2026-04-01", "A", "Trà", 100, "Đã hoàn thành"],
+                ["", "", "Cà phê", 50, ""],
+                ["", "", "TỔNG NGÀY 01/04", 150, ""],
+                ["2026-04-02", "B", "Bánh", 200, "Đã hoàn thành"],
+                ["", "", "Tổng tháng 4/2026", 200, ""],
+            ],
+        )
+        question = "doanh thu tháng 4/2026"
+        plan = self.planner.plan(question, "2026-05-01")
+        candidate = Executor([detail]).execute(plan, question)
+        self.assertEqual(candidate["answer"], 350)
+        self.assertEqual(detail.rows[2][2], "TỔNG NGÀY 01/04")
+        self.assertEqual(detail.rows[4][2], "Tổng tháng 4/2026")
+
+    def test_revenue_selects_or_combines_disjoint_sheets_by_requested_period(self):
+        headers = ["Mã đơn hàng", "Ngày đặt hàng", "Trạng thái đơn hàng", "Tên sản phẩm", "Tổng tiền"]
+        january = Table("DonHang_ChiTiet:2026-01", headers, [
+            ["A", "2026-01-03", "Hoàn thành", "Trà", 50000],
+        ], source="DonHang_ChiTiet.xlsx")
+        february = Table("DonHang_ChiTiet:2026-02", headers, [
+            ["B", "2026-02-05", "Hoàn thành", "Cà phê", 70000],
+        ], source="DonHang_ChiTiet.xlsx")
+
+        february_question = "doanh thu tháng 2/2026"
+        february_plan = self.planner.plan(february_question, "2026-03-04")
+        self.assertEqual(
+            Executor([january, february]).execute(february_plan, february_question)["answer"],
+            70000,
+        )
+
+        quarter_question = "doanh thu quý 1/2026"
+        quarter_plan = self.planner.plan(quarter_question, "2026-03-31")
+        self.assertEqual(
+            Executor([january, february]).execute(quarter_plan, quarter_question)["answer"],
+            120000,
+        )
+
+    def test_revenue_abstains_when_partition_sheets_overlap_by_day(self):
+        headers = ["Mã đơn hàng", "Ngày đặt hàng", "Trạng thái đơn hàng", "Tên sản phẩm", "Tổng tiền"]
+        first = Table("sales:one", headers, [
+            ["A", "2026-03-01", "Hoàn thành", "Trà", 50000],
+        ], source="sales.xlsx")
+        second = Table("sales:two", headers, [
+            ["B", "2026-03-01", "Hoàn thành", "Cà phê", 70000],
+        ], source="sales.xlsx")
+        question = "doanh thu tháng này"
+        plan = self.planner.plan(question, "2026-03-04")
+        self.assertIsNone(Executor([first, second]).execute(plan, question))
 
     def test_daily_revenue_threshold_counts_distinct_days_and_excludes_unsuccessful_orders(self):
         table = Table("sales_lines", ["Mã đơn", "Ngày đặt", "Trạng thái", "Tên sản phẩm", "Thành tiền"], [
@@ -91,6 +165,35 @@ class PipelineTests(unittest.TestCase):
         candidate = Executor([table]).execute(plan, question)
         self.assertEqual(candidate, {"type": "number", "answer": 2, "evidence": ["sales_lines"]})
         self.assertEqual(verify("q", candidate, plan), {"id": "q", "type": "number", "answer": 2})
+
+    def test_order_revenue_threshold_sums_line_amounts_per_order_and_excludes_unsuccessful_orders(self):
+        table = Table("sales_lines", ["Mã đơn", "Ngày đặt", "Trạng thái", "Tên sản phẩm", "Thành tiền"], [
+            ["A", "2026-02-01", "completed", "Trà", 60000],
+            ["A", "2026-02-01", "completed", "Cà phê", 50000],
+            ["B", "2026-02-01", "completed", "Bánh", 70000],
+            ["B", "2026-02-01", "completed", "Kẹo", 29000],
+            ["C", "2026-02-02", "cancelled", "Nước", 500000],
+            ["D", "2026-02-02", "returned", "Sữa", 500000],
+        ])
+        question = "Tháng 2/2026 có bao nhiêu đơn hàng có doanh thu từ 100.000 đồng trở lên?"
+        plan = self.planner.plan(question, "2026-03-04")
+        candidate = Executor([table]).execute(plan, question)
+        self.assertEqual(candidate, {"type": "number", "answer": 1, "evidence": ["sales_lines"]})
+        self.assertEqual(verify("q", candidate, plan), {"id": "q", "type": "number", "answer": 1})
+
+    def test_order_count_selects_the_period_partition_when_sales_tables_are_split(self):
+        headers = ["Mã đơn hàng", "Ngày đặt hàng", "Trạng thái đơn hàng", "Tên sản phẩm", "Tổng tiền"]
+        january = Table("So_chi_tiet_ban_hang:Jan", headers, [
+            ["A", "2026-01-03", "completed", "Trà", 50000],
+        ], source="sales.xlsx")
+        february = Table("So_chi_tiet_ban_hang:Feb", headers, [
+            ["B", "2026-02-05", "completed", "Cà phê", 70000],
+            ["C", "2026-02-05", "completed", "Bánh", 10000],
+        ], source="sales.xlsx")
+        question = "tháng 2/2026 có bao nhiêu đơn?"
+        plan = self.planner.plan(question, "2026-03-04")
+        candidate = Executor([january, february]).execute(plan, question)
+        self.assertEqual(candidate, {"type": "number", "answer": 2, "evidence": ["So_chi_tiet_ban_hang:Feb"]})
 
     def test_daily_revenue_threshold_abstains_without_unique_revenue_source(self):
         first = Table("sales_a", ["Ngày bán", "Tên sản phẩm", "Thành tiền"], [["2026-02-01", "Trà", 20000000]])
@@ -167,6 +270,20 @@ class PipelineTests(unittest.TestCase):
         candidate, reason = Executor([without_epoch]).execute_with_reason(plan, question)
         self.assertIsNone(candidate)
         self.assertEqual(reason, "insufficient_evidence")
+
+    def test_daily_revenue_threshold_uses_only_inferred_column_separator_policy(self):
+        question = "tháng 2/2026 có mấy ngày doanh thu từ 15.000 đồng trở lên?"
+        plan = self.planner.plan(question, "2026-03-04")
+        evidenced = Table("sales", ["Ngày đặt", "Mã hàng", "Tên hàng", "Thành tiền"], [
+            ["2026-02-01", "A", "Trà", "10,000"],
+            ["2026-02-01", "B", "Cà phê", "5,000"],
+            ["2026-02-02", "C", "Bánh", "1,250,000"],
+        ])
+        candidate = Executor([evidenced]).execute(plan, question)
+        self.assertEqual(candidate["answer"], 2)
+
+        ambiguous_only = Table("sales", evidenced.headers, evidenced.rows[:2])
+        self.assertIsNone(Executor([ambiguous_only]).execute(plan, question))
 
     def test_collected_amount_uses_payment_event_date_and_split_payment_values(self):
         orders = Table("don_hang", ["Số phiếu", "Ngày bán", "Tình trạng đơn", "Tổng đơn"], [
@@ -400,6 +517,9 @@ class PipelineTests(unittest.TestCase):
     def test_cancellation_rate_counts_only_canceled_orders_from_all_statuses(self):
         self.assertEqual(classify_order_status("Đã hủy"), "cancelled")
         self.assertEqual(classify_order_status("Đổi trả"), "returned")
+        self.assertEqual(classify_order_status("Hàng trả về"), "returned")
+        self.assertEqual(classify_order_status("Đã hoàn hàng"), "returned")
+        self.assertEqual(classify_order_status("Đã lấy"), "successful")
         self.assertEqual(classify_order_status("Không giao được"), "delivery_failed")
         table = Table("sales", ["Mã đơn", "Ngày", "Kết quả"], [
             ["A", "2026-03-01", "Xong"],
@@ -488,6 +608,129 @@ class PipelineTests(unittest.TestCase):
         ])
         plan = self.planner.plan("hàng nào bán chạy nhất tháng này", "2026-03-04")
         self.assertIsNone(Executor([table]).execute(plan, "hàng nào bán chạy nhất tháng này"))
+
+    def test_sales_ranking_does_not_use_inbound_purchase_ledger(self):
+        purchases = Table("SoNhapHang:Sheet1", ["Ngày nhập", "Tên mặt hàng", "SL nhập"], [
+            ["2026-03-01", "Sản phẩm mua vào", 1000],
+        ])
+        sales = Table("SoBanHang:Sheet1", ["Ngày bán", "Tên hàng", "Số lượng bán"], [
+            ["2026-03-01", "Sản phẩm thực bán", 4],
+        ])
+        question = "hàng nào bán chạy nhất tháng này"
+        plan = self.planner.plan(question, "2026-03-04")
+        self.assertEqual(Executor([sales, purchases]).execute(plan, question)["answer"], "Sản phẩm thực bán")
+        self.assertIsNone(Executor([purchases]).execute(plan, question))
+
+    def test_sales_ranking_prefers_normalized_base_quantity(self):
+        sales = Table("sales", ["Ngày bán", "Tên hàng", "Số lượng bán", "SL lẻ"], [
+            ["2026-03-01", "Bán nhiều gói", 100, 100],
+            ["2026-03-02", "Bán nhiều đơn vị lẻ", 10, 250],
+        ])
+        question = "hàng nào bán chạy nhất tháng này"
+        plan = self.planner.plan(question, "2026-03-04")
+        self.assertEqual(Executor([sales]).execute(plan, question)["answer"], "Bán nhiều đơn vị lẻ")
+
+    def test_sales_ranking_converts_packaging_units_to_product_base_units(self):
+        sales = Table("DonHang_ChiTiet", ["Ngày bán", "Tên sản phẩm", "Số lượng", "Đơn vị tính", "Trạng thái"], [
+            ["2026-03-01", "Khẩu trang", 3, "hộp", "completed"],
+            ["2026-03-01", "Thuốc", 4, "hộp", "completed"],
+        ])
+        products = Table("DanhSachSanPham", ["Tên sản phẩm", "Đơn vị"], [
+            ["Khẩu trang", "cái"], ["Thuốc", "viên"],
+        ])
+        conversions = Table("DanhSachQuyDoi", ["Tên sản phẩm", "Đơn vị quy đổi", "Tỉ lệ quy đổi", "Đơn vị cơ bản"], [
+            ["Khẩu trang", "hộp", 50, "cái"], ["Thuốc", "hộp", 30, "viên"],
+        ])
+        question = "hàng nào bán chạy nhất tháng này"
+        plan = self.planner.plan(question, "2026-03-04")
+        self.assertEqual(
+            Executor([sales, products, conversions]).execute(plan, question)["answer"],
+            "Khẩu trang",
+        )
+
+    def test_sales_ranking_fails_closed_for_unit_without_a_conversion(self):
+        sales = Table("DonHang_ChiTiet", ["Ngày bán", "Tên sản phẩm", "Số lượng", "Đơn vị tính", "Trạng thái"], [
+            ["2026-03-01", "Khẩu trang", 3, "thùng", "completed"],
+        ])
+        products = Table("DanhSachSanPham", ["Tên sản phẩm", "Đơn vị"], [["Khẩu trang", "cái"]])
+        conversions = Table("DanhSachQuyDoi", ["Tên sản phẩm", "Đơn vị quy đổi", "Tỉ lệ quy đổi", "Đơn vị cơ bản"], [
+            ["Khẩu trang", "hộp", 50, "cái"],
+        ])
+        question = "hàng nào bán chạy nhất tháng này"
+        plan = self.planner.plan(question, "2026-03-04")
+        self.assertIsNone(Executor([sales, products, conversions]).execute(plan, question))
+
+    def test_sqlite_sales_details_join_unique_orders_and_product_catalog(self):
+        details = Table("chi_tiet_don", ["MaHoaDon", "MaHangHoa", "SL", "SLQuyDoi", "TriGia"], [
+            ["A", "P1", 2, 24, 100],
+            ["B", "P2", 100, 1000, 900],
+            ["C", "P2", 5, 5, 50],
+        ], source="pos.sqlite")
+        orders = Table("don_hang", ["MaHoaDon", "NgayLap", "TinhTrang"], [
+            ["A", "2026-03-01", "completed"],
+            ["B", "2026-03-02", "canceled"],
+            ["C", "2026-03-03", "completed"],
+        ], source="pos.sqlite")
+        products = Table("san_pham", ["MaHangHoa", "TenGoi"], [
+            ["P1", "Sản phẩm quy đổi cao"],
+            ["P2", "Sản phẩm thường"],
+        ], source="pos.sqlite")
+
+        ranking_question = "hàng nào bán chạy nhất tháng này"
+        ranking_plan = self.planner.plan(ranking_question, "2026-03-04")
+        engine = Executor([details, orders, products])
+        self.assertEqual(
+            engine.execute(ranking_plan, ranking_question)["answer"],
+            "Sản phẩm quy đổi cao",
+        )
+
+        revenue_question = "doanh thu tháng này"
+        revenue_plan = self.planner.plan(revenue_question, "2026-03-04")
+        self.assertEqual(engine.execute(revenue_plan, revenue_question)["answer"], 150)
+
+    def test_sales_ranking_joins_xlsx_style_detail_and_invoice_names(self):
+        details = Table(
+            "BanHang_ChiTietHoaDon:Sheet1",
+            ["Mã giao dịch", "Ma hang", "Chi tiết hàng", "SL cơ bản", "Slg"],
+            [
+                ["A", "P1", "Mặt hàng quy đổi", 24, 2],
+                ["B", "P2", "Mặt hàng bị hủy", 1000, 100],
+            ],
+            source="BanHang_ChiTietHoaDon.xlsx",
+        )
+        orders = Table(
+            "BanHang_HoaDon:Sheet1",
+            ["Order ID", "Ngày bán", "Trạng thái"],
+            [["A", "2026-03-01", "completed"], ["B", "2026-03-02", "canceled"]],
+            source="BanHang_HoaDon.xlsx",
+        )
+        question = "hàng nào bán chạy nhất tháng này"
+        plan = self.planner.plan(question, "2026-03-04")
+        self.assertEqual(
+            Executor([details, orders]).execute(plan, question)["answer"],
+            "Mặt hàng quy đổi",
+        )
+
+    def test_sales_ranking_abstains_when_join_keys_are_not_unique(self):
+        details = Table("chi_tiet_don", ["MaHoaDon", "MaHangHoa", "SLQuyDoi"], [
+            ["A", "P1", 5],
+        ], source="pos.sqlite")
+        duplicate_orders = Table("don_hang", ["MaHoaDon", "NgayLap", "TinhTrang"], [
+            ["A", "2026-03-01", "completed"],
+            ["A", "2026-03-01", "completed"],
+        ], source="pos.sqlite")
+        products = Table("san_pham", ["MaHangHoa", "TenGoi"], [["P1", "Sản phẩm"]], source="pos.sqlite")
+        question = "hàng nào bán chạy nhất tháng này"
+        plan = self.planner.plan(question, "2026-03-04")
+        self.assertIsNone(Executor([details, duplicate_orders, products]).execute(plan, question))
+
+    def test_revenue_does_not_use_inbound_purchase_ledger(self):
+        purchases = Table("SoNhapHang:Sheet1", ["Ngày nhập", "Tên mặt hàng", "Thành tiền"], [
+            ["2026-03-01", "Sản phẩm mua vào", 1000000],
+        ])
+        question = "doanh thu tháng này"
+        plan = self.planner.plan(question, "2026-03-04")
+        self.assertIsNone(Executor([purchases]).execute(plan, question))
 
     def test_unknown_question_abstains(self):
         self.assertIsNone(self.planner.plan("lô nào gần hết hạn", "2026-03-04"))

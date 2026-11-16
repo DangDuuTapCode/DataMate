@@ -65,6 +65,23 @@ class DecimalNormalizationTests(unittest.TestCase):
         self.assertEqual(policy, ",")
         self.assertEqual(parse_decimal("1,156tr", decimal_separator=policy).value, Decimal("1156000"))
 
+    def test_thousand_suffix_and_column_separator_inference(self):
+        cases = (
+            ("25k", Decimal("25000")),
+            ("1.5k", Decimal("1500.0")),
+            ("1,5 nghìn", Decimal("1500.0")),
+            ("25 ngàn", Decimal("25000")),
+        )
+        for raw, expected in cases:
+            with self.subTest(raw=raw):
+                result = parse_decimal(raw)
+                self.assertEqual(result.status, ParseStatus.OK)
+                self.assertEqual(result.value, expected)
+
+        policy = infer_decimal_separator(["1.5k", "2.5k", "25k"])
+        self.assertEqual(policy, ".")
+        self.assertEqual(parse_decimal("1.234k").status, ParseStatus.AMBIGUOUS)
+
     def test_column_separator_inference_requires_consistent_evidence(self):
         self.assertIsNone(infer_decimal_separator(["51,000", "45,000", "12"]))
         policy = infer_decimal_separator(["1.234,56", "51.000", "45.000"])

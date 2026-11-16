@@ -1,0 +1,19 @@
+ M src/datamate/metrics.py
+ M src/datamate/normalization.py
+ M src/datamate/rules.py
+ M src/datamate/timeparse.py
+ M src/datamate/understanding.py
+ M src/datamate/verify.py
+ M tests/test_normalization.py
+ M tests/test_pipeline.py
+ M tests/test_timeparse.py
+ M tests/test_understanding.py
+ M tools/STATE.md
+?? HANDOFF_2026_11_16_V26.txt
+?? tools/checkpoints/2026-11-16T1747+07-00_P6_REVENUE_COLUMN_SEPARATOR_FIX_START.md
+?? tools/checkpoints/2026-11-16T1752+07-00_P6_EXCEL_JOIN_AND_COLUMN_POLICY_COMPLETE.md
+?? tools/checkpoints/2026-11-16T1755+07-00_P6_V18_TRAIN_REPLAY_START.md
+?? tools/checkpoints/2026-11-16T2018+07-00_P6_V18_TRAIN_FREEZE_VALIDATED.md
+?? tools/checkpoints/2026-11-16T2024+07-00_P6_SALES_SOURCE_AND_BASE_QUANTITY_FIX_START.md
+?? tools/checkpoints/2026-11-16T2035+07-00_P6_V19_PURCHASE_BASE_QUANTITY_FIX_TRAIN_COMPLETE.md
+?? tools/checkpoints/2026-11-16T2149+07-00_P6_SUMMARY_ROW_DOUBLE_COUNT_FIX_COMPLETE.md
