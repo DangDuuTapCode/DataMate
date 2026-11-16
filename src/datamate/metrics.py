@@ -1,4 +1,5 @@
 import datetime as dt
+import re
 from decimal import Decimal, ROUND_HALF_UP
 
 from .normalization import parse_date, parse_decimal
@@ -107,9 +108,50 @@ def _product_key_column(headers):
     return None
 
 
-def _decimal(value):
-    result = parse_decimal(value)
+def _decimal(value, decimal_separator=None):
+    result = parse_decimal(value, decimal_separator=decimal_separator)
     return result.value if result.ok else None
+
+
+def _column_decimal_separator(table, column_index):
+    """Infer a thousands separator only when the entire source column agrees.
+
+    Competition money exports may store VND values as strings such as
+    ``82,500``. A single value is ambiguous, so never infer from one cell:
+    inspect the whole column and enable grouping only when every
+    separator-bearing string uses the same valid three-digit grouping.
+    Mixed or malformed conventions remain fail-closed.
+    """
+    grouping = None
+    saw_grouped_value = False
+    grouped_pattern = re.compile(r"^[+-]?\d{1,3}([,.])\d{3}(?:\1\d{3})*$")
+    for row in table.rows:
+        if column_index >= len(row):
+            return None
+        value = row[column_index]
+        if value is None or isinstance(value, (int, float, Decimal)):
+            continue
+        text = str(value).strip()
+        if not text:
+            continue
+        if not any(separator in text for separator in (",", ".")):
+            # Plain integer strings do not contribute locale evidence.
+            if not parse_decimal(value).ok:
+                return None
+            continue
+        match = grouped_pattern.fullmatch(text)
+        if not match:
+            return None
+        separator = match.group(1)
+        if grouping is not None and grouping != separator:
+            return None
+        grouping = separator
+        saw_grouped_value = True
+    if not saw_grouped_value:
+        return None
+    # parse_decimal's policy names the decimal separator; the other
+    # punctuation is then accepted only as valid thousands grouping.
+    return "." if grouping == "," else ","
 
 
 def _date(value, date_system=None):
@@ -311,9 +353,10 @@ class Executor:
             if rows is None or not rows:
                 return None
             daily_totals = {}
+            decimal_separator = _column_decimal_separator(table, value_col)
             for row in rows:
                 day = _date(row[date_col], table.date_system)
-                value = _decimal(row[value_col])
+                value = _decimal(row[value_col], decimal_separator)
                 if day is None or value is None:
                     return None
                 daily_totals[day] = daily_totals.get(day, Decimal(0)) + value
@@ -361,7 +404,8 @@ class Executor:
                 target = next((x for x in names if len(tokens(x)) > 1 and tokens(x).issubset(qwords)), None)
                 if target:
                     rows = [r for r in rows if str(r[product_col]).strip() == target]
-            values = [_decimal(row[value_col]) for row in rows]
+            decimal_separator = _column_decimal_separator(table, value_col)
+            values = [_decimal(row[value_col], decimal_separator) for row in rows]
             if any(value is None for value in values):
                 return None
             total = sum(values, Decimal(0))
@@ -433,10 +477,11 @@ class Executor:
             rows = self._period(table, date_col, start, end, status_col)
             if rows is None or not rows:
                 return None
+            decimal_separator = _column_decimal_separator(table, value_col)
             for row in rows:
                 name = str(row[product_col]).strip() if product_col is not None else ""
                 code = str(row[product_key_col]).strip() if product_key_col is not None else ""
-                value = _decimal(row[value_col])
+                value = _decimal(row[value_col], decimal_separator)
                 if (not name and not code) or (product_key_col is not None and not code) or value is None:
                     return None
                 if name and fold(name) != "phi phuc vu":

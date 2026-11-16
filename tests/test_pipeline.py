@@ -53,6 +53,29 @@ class PipelineTests(unittest.TestCase):
         candidate = Executor([orders]).execute(plan, "doanh thu tháng này")
         self.assertEqual(candidate["answer"], 120000)
 
+    def test_daily_revenue_threshold_infers_consistent_vnd_thousands_grouping_from_column(self):
+        table = Table("sales_lines", ["Mã đơn", "Ngày đặt", "Trạng thái", "Tên sản phẩm", "Thành tiền"], [
+            ["A", "2026-02-01", "completed", "Trà", "9,000,000"],
+            ["B", "2026-02-01", "completed", "Cà phê", "6,000,000"],
+            ["C", "2026-02-02", "completed", "Bánh", "14,999,999"],
+            ["D", "2026-02-03", "completed", "Sữa", "15,000,000"],
+            ["E", "2026-02-04", "completed", "Kẹo", "800"],
+        ])
+        question = "tháng 2/2026 có mấy ngày doanh thu từ 15.000.000 đồng trở lên?"
+        plan = self.planner.plan(question, "2026-03-04")
+        candidate = Executor([table]).execute(plan, question)
+        self.assertEqual(candidate["answer"], 2)
+
+    def test_daily_revenue_threshold_fails_closed_on_mixed_money_separators(self):
+        table = Table("sales_lines", ["Mã đơn", "Ngày đặt", "Trạng thái", "Tên sản phẩm", "Thành tiền"], [
+            ["A", "2026-02-01", "completed", "Trà", "15,000"],
+            ["B", "2026-02-02", "completed", "Cà phê", "15.25"],
+        ])
+        question = "tháng 2/2026 có mấy ngày doanh thu từ 15.000 đồng trở lên?"
+        plan = self.planner.plan(question, "2026-03-04")
+        candidate = Executor([table]).execute(plan, question)
+        self.assertIsNone(candidate)
+
     def test_daily_revenue_threshold_counts_distinct_days_and_excludes_unsuccessful_orders(self):
         table = Table("sales_lines", ["Mã đơn", "Ngày đặt", "Trạng thái", "Tên sản phẩm", "Thành tiền"], [
             ["A", "2026-02-01", "completed", "Trà", 9000000],
