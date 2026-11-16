@@ -1,0 +1,20 @@
+
+Tóm tắt nhanh hiện trạng & việc cần làm trong 3 ngày tới (17/11 – 19/11):
+1. Hiện trạng (Bản v26 — đã qua 186/189 unit tests):
+- Hệ thống đang chạy thuần Python rule-based (0B tham số, offline 100%, đóng gói Docker chuẩn linux/amd64, chạy mất ~22ms/câu).
+- Đã xử lý tốt phần nền tảng: đọc CSV/XLSX/SQLite, chuẩn hóa ngày tháng gốc Excel (1900/1904), lịch âm/dương, đọc quy tắc từng bộ đề (rulebook.md), loại dòng tổng cộng trùng lặp, nối 3 bảng quan hệ và từ chối an toàn (abstain) câu hỏi bẫy.
+- Điểm yếu hiện tại: Hệ thống đang cài cơ chế phòng thủ (fail-closed) quá chặt nên chỉ trả lời ~8% số câu hỏi (độ chính xác trên câu trả lời đạt 97.5%), còn lại ~92% đều từ chối (abstain) khiến điểm tổng bị thấp.
+
+2. Mục tiêu nâng cấp trước ngày 20/11:
+- Giữ nguyên tầng ingest dữ liệu và bộ lọc an toàn (`ingest.py`, `split_rules.py`, `verify.py`), tập trung mở rộng độ phủ để giảm tỷ lệ `abstain` từ 92% xuống còn ~15–20%:
+  + Hướng 1 (Mạnh nhất): Tích hợp thêm 1 mô hình SLM mã nguồn mở <=15B tham số (như Qwen2.5-7B-Instruct hoặc Qwen2.5-Coder-7B) chạy offline làm nhánh dự phòng: câu nào rule cứng giải được thì chạy rule; câu nào rule từ chối thì chuyển cho Qwen2.5-7B sinh truy vấn Python/SQL trên dữ liệu.
+  + Hướng 2 (Mở rộng code): Bổ sung các phép tính còn thiếu trong `src/datamate/metrics.py` (tồn kho, công nợ, lợi nhuận, xếp hạng khách hàng/NCC, so sánh tăng/giảm 2 kỳ) và mở rộng dữ liệu huấn luyện (paraphrase thêm nhiều cách diễn đạt tiếng Việt tự nhiên).
+
+3. Lưu ý quan trọng về luật thi (tránh bị loại):
+- Bắt buộc chạy offline 100% trong Docker, tổng tham số model không vượt quá 15B (để hợp lệ bảng đấu chính thức SLM).
+- Tuyệt đối KHÔNG lấy câu hỏi hay dữ liệu từ tập Public Test để train hay sinh dữ liệu mở rộng (chỉ được mở rộng từ tập Train gốc và dữ liệu tự tạo Synthetic).
+- Anh em tải repo về xem thêm chi tiết trong file `HANDOFF.md` và `docs/CHANGELOG_WORK.md` nhé!
+4. MỤC TIÊU:
+- ĐẠT TỐI ĐA SỐ LƯỢNG CÂU ĐÚNG TRÊN 1000 CÂU
+- BẮT BUỘC ABSTAIN NHỮNG CÂU HỎI BẪY, KHÔNG CÓ DỮ LIỆU
+GOOD LUCK </>
