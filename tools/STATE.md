@@ -530,3 +530,14 @@ python qstats.py public_test/ 15
 - Source hashes: `metrics.py` SHA256 `C624C373FE31F90FD70DEA4F781CDFCFD3C6968394BCD3EA3CD53769A485BBBD`; `tests/test_pipeline.py` SHA256 `A65B5E4C25D448B87AD48B7EC6C213B18F32DA2131FB56557B651B87C120D566`.
 - Checkpoint: `tools/checkpoints/2026-11-16T2035+07-00_P6_V19_PURCHASE_BASE_QUANTITY_FIX_TRAIN_COMPLETE.md`.
 
+
+
+## Current state — 2026-11-17 — v26
+
+- Full report: `docs/PROGRESS_REPORT_2026-11-17.md`; checkpoint: `tools/checkpoints/2026-11-17T0821+07-00_P6_V26_REPORT_SYNC.md`.
+- Full suite: 189 run, 186 passed, 3 Git-dependent skips. Pipeline: 69/69 passed.
+- Train v26: 237 correct, 6 wrong, 2,757 abstain / 3,000; 97.53% answered accuracy, 8.10% coverage, PA 7.70%, p95 756 ms, zero runtime errors. In-sample only.
+- Remaining errors: 3 rankings and 3 cancellation-rate rule/label discrepancies. Keep cancellation semantics; do not hardcode or tune answers.
+- Public labels not read. Existing source-root submission JSONL is stale (998 abstain / 2 number); no v26 output confirmed.
+- Core v26 code/tests were verified to match GitHub `main`; this update only synchronizes reports/status/checkpoint.
+- Next: fix sales rankings with evidence and tests; freeze and replay train; only then generate one structural public candidate without tuning from public questions.
