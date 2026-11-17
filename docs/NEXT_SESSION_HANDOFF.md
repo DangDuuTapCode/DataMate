@@ -479,3 +479,13 @@ The Public Submissions JSONL candidate is prepared and structurally verified, bu
 - Test Solution is a separate Docker image upload. No Docker runtime is available; image, offline run, GPU test, tarball, MD5, and Test Solution are not ready. Portal's model dropdown lacks an obvious no-model/rule-engine selection.
 - Official checkout is still clean at feature/offline-core / 24cfa0908bd20f6e5b210366e956cae0d665b56e; do not sync or mutate it.
 - Continue the active Playbook from P3. P3 remains NOT PASSED pending honest reviewed full-slot/ambiguity evidence; P4–P8 must not be marked complete. Work only in work/rehydrated-2026-11-15-P3/source, preserve sources/, and checkpoint every bounded unit.
+
+
+## Resume — 2026-11-17 — v26
+
+- Read `docs/PROGRESS_REPORT_2026-11-17.md` and `tools/checkpoints/2026-11-17T0821+07-00_P6_V26_REPORT_SYNC.md` first.
+- Current suite: 189 run, 186 passed, 3 Git-only skips; focused pipeline 69/69 passed.
+- Latest frozen train v26: 237 correct / 6 wrong / 2,757 abstain out of 3,000; answered accuracy 97.53%, coverage 8.10%, PA 7.70%, runtime errors 0. This is in-sample only.
+- Six remaining train errors: 3 sales-ranking false answers and 3 cancellation-rate label/rulebook conflicts. Keep rulebook semantics; investigate rankings with generic unit/schema evidence and regressions.
+- Do not tune on public questions or open public/private labels. Current source-root `public_submission.jsonl` is stale and not v26. No v26 public artifact is confirmed.
+- Replay only to a new directory and validate freeze before evaluator label access. No source changes were made by this report sync.
