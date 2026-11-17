@@ -507,3 +507,13 @@ The portal screenshots show a JSONL Public Submission flow separate from Docker 
 Generated once from the frozen isolated snapshot for the portal's Public Submissions flow. It contains 1,000 valid ordered records for 1,000 questions across 14 businesses; the project validator passed, 1,000 trace records matched, and no per-question runtime exceptions were logged. The engine abstained on 718 questions (71.8%), so answer accuracy/PA is unknown and this output is only format/runtime verified. Public questions were not used for tuning and no labels were present.
 
 Review package: work/submission-build/public-test-submission-2026-11-15. JSONL SHA-256 0de940823521e386477efeb76c26d6533e61cabf1977b5c0d9cbb6fd0d61e112; MD5 85b4acc0abf681c8b5a6a6a6812910ab; 44,806 bytes. It has not been uploaded. This is separate from the Docker Test Solution artifact, which remains blocked. P3–P8 are still incomplete; see tools/checkpoints/2026-11-15_PUBLIC_SUBMISSION_GENERATION_COMPLETE.md.
+
+
+## Latest update — 2026-11-17 — v26
+
+- Full project history, phase status, and current risks: `docs/PROGRESS_REPORT_2026-11-17.md`.
+- v26 train-only replay (3,000 questions): 237 correct, 6 wrong, 2,757 abstain; answered accuracy 97.53%, coverage 8.10%, PA 7.70%, 0 runtime errors. In-sample diagnostic only; not a Public Test score.
+- Current tests: 189 run, 186 passed, 3 Git-dependent skips; focused pipeline 69/69 passed.
+- P3 remains NOT VERIFIED / NOT PASSED because independent review was skipped. Public labels remain unopened. Source-root public JSONL is stale (998 abstain / 2 number), not v26.
+- Main v26 implementation and primary regression files match the validated snapshot; this update changes tracking documents only.
+- Next: investigate remaining sales-ranking errors generically, preserve the rulebook cancellation definition, then replay train from a new frozen output before public inference.
