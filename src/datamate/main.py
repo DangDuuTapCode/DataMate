@@ -120,6 +120,7 @@ def run(data_root, output, log_directory=None, business_filter=None):
                                 scoped_tables,
                                 rules=split_rules,
                                 revenue_source_shape=component.executor_source_shape,
+                                revenue_join_contract=component.revenue_join_contract,
                             )
                         component_result = component_engine.execute_with_reason(
                             component.query_plan,
