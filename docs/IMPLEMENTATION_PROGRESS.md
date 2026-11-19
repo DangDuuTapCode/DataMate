@@ -196,3 +196,10 @@ Important limitation: this resolver is discovery-only and is not yet connected t
 - Commits: `5c04d9b8498133e28170108ed3ba7fe8ec58301a`, `783631e99ed584fee284564c126b1275ca453edf`.
 - CI for the new branch has not yet been verified. No local checkout or local test execution was used.
 - Runtime wiring remains blocked pending a representative real query family with reviewed source evidence for fact grain, measure semantics, additive behavior, exact path/keys, and aggregation stage.
+
+
+### Malformed-cardinality follow-up
+
+- Added an explicit string-type check before cardinality membership validation and a regression for an unhashable list value.
+- Latest code/test commits: `101a5089d1bd71c45b17516f5753a2e01f06f151`, `4e073e4f1a35a216179094ff0d63389f27829775`.
+- Branch head verified at `4e073e4f1a35a216179094ff0d63389f27829775`; no Actions run is available yet.
