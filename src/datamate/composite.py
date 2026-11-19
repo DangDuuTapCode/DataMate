@@ -26,6 +26,7 @@ class QueryComponent:
     query_plan: QueryPlan
     table_scope: tuple[tuple[str, str], ...] = ()
     executor_source_shape: str | None = None
+    revenue_join_contract: object | None = None
 
 
 @dataclass(frozen=True)
@@ -147,6 +148,7 @@ class CompositePlanner:
                 component_plan,
                 table_scope=resolution.approved_table_scope if resolution is not None else (),
                 executor_source_shape=resolution.executor_source_shape if resolution is not None else None,
+                revenue_join_contract=resolution.revenue_join_contract if resolution is not None else None,
             ))
 
         return CompositeQueryPlan(
