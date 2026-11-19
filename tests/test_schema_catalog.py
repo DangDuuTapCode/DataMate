@@ -32,7 +32,7 @@ class BusinessSchemaCatalogTests(unittest.TestCase):
         )
         self.assertEqual(relationship.cardinality, "many_to_one")
         payload = catalog.to_dict()
-        self.assertEqual(payload["schema_version"], "1.0.0")
+        self.assertEqual(payload["schema_version"], "1.1.0")
         self.assertEqual(payload["business_id"], "biz_synthetic")
         self.assertEqual(payload["relationships"][0]["status"], "validated")
 
