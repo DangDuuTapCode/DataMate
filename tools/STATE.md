@@ -107,3 +107,10 @@ Next: audit public-test questions against the 14 input shapes, then build minima
 - CI run `44578825930`: 293 tests, 291 passed; all feature tests pass. Two inherited hygiene failures remain for `CODEX PROGRESS`.
 - Implementation commit: `68564ac356af305e63aabe1703ce76d98aadb08f`.
 - Next: query-specific execution contract including fact grain, aggregation stage, exact path and fanout policy. Do not enable arbitrary multi-hop joins.
+## Relationship path bound hardening (2026-11-20)
+
+- Fixed candidate-cap off-by-one: exactly max_candidates paths may still be a valid unique result; overflow is reported only after observing one more path.
+- Invalid/non-integer/boolean limits and malformed or blank table identities return invalid_request.
+- Added six synthetic regressions for exact cap, overflow, reverse traversal fanout, hop limit, invalid limits, and cycles.
+- Commits: 4212165cece5a9167095984865aca98ae6362890 and fe799c55ac9757a64007fbe03ef0a9028e6ff1f2.
+- CI pending; no local test execution.
