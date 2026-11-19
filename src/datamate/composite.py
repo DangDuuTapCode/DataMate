@@ -24,6 +24,8 @@ class QueryComponent:
     requirement: MetricRequirement
     query_spec: QuerySpec
     query_plan: QueryPlan
+    table_scope: tuple[tuple[str, str], ...] = ()
+    executor_source_shape: str | None = None
 
 
 @dataclass(frozen=True)
@@ -108,6 +110,7 @@ class CompositePlanner:
             bundle = self.requirement_extractor.bundle_registry.resolve(requirement.metric)
             if bundle is None or not bundle.supports_period:
                 return None
+            resolution = None
             if self.schema_catalog is not None:
                 resolution = self.capability_resolver.resolve(
                     bundle, self.schema_catalog, self.rule_evidence,
@@ -138,7 +141,13 @@ class CompositePlanner:
                 top_k=1,
                 evidence=component_spec.evidence,
             )
-            components.append(QueryComponent(requirement, component_spec, component_plan))
+            components.append(QueryComponent(
+                requirement,
+                component_spec,
+                component_plan,
+                table_scope=resolution.approved_table_scope if resolution is not None else (),
+                executor_source_shape=resolution.executor_source_shape if resolution is not None else None,
+            ))
 
         return CompositeQueryPlan(
             raw_question=question,

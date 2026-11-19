@@ -182,9 +182,19 @@ class ApiTests(unittest.TestCase):
                 "2026-03-01,Trà,42,Hoàn thành\n",
                 encoding="utf-8",
             )
+            (data / "other_sales.csv").write_text(
+                "Ngày đặt,Tên sản phẩm,Thành tiền,Trạng thái\n"
+                "2026-03-01,Cà phê,900,Hoàn thành\n",
+                encoding="utf-8",
+            )
             (data / "payments.csv").write_text(
                 "Thanh toán / Giá trị,Thanh toán / Ngày,Thanh toán / Trạng thái\n"
                 "30,2026-03-01,Thành công\n",
+                encoding="utf-8",
+            )
+            (data / "payment_archive.csv").write_text(
+                "Thanh toán / Giá trị,Thanh toán / Ngày,Thanh toán / Trạng thái\n"
+                "700,2026-03-01,Thành công\n",
                 encoding="utf-8",
             )
             _write_complete_business_rule_evidence(data)
@@ -211,6 +221,16 @@ class ApiTests(unittest.TestCase):
             self.assertEqual(
                 [item["status"] for item in trace["bundle_capability_resolutions"]],
                 ["available", "available"],
+            )
+            components = trace["composite_query_plan"]["components"]
+            self.assertEqual(
+                components[0]["table_scope"],
+                [["sales", "sales.csv"]],
+            )
+            self.assertEqual(components[0]["executor_source_shape"], "direct_line")
+            self.assertEqual(
+                components[1]["table_scope"],
+                [["payments", "payments.csv"]],
             )
 
     def test_runner_rejects_invalid_business_rule_evidence_without_crashing(self):

@@ -69,3 +69,13 @@
 - CompositePlanner passes active SplitRules into capability resolution.
 - CI run `44561508605`: 264 tests; 262 passed. All feature tests passed; only two inherited CODEX PROGRESS hygiene failures.
 - Next: bind evidence-approved table scope to Executor candidate selection; then implement controlled digest verification.
+
+
+## Evidence-scoped runtime state
+
+- BundleCapabilityResolution returns approved exact table identities and revenue source shape.
+- QueryComponent carries those fields; runtime builds a component-specific Executor using only approved tables.
+- Executor honors direct_line/detail_to_order rather than reselecting another source shape.
+- New regression adds unreviewed competing sales and payment tables.
+- Previous CI run `44561508605`: 264 tests, 262 passed; only two inherited hygiene failures.
+- Next: verify SHA-256 only against allowlisted files under the input root.

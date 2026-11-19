@@ -90,7 +90,22 @@ def run(data_root, output, log_directory=None, business_filter=None):
                 composite_plan = composite_planners[question.business_id].plan(spec)
                 if composite_plan is not None:
                     for component in composite_plan.components:
-                        component_result = engine.execute_with_reason(
+                        component_engine = engine
+                        if component.table_scope:
+                            allowed = set(component.table_scope)
+                            scoped_tables = [
+                                table for table in engine.tables
+                                if (table.name, table.source) in allowed
+                            ]
+                            if len(scoped_tables) != len(allowed):
+                                component_results.append((None, "source_scope_mismatch"))
+                                continue
+                            component_engine = Executor(
+                                scoped_tables,
+                                rules=split_rules,
+                                revenue_source_shape=component.executor_source_shape,
+                            )
+                        component_result = component_engine.execute_with_reason(
                             component.query_plan,
                             question.question,
                             spec=component.query_spec,

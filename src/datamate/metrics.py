@@ -270,17 +270,24 @@ def _money(value):
 
 class Executor:
     """Allowlist executor. Incomplete or ambiguous evidence returns None."""
-    def __init__(self, tables, rules=None):
+    def __init__(self, tables, rules=None, *, revenue_source_shape=None):
         self.tables = tables
         self.rules = rules or SplitRules.test_defaults()
+        self.revenue_source_shape = revenue_source_shape
         self._order_metadata_cache = {}
         self._table_date_range_cache = {}
 
     def _revenue_fact(self, start=None, end=None):
-        candidates = self._revenue_candidates()
-        if candidates:
-            return self._select_period_revenue_candidate(candidates, start, end)
-        joined = self._daily_revenue_fact(start, end)
+        if self.revenue_source_shape == "direct_line":
+            candidates = self._revenue_candidates()
+            return candidates[0] if len(candidates) == 1 else None
+        if self.revenue_source_shape == "detail_to_order":
+            joined = self._daily_revenue_fact(start, end, allow_direct=False)
+        else:
+            candidates = self._revenue_candidates()
+            if candidates:
+                return self._select_period_revenue_candidate(candidates, start, end)
+            joined = self._daily_revenue_fact(start, end)
         if joined is None:
             return None
         table, date_col, value_col, status_col, _ = joined
@@ -384,11 +391,11 @@ class Executor:
                 pass
         return str(value).strip().casefold()
 
-    def _daily_revenue_fact(self, start=None, end=None):
+    def _daily_revenue_fact(self, start=None, end=None, *, allow_direct=True):
         """Find direct line facts or one complete, one-to-many invoice join."""
         if not self.rules.revenue_supported:
             return None
-        direct = self._revenue_candidates()
+        direct = self._revenue_candidates() if allow_direct else []
         if direct:
             selected = self._select_period_revenue_candidate(direct, start, end)
             if selected is None:

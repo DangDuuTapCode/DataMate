@@ -17,6 +17,8 @@ class BundleCapabilityResolution:
     rejected_capabilities: tuple[str, ...] = ()
     rule_profile_version: str | None = None
     reasons: tuple[str, ...] = ()
+    approved_table_scope: tuple[tuple[str, str], ...] = ()
+    executor_source_shape: str | None = None
 
     @property
     def available(self):
@@ -39,6 +41,11 @@ class BundleCapabilityResolution:
             "rejected_capabilities": list(self.rejected_capabilities),
             "rule_profile_version": self.rule_profile_version,
             "reasons": list(self.reasons),
+            "approved_table_scope": [
+                {"table_name": name, "source": source}
+                for name, source in self.approved_table_scope
+            ],
+            "executor_source_shape": self.executor_source_shape,
         }
 
 
@@ -150,6 +157,8 @@ class BundleCapabilityResolver:
         # reviewed for both payment-source role and settlement policy.
         field_scope = None
         scope_mismatch = False
+        approved_table_scope = ()
+        executor_source_shape = None
         if bundle.rule_profile == "collection_rules":
             role = verified.get("payment_source_role")
             policy = verified.get("settled_payment_status_policy")
@@ -158,6 +167,7 @@ class BundleCapabilityResolver:
                 policy_scope = tuple((x.table_name, x.source) for x in policy.table_scope)
                 if len(role_scope) == 1 and role_scope == policy_scope:
                     field_scope = set(role_scope)
+                    approved_table_scope = role_scope
                 else:
                     scope_mismatch = True
                     for capability in ("payment_source_role", "settled_payment_status_policy"):
@@ -219,6 +229,8 @@ class BundleCapabilityResolver:
         shape = verified.get("revenue_executor_source_shape")
         if shape is not None:
             shape_scope = tuple((x.table_name, x.source) for x in shape.table_scope)
+            approved_table_scope = shape_scope
+            executor_source_shape = shape.assertion
             shape_names = [name for name, _ in shape_scope]
             assertion = shape.assertion
             direct_shape = assertion == "direct_line" and len(shape_scope) == 1
@@ -307,4 +319,6 @@ class BundleCapabilityResolver:
             rejected_capabilities=tuple(rejected_capabilities),
             rule_profile_version=profile_version,
             reasons=tuple(dict.fromkeys(reasons)),
+            approved_table_scope=approved_table_scope,
+            executor_source_shape=executor_source_shape,
         )

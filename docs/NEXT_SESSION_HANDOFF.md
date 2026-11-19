@@ -133,3 +133,15 @@ Next: review CI, then design controlled SHA-256 verification against allowlisted
 Run `44561508605` on `211941c8b8bdaafabd5f0c85477f1ce99bdf041b`: 264 tests; 262 passed. All feature tests passed. Only the two inherited `CODEX PROGRESS` repository-hygiene checks failed.
 
 Next: bind the exact evidence-approved source scope to Executor candidate selection, then implement controlled SHA-256 verification under the input root.
+
+
+## Latest continuation — evidence-scoped execution
+
+- Resolver now returns approved exact table scope and revenue source shape.
+- CompositePlanner carries scope into QueryComponent.
+- Runtime creates a separate Executor per component over only the approved table identities.
+- Executor honors `direct_line` vs `detail_to_order`; the latter bypasses direct-line candidate selection.
+- Regression coverage adds competing unreviewed sales/payment tables and verifies they cannot influence a valid evidence-backed composite.
+- CI before this milestone: run `44561508605`, 264 tests / 262 passed; only inherited hygiene failures.
+
+Next: inspect the new CI result, then implement safe digest verification for known files under the input root. Keep arbitrary evidence paths inaccessible.

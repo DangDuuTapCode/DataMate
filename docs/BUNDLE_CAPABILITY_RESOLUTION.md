@@ -59,3 +59,10 @@ Run: https://github.com/pl2n/DataMate/actions/runs/44558398515
 A verified evidence payload is necessary but not sufficient. The resolver cross-checks revenue amount, period, and order-status assertions against the active `SplitRules`. It also requires the collection successful-status-only assertion to match an explicit supported clause in the active rulebook. Missing collection policy leaves that bundle unavailable.
 
 The collection executor uses a dedicated payment-status classifier, separate from `classify_order_status`. Unknown payment labels cause abstention; recognized pending, failed, cancelled, refunded, or reversed states are excluded.
+
+
+## Execution scope binding
+
+The resolver returns the exact approved table identities and, for revenue, the reviewed source shape. CompositePlanner carries these into each QueryComponent. At runtime, main creates a component-specific Executor over only those exact tables. Revenue's direct-line and detail-to-order assertions are also enforced by the Executor; a detail-to-order claim disables the direct-candidate shortcut and uses the existing validated detail/order path.
+
+This prevents a second, unreviewed candidate table from being selected after the capability gate has approved a different table. Missing scope identities fail closed.

@@ -81,3 +81,8 @@ Reviewed claims are checked against the active `SplitRules` object before they c
 - `settled_payment_status_policy` is accepted only when the active rulebook explicitly states that only successful payment transactions count as collected money. If this clause is absent, collection remains unavailable.
 
 The executor now classifies payment statuses independently from order statuses. Explicit paid/successful states are included; pending, failed, cancelled, refunded, and reversed states are excluded. Unknown statuses cause abstention. This prevents order-status semantics from being reused as proof of payment settlement.
+
+
+## Execution uses the approved source scope
+
+The resolver now returns exact approved table identities. CompositePlanner stores that scope on each component, and main creates a component-specific Executor over only those tables. The reviewed revenue source shape is also passed to Executor, so `detail_to_order` cannot silently fall back to a direct-line candidate. This closes the gap between capability validation and actual table selection.

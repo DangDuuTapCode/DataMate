@@ -116,3 +116,13 @@ Review the evidence file's provenance against controlled, known source locations
 GitHub Actions run `44561508605` on commit `211941c8b8bdaafabd5f0c85477f1ce99bdf041b` executed 264 tests. 262 passed, including all feature tests. The only two failures remain the inherited `CODEX PROGRESS` large-file and secret-like-pattern hygiene checks.
 
 Run: https://github.com/pl2n/DataMate/actions/runs/44561508605
+
+
+## Evidence-scoped execution — 2026-11-19
+
+- BundleCapabilityResolution now returns approved exact table identities and the reviewed revenue source shape.
+- QueryComponent carries that scope.
+- Runtime constructs a component-specific Executor over only the approved tables.
+- Executor enforces the reviewed revenue shape: `direct_line` selects only direct facts; `detail_to_order` skips direct-candidate selection and executes the existing detail/order path.
+- End-to-end regression adds unreviewed competing sales/payment tables and verifies that the approved tables alone supply the result.
+- Added a pipeline regression proving a detail-to-order claim cannot be replaced by a direct order-summary candidate.

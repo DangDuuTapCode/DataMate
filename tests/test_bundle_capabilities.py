@@ -197,6 +197,7 @@ class BundleCapabilityResolverTests(unittest.TestCase):
         )
 
         self.assertTrue(result.available)
+        self.assertEqual(result.approved_table_scope, (("payments", "payments.xlsx"),))
         self.assertEqual(result.rule_profile_version, "1.0.0")
         self.assertEqual(result.unverified_capabilities, ())
 
@@ -315,6 +316,11 @@ class BundleCapabilityResolverTests(unittest.TestCase):
             evidence, split_rules=_reviewed_split_rules(),
         )
         self.assertTrue(valid.available)
+        self.assertEqual(
+            valid.approved_table_scope,
+            (("sales_details", "details.xlsx"), ("orders", "orders.xlsx")),
+        )
+        self.assertEqual(valid.executor_source_shape, "detail_to_order")
 
         broken_orders = Table("orders", ["Mã đơn hàng"], [["A2"]], "orders.xlsx")
         rejected = self.resolver.resolve(

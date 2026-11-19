@@ -57,6 +57,31 @@ class PipelineTests(unittest.TestCase):
         plan = self.planner.plan(question, "2026-03-04")
         self.assertIsNone(Executor([table]).execute(plan, question))
 
+    def test_revenue_source_shape_forces_detail_to_order_path(self):
+        details = Table(
+            "chi_tiet_don_hang",
+            ["Mã đơn hàng", "Mã hàng", "Tên hàng", "Thành tiền"],
+            [["A", "SP-1", "Trà", 42000]],
+            source="chi_tiet_don_hang.csv",
+        )
+        orders = Table(
+            "don_hang",
+            ["Mã đơn hàng", "Ngày đặt", "Trạng thái đơn hàng", "Tên sản phẩm", "Thành tiền"],
+            [["A", "2026-03-01", "Hoàn thành", "Tổng hóa đơn", 999000]],
+            source="don_hang.csv",
+        )
+        question = "doanh thu tháng này"
+        plan = self.planner.plan(question, "2026-03-04")
+
+        forced = Executor(
+            [details, orders],
+            revenue_source_shape="detail_to_order",
+        ).execute(plan, question)
+        automatic = Executor([details, orders]).execute(plan, question)
+
+        self.assertEqual(forced["answer"], 42000)
+        self.assertEqual(automatic["answer"], 999000)
+
     def test_revenue_drops_cancelled_orders(self):
         self.assertEqual(self.answer("doanh thu tháng này")["answer"], 40000)
 
