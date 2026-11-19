@@ -66,7 +66,14 @@ def run(data_root, output, log_directory=None, business_filter=None):
                 if question.business_id not in engines:
                     data_dir = root / "data" / question.business_id
                     tables = read_business(data_dir)
-                    schema_catalog = build_schema_catalog(tables, business_id=question.business_id)
+                    schema_catalog = build_schema_catalog(
+                        tables,
+                        business_id=question.business_id,
+                        deduplicate_identical_order_lines=(
+                            split_rules is not None
+                            and split_rules.deduplicate_identical_order_lines
+                        ),
+                    )
                     evidence_path = data_dir / "business_rule_evidence.json"
                     rule_evidence = None
                     if evidence_path.exists():
