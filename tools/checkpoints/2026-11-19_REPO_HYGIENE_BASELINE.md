@@ -15,3 +15,10 @@ The feature branch's two recurring GitHub Actions failures are caused by an inhe
 - Do not weaken or bypass the repository-hygiene tests.
 - Keep the CI failure documented as a baseline issue for maintainers to resolve separately.
 - No credential value is copied into this checkpoint.
+
+
+## Latest branch verification
+
+GitHub Actions run `44551508183` for commit `a804405a5794cb8af04f36e1c0e4d8a314c42537` executed 232 tests with no code/test errors; 230 passed. The only two failures are the inherited file-size and false-positive secret-pattern checks described above.
+
+Run: https://github.com/pl2n/DataMate/actions/runs/44551508183
