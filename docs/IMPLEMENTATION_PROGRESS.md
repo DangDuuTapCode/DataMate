@@ -203,3 +203,10 @@ Important limitation: this resolver is discovery-only and is not yet connected t
 - Added an explicit string-type check before cardinality membership validation and a regression for an unhashable list value.
 - Latest code/test commits: `101a5089d1bd71c45b17516f5753a2e01f06f151`, `4e073e4f1a35a216179094ff0d63389f27829775`.
 - Branch head verified at `4e073e4f1a35a216179094ff0d63389f27829775`; no Actions run is available yet.
+
+
+### CI branch coverage
+
+- Updated the Python test workflow to run for pushes to any `feature/**` branch and PRs targeting `main` or `feature/**`.
+- Commit: `e74d43413c3966d7d80e6fbe8f985fb5b6ac4de9`.
+- No Actions run/status was surfaced for this push; CI remains unverified.
