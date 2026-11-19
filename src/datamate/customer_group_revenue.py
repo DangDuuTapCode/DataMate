@@ -4,6 +4,7 @@ This is intentionally not a generic dimension join or arbitrary GROUP BY engine.
 It accepts only the README-documented three-source shape and the reviewed
 revenue semantics for this query family.
 """
+from dataclasses import replace
 from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 from pathlib import PurePosixPath
@@ -70,6 +71,8 @@ def execute_customer_group_revenue_share(tables, rules, start, end, customer_gro
         or rules.revenue_amount_basis != "line_amount_after_line_discount"
         or rules.revenue_period_basis != "order_date"
         or not _REQUIRED_EXCLUDED_STATUSES.issubset(rules.revenue_excluded_statuses)
+        or "in_transit" not in rules.revenue_included_statuses
+        or not rules.deduplicate_identical_order_lines
     ):
         return None, "rulebook_unavailable"
     if not isinstance(customer_group, str) or not customer_group.strip():
@@ -87,6 +90,18 @@ def execute_customer_group_revenue_share(tables, rules, start, end, customer_gro
     fact, orders, customers = (
         role_tables["fact"], role_tables["order"], role_tables["customer"]
     )
+    # Rulebook §8: exact duplicate lines within the same order are export
+    # errors and count once. The order key is part of the row, so identical
+    # rows belonging to different orders remain distinct sales.
+    unique_rows = []
+    seen_rows = set()
+    for row in fact.rows:
+        row_key = tuple((type(value).__name__, repr(value)) for value in row)
+        if row_key in seen_rows:
+            continue
+        seen_rows.add(row_key)
+        unique_rows.append(row)
+    fact = replace(fact, rows=unique_rows)
     schemas = {
         role: map_table_schema(table)
         for role, table in role_tables.items()
