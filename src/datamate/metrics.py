@@ -749,7 +749,13 @@ class Executor:
             if value is None:
                 value = _payment_grouped_column(table.headers, {"gia tri", "amount", "value"})
             if date is not None and value is not None:
-                candidates.append((table, date, value, _payment_status_column(table.headers)))
+                status = _payment_status_column(table.headers)
+                if status is None:
+                    # Preserve legacy single-metric behavior. The composite
+                    # capability gate separately requires an exact canonical
+                    # payment_status mapping before a bundle can be planned.
+                    status = _column(table.headers, STATUS)
+                candidates.append((table, date, value, status))
         return candidates[0] if len(candidates) == 1 else None
 
     def _period(self, table, date_column, start, end, status_column=None, accepted_only=True):

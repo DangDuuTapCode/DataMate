@@ -207,8 +207,8 @@ class BundleCapabilityResolver:
                         if capability not in unverified_capabilities:
                             unverified_capabilities.append(capability)
 
-        unverified_capabilities = sorted(set(unverified_capabilities))
-        rejected_capabilities = sorted(set(rejected_capabilities))
+        unverified_capabilities = list(dict.fromkeys(unverified_capabilities))
+        rejected_capabilities = list(dict.fromkeys(rejected_capabilities))
         reasons = []
         if missing_fields:
             reasons.append("missing_required_fields")
