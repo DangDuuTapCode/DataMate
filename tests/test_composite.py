@@ -1,5 +1,6 @@
 import unittest
 
+from datamate.bundles import BundleDefinition, BundleRegistry
 from datamate.composite import CompositePlanner, verify_composite_with_reason
 from datamate.metrics import Executor
 from datamate.types import Table
@@ -42,6 +43,28 @@ class CompositePlannerTests(unittest.TestCase):
             "doanh thu và tiền thực thu theo phương thức tháng này",
             "2026-03-04", "biz_synthetic")
         self.assertIsNone(self.composite_planner.plan(spec))
+
+    def test_missing_bundle_definition_fails_closed(self):
+        registry = BundleRegistry((
+            BundleDefinition("revenue", "revenue", "revenue"),
+        ))
+        planner = CompositePlanner(self.rule_planner, registry)
+        spec = self.rule_planner.interpret(
+            "doanh thu và tiền thực thu tháng này", "2026-03-04", "biz_synthetic"
+        )
+        self.assertIsNone(planner.plan(spec))
+
+    def test_non_numeric_bundle_is_not_used_in_financial_comparison(self):
+        registry = BundleRegistry((
+            BundleDefinition("revenue", "revenue", "revenue"),
+            BundleDefinition("collection", "collected_amount", "collected_amount",
+                             output_type="string"),
+        ))
+        planner = CompositePlanner(self.rule_planner, registry)
+        spec = self.rule_planner.interpret(
+            "doanh thu và tiền thực thu tháng này", "2026-03-04", "biz_synthetic"
+        )
+        self.assertIsNone(planner.plan(spec))
 
     def test_derived_difference_is_not_misrepresented_as_side_by_side(self):
         spec = self.rule_planner.interpret(

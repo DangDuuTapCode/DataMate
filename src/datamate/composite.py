@@ -80,6 +80,13 @@ class CompositePlanner:
         bundle_definitions = self.bundle_registry.resolve_many(self.FINANCIAL_METRICS)
         if bundle_definitions is None:
             return None
+        if any(
+            bundle.output_type != "number"
+            or not bundle.supports_period
+            or (spec.entity is not None and not bundle.supports_entity)
+            for bundle in bundle_definitions
+        ):
+            return None
 
         components = []
         for index, bundle in enumerate(bundle_definitions, start=1):
