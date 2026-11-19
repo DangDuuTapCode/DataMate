@@ -4,7 +4,7 @@
 
 - Repository: `pl2n/DataMate` (user fork only).
 - Branch: `feature/multi-bundle-query`.
-- Upstream `DangDuuTapCode/DataMate` is untouched; no PR is open.
+- Upstream `DangDuuTapCode/DataMate` has not been modified. An existing PR #1 from this fork branch to upstream `main` is open; this work did not create or modify it.
 - Changes are made through GitHub APIs. There is no local checkout, so no local `git status` or local test execution is claimed.
 - Current branch head at this checkpoint: `6fde7f8211ec488f860255da7bb7e5f6e7809cab`.
 
@@ -156,3 +156,11 @@ Important limitation: this resolver is discovery-only and is not yet connected t
 - This remains discovery-only; no JOIN execution or metric enablement was added.
 - Commits: `4212165cece5a9167095984865aca98ae6362890` (resolver fix), `fe799c55ac9757a64007fbe03ef0a9028e6ff1f2` (tests).
 - CI pending for this commit range. No local checkout or local test execution was used.
+
+
+## Follow-up verification — 2026-11-20
+
+- The first added edge-case run exposed two incorrect test fixtures (cardinality direction and an assertion that expected a longer path despite a direct edge). The fixtures were corrected in commit `2522abbafdccb6bb930d3f79f9f0f13af8302d4f`; no production-code change was needed for those fixture failures.
+- GitHub Actions run `44580683573` on `2522abb` executed 299 tests. 297 passed, including all relationship-path tests. The only two failures are the inherited repository-hygiene checks for the pre-existing `CODEX PROGRESS` artifact.
+- Run: https://github.com/pl2n/DataMate/actions/runs/44580683573
+- The existing upstream PR #1 is open from `pl2n/DataMate:feature/multi-bundle-query` into `DangDuuTapCode/DataMate:main`. It was not created or modified in this work item. GitHub currently reports `mergeable=false`; this should be rechecked before any merge decision.
