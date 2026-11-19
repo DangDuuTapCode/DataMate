@@ -26,7 +26,10 @@ The semantic catalog and relationship discovery currently recognize these exact 
 - purchase receipt IDs: `purchase_receipt_id`;
 - lot/batch IDs: `batch_id`;
 - branch IDs: `branch_id`;
-- device IMEIs: `imei`.
+- device IMEIs: `imei`;
+- order-line sequence: `order_line_number`, used only as part of the composite `order_id + order_line_number` key and never as a standalone join key.
+
+The schema catalog is now version `1.1.0`; relationship records expose `canonical_keys` and all participating column indices for composite links. The active rulebook may explicitly authorize exact duplicate order-line rows to be counted once. When that clause is present, relationship profiling deduplicates byte/value-identical rows before assessing the composite key; without the clause, duplicate keys remain ambiguous. This affects relationship evidence only and does not mutate source tables.
 
 The alias list is deliberately exact. Generic labels such as `STT`, `Mã tham chiếu`, `Mã`, and generic amount/date/status headers are not treated as keys. Identifier values are compared as exact strings; leading zeroes are preserved. Relationship evidence stores both table names and source filenames, so repeated worksheet names such as `Sheet1` remain distinct. Capability checks use the full `(table_name, source)` identity. Relationship results still require overlap and safe cardinality evidence. A detected or validated relationship is not an instruction to execute a join.
 
