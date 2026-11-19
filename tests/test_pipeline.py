@@ -174,7 +174,7 @@ class PipelineTests(unittest.TestCase):
 
         self.assertIsNotNone(candidate)
         self.assertEqual(candidate["answer"], 42000)
-        self.assertEqual(candidate["evidence"], ["details", "orders"])
+        self.assertEqual(candidate["evidence"], ["details+orders"])
 
     def test_revenue_drops_cancelled_orders(self):
         self.assertEqual(self.answer("doanh thu tháng này")["answer"], 40000)
