@@ -162,6 +162,8 @@ def _multirow_header(preamble, merge_ranges):
     for index in range(len(preamble) - 1):
         group_row_number, group_values = preamble[index]
         leaf_row_number, leaf_values = preamble[index + 1]
+        if leaf_row_number != group_row_number + 1:
+            continue
         if not leaf_values or not all(
             isinstance(value, str) and value.strip()
             for value in leaf_values.values()
@@ -171,7 +173,7 @@ def _multirow_header(preamble, merge_ranges):
         columns = sorted(leaf_values, key=_column_number)
         groups = []
         for reference in merge_ranges:
-            match = re.fullmatch(r"([A-Z]+)(\\d+):([A-Z]+)(\\d+)", reference.upper())
+            match = re.fullmatch(r"([A-Z]+)(\d+):([A-Z]+)(\d+)", reference.upper())
             if not match:
                 continue
             first_col, first_row, last_col, last_row = match.groups()
@@ -238,9 +240,9 @@ def _xlsx(path):
     """Read XLSX sheets one XML row at a time while retaining raw cell values.
 
     Leading report titles, filter rows, and blank rows are skipped by selecting
-    the widest complete text row among the first 32 worksheet rows as the
-    header. Incomplete schemas still fail closed; grouped labels are not
-    concatenated or guessed.
+    a conservative two-row merged-header pattern when explicit grouped ranges
+    are present, otherwise the widest complete text row among the first 32 rows.
+    Ambiguous grouped layouts are not reconstructed.
     """
     try:
         with zipfile.ZipFile(path) as archive:
