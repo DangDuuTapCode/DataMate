@@ -6,6 +6,7 @@ remain the source of truth for each component.
 """
 from dataclasses import dataclass, replace
 
+from .bundles import default_bundle_registry
 from .normalise import fold
 from .output import valid_record
 from .types import QueryPlan, QuerySpec
@@ -41,13 +42,11 @@ class CompositeQueryPlan:
 class CompositePlanner:
     """Build a composite plan only for explicitly supported combinations."""
 
-    FINANCIAL_COMPONENTS = (
-        ("revenue", "revenue"),
-        ("collected_amount", "collection"),
-    )
+    FINANCIAL_METRICS = ("revenue", "collected_amount")
 
-    def __init__(self, rule_planner):
+    def __init__(self, rule_planner, bundle_registry=None):
         self.rule_planner = rule_planner
+        self.bundle_registry = bundle_registry or default_bundle_registry()
 
     def plan(self, spec: QuerySpec | None) -> CompositeQueryPlan | None:
         if spec is None or spec.intent != "financial_metric_comparison":
@@ -78,13 +77,22 @@ class CompositePlanner:
         )):
             return None
 
+        bundle_definitions = self.bundle_registry.resolve_many(self.FINANCIAL_METRICS)
+        if bundle_definitions is None:
+            return None
+
         components = []
-        for index, (intent, bundle_id) in enumerate(self.FINANCIAL_COMPONENTS, start=1):
-            requirement = QueryRequirement(f"R{index}", intent, bundle_id)
+        for index, bundle in enumerate(bundle_definitions, start=1):
+            requirement = QueryRequirement(
+                requirement_id=f"R{index}",
+                metric=bundle.metric_id,
+                bundle_id=bundle.bundle_id,
+                expected_type=bundle.output_type,
+            )
             component_spec = replace(
                 spec,
-                intent=intent,
-                metric=intent,
+                intent=bundle.executor_intent,
+                metric=bundle.metric_id,
                 dimensions=(),
                 filters=(),
                 executable=True,
@@ -93,7 +101,7 @@ class CompositePlanner:
                 sort=None,
             )
             component_plan = QueryPlan(
-                intent=intent,
+                intent=bundle.executor_intent,
                 start=spec.time.start,
                 end=spec.time.end,
                 confidence=spec.confidence,

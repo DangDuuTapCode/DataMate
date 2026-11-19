@@ -542,3 +542,10 @@ The Public Submissions JSONL candidate is prepared and structurally verified, bu
 - Run `44546976679` executed 210 tests; all new relationship tests passed and 208 tests passed overall.
 - Two existing repository-hygiene checks still fail on `CODEX PROGRESS`. Do not bypass them.
 - Run: https://github.com/pl2n/DataMate/actions/runs/44546976679
+
+
+## Resume — 2026-11-19 — bundle registry
+
+- Read `tools/checkpoints/2026-11-19_BUNDLE_REGISTRY.md`.
+- `BundleRegistry` is an explicit allowlist. It currently contains only revenue and collected-amount definitions.
+- `CompositePlanner` resolves its current two metrics through the registry. Do not claim arbitrary multi-bundle question parsing is implemented.

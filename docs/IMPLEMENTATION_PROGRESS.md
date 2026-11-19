@@ -577,3 +577,12 @@ Review package: work/submission-build/public-test-submission-2026-11-15. JSONL S
 - GitHub Actions run `44546976679` executed 210 tests. All relationship discovery tests passed; 208 tests passed overall.
 - The only two failures remain pre-existing hygiene assertions on tracked `CODEX PROGRESS` (size limit and secret-like regex). No security checks were weakened.
 - Run: https://github.com/pl2n/DataMate/actions/runs/44546976679
+
+
+## 2026-11-19 — declarative metric bundle registry
+
+- Added `src/datamate/bundles.py` with explicit metric-to-bundle definitions, executor intent, output type, required capability labels, and rule-profile labels.
+- Updated `CompositePlanner` to resolve the current revenue/collection pair through the registry instead of embedding bundle IDs in the planner.
+- Unknown or duplicate metric requirements fail closed. Existing executor and verifier behavior is retained.
+- Added registry validation tests. This does not yet generalize question parsing beyond the fixed first financial pair.
+- Checkpoint: `tools/checkpoints/2026-11-19_BUNDLE_REGISTRY.md`.

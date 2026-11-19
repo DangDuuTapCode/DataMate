@@ -126,3 +126,10 @@ The alias registry is intentionally small. Expand it only with source-backed exa
 - This module reports evidence and does not execute joins. Business rules and query-specific join approval remain separate.
 
 A structurally validated key relationship is necessary but not sufficient to combine business metrics.
+
+
+## Bundle registry foundation
+
+`src/datamate/bundles.py` defines an explicit allowlist from metric IDs to logical bundle IDs, executor intents, output types, required capabilities, and rule-profile labels. The initial registry contains only the already-supported `revenue` and `collected_amount` components.
+
+The registry is declarative. It does not infer source tables or replace the existing metric executors.

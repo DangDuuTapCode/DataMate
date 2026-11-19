@@ -101,3 +101,14 @@ Test component ordering, shared context, unchanged single-metric behavior, impli
 The initial relationship validator lives in `src/datamate/relationships.py`. It requires shared, unambiguous canonical key mappings and exact key-value overlap. It reports cardinality and refuses partial child-key coverage, blank child keys, and many-to-many join risks. It does not execute joins.
 
 This is a prerequisite for future multi-bundle plans, not an authorization to join tables automatically. Metric-specific business rules and query-specific join approval remain mandatory.
+
+
+## Declarative bundle registry
+
+`src/datamate/bundles.py` now provides an explicit `BundleRegistry` mapping metric IDs to logical bundle IDs, existing executor intents, output types, required capability labels, and rule-profile labels.
+
+The first registry contains only:
+- `revenue` → `revenue` bundle → existing `revenue` executor.
+- `collected_amount` → `collection` bundle → existing `collected_amount` executor.
+
+`CompositePlanner` resolves the fixed first-slice pair through this registry. Unknown or duplicate requirements fail closed. This is a registry foundation, not yet general multi-intent extraction or dynamic bundle discovery.
