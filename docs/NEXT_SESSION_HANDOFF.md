@@ -287,3 +287,10 @@ No new Actions run is verified for this branch yet. Do not claim local tests or 
 - Added a list-valued cardinality regression.
 - Latest commits: `101a5089d1bd71c45b17516f5753a2e01f06f151`, `4e073e4f1a35a216179094ff0d63389f27829775`.
 - Current branch head verified at `4e073e4f1a35a216179094ff0d63389f27829775`; Actions has no run for this commit yet.
+
+
+### Feature-branch CI trigger
+
+- `.github/workflows/tests.yml` now triggers on pushes to `feature/**` and pull requests targeting `main` or `feature/**`.
+- Commit: `e74d43413c3966d7d80e6fbe8f985fb5b6ac4de9`.
+- No workflow run/status was surfaced for this push by the available GitHub queries. CI remains unverified; do not claim success. A subsequent PR targeting `main` will also trigger the workflow.
