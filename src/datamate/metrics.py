@@ -455,7 +455,7 @@ class Executor:
             )
             if order_key_col is None or not 0 <= order_key_col < len(table.headers):
                 continue
-        date_choices = self.rules.revenue_date_headers
+            date_choices = self.rules.revenue_date_headers
             if order_date_rule:
                 # "Ngày bán" is accepted as the order date only in a table
                 # whose role and unique invoice key are validated below.
