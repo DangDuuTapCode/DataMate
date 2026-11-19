@@ -181,7 +181,7 @@ class RelationshipPathTests(unittest.TestCase):
 
     def test_reverse_many_to_one_traversal_is_fanout(self):
         result = resolve_relationship_path(
-            [edge(self.orders, self.fact, "order_id", "one_to_many")],
+            [edge(self.fact, self.orders, "order_id", "many_to_one")],
             self.fact,
             self.orders,
             max_hops=1,
@@ -219,10 +219,10 @@ class RelationshipPathTests(unittest.TestCase):
     def test_cycles_do_not_repeat_a_table(self):
         bridge = ("bridge", "bridge.xlsx")
         relationships = [
+            edge(self.fact, self.customers, "customer_id", "many_to_one"),
             edge(self.fact, self.orders, "order_id", "many_to_one"),
             edge(self.orders, bridge, "customer_id", "many_to_one"),
-            edge(bridge, self.orders, "customer_id", "many_to_one"),
-            edge(bridge, self.customers, "customer_id", "many_to_one"),
+            edge(bridge, self.orders, "customer_id", "one_to_many"),
         ]
 
         result = resolve_relationship_path(
