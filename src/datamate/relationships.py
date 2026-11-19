@@ -46,6 +46,9 @@ class RelationshipCandidate:
     from_duplicate_excess: int
     to_duplicate_excess: int
     evidence: tuple[str, ...]
+    canonical_keys: tuple[str, ...] = ()
+    from_column_indices: tuple[int, ...] = ()
+    to_column_indices: tuple[int, ...] = ()
 
     def to_dict(self):
         return {
@@ -54,8 +57,11 @@ class RelationshipCandidate:
             "to_table": self.to_table,
             "to_source": self.to_source,
             "canonical_key": self.canonical_key,
+            "canonical_keys": list(self.canonical_keys or (self.canonical_key,)),
             "from_column_index": self.from_column_index,
             "to_column_index": self.to_column_index,
+            "from_column_indices": list(self.from_column_indices or (self.from_column_index,)),
+            "to_column_indices": list(self.to_column_indices or (self.to_column_index,)),
             "cardinality": self.cardinality,
             "status": self.status,
             "confidence": self.confidence,
@@ -102,9 +108,16 @@ def _key_profile(table, column_index):
     }
 
 
-def _candidate(left, right, field, left_index, right_index):
-    left_profile = _key_profile(left, left_index)
-    right_profile = _key_profile(right, right_index)
+def _candidate_from_profiles(
+    left,
+    right,
+    canonical_keys,
+    left_indices,
+    right_indices,
+    left_profile,
+    right_profile,
+    extra_evidence=(),
+):
     left_keys = left_profile["values"]
     right_keys = right_profile["values"]
     overlap = left_keys & right_keys
@@ -144,14 +157,17 @@ def _candidate(left, right, field, left_index, right_index):
         status, cardinality, confidence = "ambiguous", "many_to_many", 0.0
         evidence = ("canonical_key_match", "both_sides_have_duplicate_keys", "join_multiplication_risk")
 
+    canonical_keys = tuple(canonical_keys)
+    left_indices = tuple(left_indices)
+    right_indices = tuple(right_indices)
     return RelationshipCandidate(
         from_table=left.name,
         from_source=left.source,
         to_table=right.name,
         to_source=right.source,
-        canonical_key=field,
-        from_column_index=left_index,
-        to_column_index=right_index,
+        canonical_key=canonical_keys[0] if len(canonical_keys) == 1 else "+".join(canonical_keys),
+        from_column_index=left_indices[0],
+        to_column_index=right_indices[0],
         cardinality=cardinality,
         status=status,
         confidence=confidence,
@@ -166,11 +182,100 @@ def _candidate(left, right, field, left_index, right_index):
         to_blank_keys=right_profile["blank_count"],
         from_duplicate_excess=left_profile["duplicate_excess"],
         to_duplicate_excess=right_profile["duplicate_excess"],
-        evidence=evidence,
+        evidence=tuple(extra_evidence) + tuple(evidence),
+        canonical_keys=canonical_keys,
+        from_column_indices=left_indices,
+        to_column_indices=right_indices,
     )
 
 
-def discover_relationships(tables):
+def _candidate(left, right, field, left_index, right_index):
+    return _candidate_from_profiles(
+        left,
+        right,
+        (field,),
+        (left_index,),
+        (right_index,),
+        _key_profile(left, left_index),
+        _key_profile(right, right_index),
+    )
+
+
+def _composite_key_profile(table, column_indices, *, deduplicate_exact_rows):
+    rows = table.rows
+    deduplicated_count = 0
+    if deduplicate_exact_rows:
+        unique_rows, seen_rows = [], set()
+        for row in rows:
+            row_key = tuple((type(value).__name__, repr(value)) for value in row)
+            if row_key in seen_rows:
+                deduplicated_count += 1
+                continue
+            seen_rows.add(row_key)
+            unique_rows.append(row)
+        rows = unique_rows
+
+    counts = {}
+    blank_count = 0
+    for row in rows:
+        values = tuple(
+            str(row[index]).strip()
+            if index < len(row) and row[index] is not None
+            else ""
+            for index in column_indices
+        )
+        if any(not value for value in values):
+            blank_count += 1
+            continue
+        counts[values] = counts.get(values, 0) + 1
+    return {
+        "values": set(counts),
+        "counts": counts,
+        "blank_count": blank_count,
+        "row_count": len(rows),
+        "duplicate_excess": sum(count - 1 for count in counts.values()),
+        "deduplicated_rows": deduplicated_count,
+    }
+
+
+def _composite_candidate(
+    left,
+    right,
+    canonical_keys,
+    left_indices,
+    right_indices,
+    *,
+    deduplicate_identical_order_lines,
+):
+    left_profile = _composite_key_profile(
+        left, left_indices,
+        deduplicate_exact_rows=deduplicate_identical_order_lines,
+    )
+    right_profile = _composite_key_profile(
+        right, right_indices,
+        deduplicate_exact_rows=deduplicate_identical_order_lines,
+    )
+    deduplicated = (
+        left_profile["deduplicated_rows"] + right_profile["deduplicated_rows"]
+    )
+    extra_evidence = ("composite_key",)
+    if deduplicate_identical_order_lines:
+        extra_evidence += ("rulebook_exact_duplicate_rows_policy_applied",)
+        if deduplicated:
+            extra_evidence += ("exact_duplicate_rows_removed",)
+    return _candidate_from_profiles(
+        left,
+        right,
+        canonical_keys,
+        left_indices,
+        right_indices,
+        left_profile,
+        right_profile,
+        extra_evidence=extra_evidence,
+    )
+
+
+def discover_relationships(tables, *, deduplicate_identical_order_lines=False):
     """Return key-overlap/cardinality candidates; never perform a join."""
     schemas = [map_table_schema(table) for table in tables]
     results = []
@@ -179,11 +284,20 @@ def discover_relationships(tables):
         for right_index in range(left_index + 1, len(tables)):
             right = tables[right_index]
             right_fields = schemas[right_index].mapped_fields
-            shared_fields = sorted(
-                (set(left_fields) & set(right_fields)) & _RELATIONSHIP_KEYS
-            )
+            shared_mapped_fields = set(left_fields) & set(right_fields)
+            shared_fields = sorted(shared_mapped_fields & _RELATIONSHIP_KEYS)
             for field in shared_fields:
                 results.append(_candidate(
                     left, right, field, left_fields[field], right_fields[field]
+                ))
+            composite_fields = ("order_id", "order_line_number")
+            if set(composite_fields).issubset(shared_mapped_fields):
+                results.append(_composite_candidate(
+                    left,
+                    right,
+                    composite_fields,
+                    tuple(left_fields[field] for field in composite_fields),
+                    tuple(right_fields[field] for field in composite_fields),
+                    deduplicate_identical_order_lines=deduplicate_identical_order_lines,
                 ))
     return results
