@@ -44,3 +44,19 @@ Review how the existing executor discovers source columns and how rule profiles 
 GitHub Actions run 44554164419 executed 241 tests. 239 passed; the only two failures were the known inherited CODEX PROGRESS repository-hygiene checks (size limit and secret-like regex). All feature tests for field mapping/co-location, relationship validation, and planner gating passed. No hygiene checks were weakened and no upstream file was modified.
 
 Run: https://github.com/pl2n/DataMate/actions/runs/44554164419
+## Executor contract correction and production wiring
+
+Executor inspection showed that revenue has two supported source shapes: a
+direct line-grain table with date, line amount, and product identity, or a
+detail table linked to a unique dated/statused order table. The current flat
+required-field model cannot safely express that alternative, so the default
+revenue bundle intentionally declares no flat required-field list and remains
+unavailable due to unverified source-shape/business-rule capabilities.
+
+Collection requires payment-event amount and payment date in a payment-role
+table. Status is optional in current source discovery, so its absent/present
+policy remains an unverified capability. The main pipeline now builds a
+BusinessSchemaCatalog once per business and supplies it to that business's
+CompositePlanner, activating the gate in production.
+
+CI for this correction is pending.

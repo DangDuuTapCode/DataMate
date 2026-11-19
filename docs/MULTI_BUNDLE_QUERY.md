@@ -201,3 +201,4 @@ docs/BUNDLE_CAPABILITY_RESOLUTION.md.
 ### Bundle capability resolution CI
 
 GitHub Actions run 44554164419 executed 241 tests: 239 passed and the same two inherited CODEX PROGRESS hygiene checks failed. The new resolver and planner-gating tests passed; no feature-test failures were reported.
+The production entry point now builds and caches a BusinessSchemaCatalog per business and supplies it to CompositePlanner. Revenue intentionally has no flat field tuple until its alternative direct-line/detail-to-order source shapes are represented. Collection requires payment-event amount and payment date; payment-role and status policy remain unverified.

@@ -5,11 +5,11 @@ import time
 from pathlib import Path
 
 from .composite import CompositePlanner, verify_composite_with_reason
-from .schema_catalog import build_schema_catalog
 from .ingest import read_business, read_questions
 from .metrics import Executor
 from .output import write_record
 from .query_schema import query_spec_payload
+from .schema_catalog import build_schema_catalog
 from .split_rules import RulebookError, SplitRules
 from .timeparse import SolarLunarCalendar
 from .understanding import RulePlanner
@@ -17,7 +17,7 @@ from .verify import verify_with_reason
 
 
 def run(data_root, output, log_directory=None, business_filter=None):
-    root, engines = Path(data_root), {}
+    root, engines, composite_planners = Path(data_root), {}, {}
     try:
         solar_lunar_calendar = SolarLunarCalendar.read(root / "calendar.csv")
     except (OSError, ValueError):
@@ -30,7 +30,6 @@ def run(data_root, output, log_directory=None, business_filter=None):
     planner = RulePlanner(
         solar_lunar_calendar=solar_lunar_calendar, split_rules=split_rules
     )
-    composite_planners = {}
     selected_businesses = (
         {business_filter} if isinstance(business_filter, str)
         else set(business_filter or ())

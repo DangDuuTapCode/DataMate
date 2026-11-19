@@ -43,3 +43,9 @@ source validates them, the resolver reports the bundle as unavailable.
 The current revenue and collection calculations remain unchanged. No automatic
 joins are introduced. A bundle with no unverified rule capabilities can be
 resolved as available from exact field/relationship evidence alone.
+## Production integration
+
+The pipeline entry point builds a BusinessSchemaCatalog once per business and
+passes it to that business's CompositePlanner. Thus catalog-gated capability
+resolution is active in production planning, not merely exposed as an optional
+test-only API.
