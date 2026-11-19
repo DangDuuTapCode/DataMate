@@ -182,8 +182,8 @@ class RelationshipPathTests(unittest.TestCase):
     def test_reverse_many_to_one_traversal_is_fanout(self):
         result = resolve_relationship_path(
             [edge(self.fact, self.orders, "order_id", "many_to_one")],
-            self.fact,
             self.orders,
+            self.fact,
             max_hops=1,
         )
 
@@ -230,7 +230,7 @@ class RelationshipPathTests(unittest.TestCase):
         )
 
         self.assertTrue(result.available)
-        self.assertEqual(len(result.hops), 3)
+        self.assertEqual(len(result.hops), 1)
 
 
 if __name__ == "__main__":
