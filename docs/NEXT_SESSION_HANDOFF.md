@@ -6,7 +6,7 @@
 - This is the user's fork. Do not modify upstream `DangDuuTapCode/DataMate` and do not create a PR unless explicitly requested.
 - Work is performed through GitHub APIs; there is no local checkout. Do not claim a local `git status` or local test execution.
 - Commit completed milestones frequently and update this handoff/checkpoint.
-- Current verified branch head: `5bfeb494384584cfd9d32d04b4ecdb9e242fef2a` on `feature/multi-bundle-query` (confirmed identical to the branch ref).
+- The branch ref was verified at `5bfeb494384584cfd9d32d04b4ecdb9e242fef2a` before the later composite-relationship milestone; fetch the current branch head before the next code change.
 - Latest implementation baseline: `a6eade98f01e55326ae53bf6423800868b6f77b3`; continuation commits since then are documentation/checkpoint-only.
 
 ## Completed implementation
