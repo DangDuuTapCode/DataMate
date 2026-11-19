@@ -3,6 +3,7 @@ import datetime as dt
 from dataclasses import replace
 
 from datamate.metrics import Executor
+from datamate.bundle_capabilities import RevenueJoinContract
 from datamate.rules import classify_order_status
 from datamate.split_rules import SplitRules
 from datamate.timeparse import resolve
@@ -141,6 +142,39 @@ class PipelineTests(unittest.TestCase):
 
         self.assertIsNotNone(candidate)
         self.assertEqual(candidate["answer"], 42000)
+
+    def test_detail_to_order_executor_uses_approved_key_column_indices(self):
+        details = Table(
+            "details",
+            ["Mã đơn hàng", "Mã giao dịch", "Mã hàng", "Tên hàng", "Thành tiền"],
+            [["WRONG-LINE-KEY", "A", "SP-1", "Trà", 42000]],
+            source="details.xlsx",
+        )
+        orders = Table(
+            "orders",
+            ["Mã đơn hàng", "Mã giao dịch", "Ngày đặt", "Trạng thái đơn hàng"],
+            [["WRONG-ORDER-KEY", "A", "2026-03-01", "Hoàn thành"]],
+            source="orders.xlsx",
+        )
+        contract = RevenueJoinContract(
+            line_table=("details", "details.xlsx"),
+            order_table=("orders", "orders.xlsx"),
+            line_key_column_index=1,
+            order_key_column_index=1,
+        )
+        question = "doanh thu tháng này"
+        plan = self.planner.plan(question, "2026-03-04")
+
+        candidate = Executor(
+            [details, orders],
+            rules=SplitRules.test_defaults(),
+            revenue_source_shape="detail_to_order",
+            revenue_join_contract=contract,
+        ).execute(plan, question)
+
+        self.assertIsNotNone(candidate)
+        self.assertEqual(candidate["answer"], 42000)
+        self.assertEqual(candidate["evidence"], ["details", "orders"])
 
     def test_revenue_drops_cancelled_orders(self):
         self.assertEqual(self.answer("doanh thu tháng này")["answer"], 40000)
