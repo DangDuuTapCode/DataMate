@@ -157,3 +157,11 @@ Next: audit public-test questions against the 14 input shapes, then build minima
 - Commits: `5c04d9b8498133e28170108ed3ba7fe8ec58301a` (implementation), `783631e99ed584fee284564c126b1275ca453edf` (tests).
 - No new Actions result is verified for this continuation yet. The old checked baseline remains run `44581612778` on `77460ea68fcb1750b8a534e87727cb7e99d8e52f` (310 tests, 308 passed; two inherited `CODEX PROGRESS` hygiene failures). No local checkout or local test execution was used.
 - The fact-join contract remains structural only. Do not connect it to Planner/Executor until one real query family has explicit, reviewed evidence for fact grain, measure semantics, additive behavior, join path, keys, and aggregation stage.
+
+
+### Final malformed-cardinality guard
+
+- `_valid_hop` now checks that cardinality is a string before membership testing, so malformed unhashable values also fail closed rather than raising.
+- Regression coverage includes a list-valued cardinality.
+- Latest commits: `101a5089d1bd71c45b17516f5753a2e01f06f151` (guard), `4e073e4f1a35a216179094ff0d63389f27829775` (test).
+- Latest branch head verified: `4e073e4f1a35a216179094ff0d63389f27829775`. No workflow run is currently associated with this commit; CI has not yet been verified.
