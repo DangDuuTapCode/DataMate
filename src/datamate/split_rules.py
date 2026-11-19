@@ -30,6 +30,7 @@ class SplitRules:
     revenue_amount_basis: str | None = None
     revenue_period_basis: str | None = None
     collection_status_policy: str | None = None
+    deduplicate_identical_order_lines: bool = False
 
     @classmethod
     def from_text(cls, text):
@@ -136,6 +137,10 @@ class SplitRules:
             ranking_default = None
 
         whole = fold(text)
+        deduplicate_identical_order_lines = (
+            "hai dong cua cung mot don giong nhau o moi o" in whole
+            and "loi xuat file, tinh mot lan" in whole
+        )
         if "theo ma tang dan" in whole or "by code ascending" in whole:
             tie_breaker = "code"
         elif "khong co ma thi theo ten" in whole or "without a code, by name" in whole:
@@ -173,6 +178,7 @@ class SplitRules:
             revenue_amount_basis=amount_basis,
             revenue_period_basis=period_basis,
             collection_status_policy=collection_status_policy,
+            deduplicate_identical_order_lines=deduplicate_identical_order_lines,
         )
 
     @classmethod
@@ -206,4 +212,5 @@ class SplitRules:
             revenue_amount_basis="line_amount_after_line_discount",
             revenue_period_basis="order_date",
             collection_status_policy=None,
+            deduplicate_identical_order_lines=True,
         )
