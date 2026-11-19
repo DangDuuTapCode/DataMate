@@ -36,6 +36,37 @@ class BusinessSchemaCatalogTests(unittest.TestCase):
         self.assertEqual(payload["business_id"], "biz_synthetic")
         self.assertEqual(payload["relationships"][0]["status"], "validated")
 
+    def test_catalog_applies_only_explicit_rulebook_duplicate_line_policy(self):
+        lots = Table(
+            "chi_tiet_don_lo",
+            ["Mã hóa đơn", "Số thứ tự", "Mã lô"],
+            [["A1", 1, "L1"], ["A1", 1, "L2"]],
+            "pos.sqlite",
+        )
+        details = Table(
+            "chi_tiet_don",
+            ["Mã hóa đơn", "Số thứ tự", "Mã hàng hóa"],
+            [["A1", 1, "P1"], ["A1", 1, "P1"]],
+            "pos.sqlite",
+        )
+
+        conservative = build_schema_catalog([lots, details])
+        reviewed = build_schema_catalog(
+            [lots, details], deduplicate_identical_order_lines=True
+        )
+        conservative_link = next(
+            item for item in conservative.relationships
+            if item.canonical_key == "order_id+order_line_number"
+        )
+        reviewed_link = next(
+            item for item in reviewed.relationships
+            if item.canonical_key == "order_id+order_line_number"
+        )
+
+        self.assertEqual(conservative_link.status, "ambiguous")
+        self.assertEqual(reviewed_link.status, "validated")
+        self.assertEqual(reviewed_link.cardinality, "many_to_one")
+
     def test_same_table_name_can_be_resolved_by_source(self):
         first = Table("orders", ["Mã đơn"], [["A1"]], "branch_a.csv")
         second = Table("orders", ["Mã khách hàng"], [["C1"]], "branch_b.csv")
