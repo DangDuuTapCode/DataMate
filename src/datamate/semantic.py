@@ -123,8 +123,18 @@ _EXACT_ALIASES = {
 # known. Keep them out of global aliases to avoid guessing what a generic
 # voucher/transaction number represents in unrelated files.
 _SOURCE_CONTEXT_ALIASES = (
-    ("chi tiet don", {"so ct": "order_id"}),
-    ("don hang", {"so phieu": "order_id"}),
+    ("chi tiet don", {
+        "so ct": "order_id",
+        "tien ban": "sales_line_amount",
+    }),
+    ("don hang", {
+        "so phieu": "order_id",
+        "ngay ban": "order_date",
+        "tinh trang don": "order_status",
+    }),
+    ("khach hang", {
+        "nhom": "customer_group",
+    }),
     ("thanh toan", {"ma giao dich": "order_id"}),
 )
 
