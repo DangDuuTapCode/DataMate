@@ -96,7 +96,7 @@ class CompositePlanner:
                 dimensions=(),
                 filters=(),
                 executable=True,
-                evidence=tuple(spec.evidence) + (f"component:{intent}",),
+                evidence=tuple(spec.evidence) + (f"component:{bundle.metric_id}",),
                 unsupported_reason=None,
                 sort=None,
             )
