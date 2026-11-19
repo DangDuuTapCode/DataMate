@@ -143,6 +143,15 @@ def _candidate_from_profiles(
         if not left_unmatched and left_profile["blank_count"] == 0:
             status, cardinality, confidence = "validated", "many_to_one", 1.0
             evidence = ("canonical_key_match", "right_side_unique", "all_left_keys_match")
+        elif not left_unmatched:
+            # Blank source keys cannot match a dimension row. A LEFT JOIN
+            # preserves those source-grain rows as null-dimension records;
+            # the path/contract layers must carry and enforce that requirement.
+            status, cardinality, confidence = "validated_left_join", "many_to_one", 0.95
+            evidence = (
+                "canonical_key_match", "right_side_unique",
+                "all_nonblank_left_keys_match", "blank_source_keys_require_left_join",
+            )
         else:
             status, cardinality, confidence = "rejected", "many_to_one", 0.0
             evidence = ("canonical_key_match", "right_side_unique", "unmatched_or_blank_left_keys")
