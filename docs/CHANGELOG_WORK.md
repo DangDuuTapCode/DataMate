@@ -340,3 +340,13 @@
 - Added synthetic executor tests covering guest rows and failure cases.
 - Actions run `44587842656`: 328 tests passed.
 - Public query/runtime integration remains deferred.
+
+
+### Customer-group revenue share runtime
+
+- Implemented the `customer_group_revenue_share` intent for `biz_129` through the public question pipeline.
+- Added source-scoped semantic aliases for line amount, order date/status, and customer group.
+- Added group parsing for observed labels `thân thiết`, `lẻ`, and `sỉ`, with business-ID scoping and fail-closed unknown groups.
+- Added rulebook-driven order filters, duplicate line handling, and whole-shop denominator semantics that retain guest orders through LEFT JOIN.
+- Added synthetic and full-main integration tests; Actions run `44594130571` reports 352 passing tests on commit `59a7444cb530801e59018149f653bcbdfd76b4e7`.
+- Added independent biz_129 archive audit values in `docs/CONTEST_BIZ129_JOIN_CASE.md`.
