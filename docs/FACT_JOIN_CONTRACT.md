@@ -40,3 +40,17 @@ This is a structural prototype, not a runtime feature:
 Synthetic tests cover a unique two-hop many-to-one chain, exact source/key-index serialization, fan-out rejection, ambiguous path rejection, endpoint mismatch, aggregation-stage rejection, invalid measure indices, unsupported join types, missing declarations, unknown cardinality, and manually constructed cyclic paths.
 
 The next step is to connect this contract to one real, rulebook-backed query family only after its source grain and measure semantics are explicitly established. Do not generalize this prototype into arbitrary JOIN execution.
+
+
+## Validation hardening — 2026-11-20
+
+The builder now independently checks the path-resolution envelope rather than trusting only its `unique_safe` status:
+
+- The resolution must report exactly one candidate path.
+- The hop collection must be an immutable tuple of typed path-hop records.
+- Every hop must contain valid, distinct source-qualified endpoints.
+- Canonical key names must be nonblank and unique, with tuple-shaped physical index lists of matching lengths.
+- The fanout flag must be the literal boolean `False`; cardinality must be a supported string value.
+- Unsupported or malformed join-type values return unavailable instead of raising a type error.
+
+This is defense in depth for manually constructed or malformed resolution objects. It does not broaden join execution or establish business semantics.
