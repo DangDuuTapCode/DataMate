@@ -3,9 +3,10 @@
 ## Repository
 
 - Work only in fork `pl2n/DataMate`, branch `feature/multi-bundle-query`.
+- Current implementation/test head: `2522abbafdccb6bb930d3f79f9f0f13af8302d4f`; docs/checkpoint commits follow it.
 - Latest implementation code head: `21469c4be7a3d93e5bd2befb879315f3c9c36afd`; branch ref was last checked at `179f5c3383aa456d88ee08f900daca868805c403` before final documentation-only synchronization. Fetch current branch head before the next code change.
 - Branch head was verified at `04881307f968d69a6a6f64caa5c25b5211bb6ef9` before the composite-order-line milestone; fetch the current branch head before the next code change.
-- Do not modify upstream `DangDuuTapCode/DataMate`; do not create a PR unless requested.
+- Do not modify upstream `DangDuuTapCode/DataMate`. An existing PR #1 is open to upstream `main`; do not create a duplicate or merge it unless requested.
 - GitHub API workflow only; no local checkout, local git status, or local test execution.
 - Latest implementation baseline: `a6eade98f01e55326ae53bf6423800868b6f77b3`.
 - Latest documentation commits: `bc01731c4e445841bbff72ab32b74bbcc18dfb6e` (provenance guide) and `382a75c33fb0bf51617dde33cee1ba172854ef65` (handoff).
@@ -114,3 +115,11 @@ Next: audit public-test questions against the 14 input shapes, then build minima
 - Added six synthetic regressions for exact cap, overflow, reverse traversal fanout, hop limit, invalid limits, and cycles.
 - Commits: 4212165cece5a9167095984865aca98ae6362890 and fe799c55ac9757a64007fbe03ef0a9028e6ff1f2.
 - CI pending; no local test execution.
+
+
+## Follow-up verification — 2026-11-20
+
+- The first added edge-case run exposed two incorrect test fixtures (cardinality direction and an assertion that expected a longer path despite a direct edge). The fixtures were corrected in commit `2522abbafdccb6bb930d3f79f9f0f13af8302d4f`; no production-code change was needed for those fixture failures.
+- GitHub Actions run `44580683573` on `2522abb` executed 299 tests. 297 passed, including all relationship-path tests. The only two failures are the inherited repository-hygiene checks for the pre-existing `CODEX PROGRESS` artifact.
+- Run: https://github.com/pl2n/DataMate/actions/runs/44580683573
+- The existing upstream PR #1 is open from `pl2n/DataMate:feature/multi-bundle-query` into `DangDuuTapCode/DataMate:main`. It was not created or modified in this work item. GitHub currently reports `mergeable=false`; this should be rechecked before any merge decision.
