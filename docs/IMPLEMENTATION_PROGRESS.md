@@ -146,3 +146,13 @@ Seven synthetic tests cover a safe two-hop many-to-one chain, fanout rejection, 
 GitHub Actions run `44578825930` on commit `68564ac356af305e63aabe1703ce76d98aadb08f`: 293 tests executed, 291 passed. All feature tests passed. The only two failures remain the inherited `CODEX PROGRESS` artifact findings in `test_no_large_files` and `test_no_secret_like_strings`. No local checkout or local test execution was used.
 
 Important limitation: this resolver is discovery-only and is not yet connected to the query planner or Executor. It must not be described as general multi-hop JOIN execution.
+
+
+## 2026-11-20 — relationship path candidate-bound hardening
+
+- Fixed an off-by-one condition in `resolve_relationship_path`: reaching exactly `max_candidates` is no longer treated as overflow. The resolver now observes one additional path before reporting that the configured bound was exceeded.
+- Invalid limits (non-positive, boolean, or non-integer) and malformed/blank table identities now fail closed as `invalid_request` instead of raising comparison/type errors or creating weak graph nodes.
+- Added six synthetic regressions: exact candidate limit, candidate-limit overflow, reverse-direction fanout, hop-limit enforcement, invalid limits, and cycle handling.
+- This remains discovery-only; no JOIN execution or metric enablement was added.
+- Commits: `4212165cece5a9167095984865aca98ae6362890` (resolver fix), `fe799c55ac9757a64007fbe03ef0a9028e6ff1f2` (tests).
+- CI pending for this commit range. No local checkout or local test execution was used.
