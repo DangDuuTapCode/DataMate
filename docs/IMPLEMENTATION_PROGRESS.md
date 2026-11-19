@@ -617,3 +617,14 @@ Review package: work/submission-build/public-test-submission-2026-11-15. JSONL S
 - GitHub Actions run `44548265235` executed 219 tests. All catalog integration tests passed; 217 tests passed overall.
 - The only two failures remain the pre-existing hygiene checks against tracked `CODEX PROGRESS` (size limit and secret-like regex). No checks were disabled.
 - Run: https://github.com/pl2n/DataMate/actions/runs/44548265235
+
+
+## 2026-11-19 — requirement extraction layer
+
+- Added `src/datamate/requirements.py` to translate recognized composite QuerySpec intents into explicit metric requirements.
+- The first rule maps only `financial_metric_comparison` to revenue and collected-amount requirements.
+- `CompositePlanner` now consumes the extraction result and resolves each requirement through the bundle registry.
+- Single intents, unknown intents, unresolved bundles, non-numeric output types, and unsupported comparison modes fail closed.
+- No arbitrary conjunction splitting or new metric execution was introduced.
+- Added extraction tests for resolved, unsupported, and unresolved cases.
+- Checkpoint: `tools/checkpoints/2026-11-19_REQUIREMENT_EXTRACTION.md`.

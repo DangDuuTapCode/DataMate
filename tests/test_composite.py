@@ -1,10 +1,49 @@
 import unittest
 
 from datamate.bundles import BundleDefinition, BundleRegistry
+from datamate.requirements import RequirementExtractor
 from datamate.composite import CompositePlanner, verify_composite_with_reason
 from datamate.metrics import Executor
 from datamate.types import Table
 from datamate.understanding import RulePlanner
+
+
+class RequirementExtractorTests(unittest.TestCase):
+    def test_financial_comparison_resolves_two_independent_requirements(self):
+        planner = RulePlanner()
+        spec = planner.interpret(
+            "doanh thu và tiền thực thu tháng này", "2026-03-04", "biz_synthetic"
+        )
+        extraction = RequirementExtractor().extract(spec)
+
+        self.assertEqual(extraction.status, "resolved")
+        self.assertEqual(extraction.comparison_type, "side_by_side")
+        self.assertEqual(
+            [(item.requirement_id, item.metric, item.bundle_id) for item in extraction.requirements],
+            [("R1", "revenue", "revenue"), ("R2", "collected_amount", "collection")],
+        )
+        self.assertEqual(extraction.requirements[1].executor_intent, "collected_amount")
+        self.assertEqual(extraction.requirements[1].rule_profile, "collection_rules")
+
+    def test_single_metric_and_unknown_intents_are_not_composites(self):
+        planner = RulePlanner()
+        single = planner.interpret("doanh thu tháng này", "2026-03-04", "biz_synthetic")
+        unknown = None
+        extractor = RequirementExtractor()
+        self.assertEqual(extractor.extract(single).status, "unsupported")
+        self.assertEqual(extractor.extract(unknown).reason, "missing_query_spec")
+
+    def test_unavailable_bundle_makes_extraction_unresolved(self):
+        registry = BundleRegistry((
+            BundleDefinition("revenue", "revenue", "revenue"),
+        ))
+        planner = RulePlanner()
+        spec = planner.interpret(
+            "doanh thu và tiền thực thu tháng này", "2026-03-04", "biz_synthetic"
+        )
+        extraction = RequirementExtractor(registry).extract(spec)
+        self.assertEqual(extraction.status, "unresolved")
+        self.assertEqual(extraction.reason, "bundle_not_resolved")
 
 
 class CompositePlannerTests(unittest.TestCase):

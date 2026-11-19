@@ -142,3 +142,10 @@ The registry is declarative. It does not infer source tables or replace the exis
 - Table schemas are addressed by both table name and source file; duplicate table names across workbooks/files are not silently collapsed.
 - Relationship entries retain their own key, cardinality, coverage, and evidence metadata.
 - The catalog is metadata-only. It does not mutate source tables, execute joins, or enable metrics.
+
+
+## Requirement extraction boundary
+
+`src/datamate/requirements.py` separates recognized multi-metric intent translation from composite plan compilation. The first extractor rule maps only the existing `financial_metric_comparison` QuerySpec to two requirements: `revenue` and `collected_amount`.
+
+It does not split arbitrary text on `và` / `and`, and it does not treat a single-metric QuerySpec as a composite.

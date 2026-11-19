@@ -6,19 +6,11 @@ remain the source of truth for each component.
 """
 from dataclasses import dataclass, replace
 
-from .bundles import default_bundle_registry
+from .requirements import RequirementExtractor
 from .normalise import fold
 from .output import valid_record
 from .types import QueryPlan, QuerySpec
 from .verify import verify_with_reason
-
-
-@dataclass(frozen=True)
-class QueryRequirement:
-    requirement_id: str
-    metric: str
-    bundle_id: str
-    expected_type: str = "number"
 
 
 @dataclass(frozen=True)
@@ -42,11 +34,9 @@ class CompositeQueryPlan:
 class CompositePlanner:
     """Build a composite plan only for explicitly supported combinations."""
 
-    FINANCIAL_METRICS = ("revenue", "collected_amount")
-
     def __init__(self, rule_planner, bundle_registry=None):
         self.rule_planner = rule_planner
-        self.bundle_registry = bundle_registry or default_bundle_registry()
+        self.requirement_extractor = RequirementExtractor(bundle_registry)
 
     def plan(self, spec: QuerySpec | None) -> CompositeQueryPlan | None:
         if spec is None or spec.intent != "financial_metric_comparison":
@@ -77,38 +67,37 @@ class CompositePlanner:
         )):
             return None
 
-        bundle_definitions = self.bundle_registry.resolve_many(self.FINANCIAL_METRICS)
-        if bundle_definitions is None:
+        extraction = self.requirement_extractor.extract(spec)
+        if extraction.status != "resolved" or len(extraction.requirements) < 2:
+            return None
+        if extraction.comparison_type != "side_by_side":
             return None
         if any(
-            bundle.output_type != "number"
-            or not bundle.supports_period
-            or (spec.entity is not None and not bundle.supports_entity)
-            for bundle in bundle_definitions
+            requirement.expected_type != "number"
+            for requirement in extraction.requirements
         ):
             return None
 
         components = []
-        for index, bundle in enumerate(bundle_definitions, start=1):
-            requirement = QueryRequirement(
-                requirement_id=f"R{index}",
-                metric=bundle.metric_id,
-                bundle_id=bundle.bundle_id,
-                expected_type=bundle.output_type,
-            )
+        for requirement in extraction.requirements:
+            bundle = self.requirement_extractor.bundle_registry.resolve(requirement.metric)
+            if bundle is None or not bundle.supports_period:
+                return None
+            if spec.entity is not None and not bundle.supports_entity:
+                return None
             component_spec = replace(
                 spec,
-                intent=bundle.executor_intent,
-                metric=bundle.metric_id,
+                intent=requirement.executor_intent,
+                metric=requirement.metric,
                 dimensions=(),
                 filters=(),
                 executable=True,
-                evidence=tuple(spec.evidence) + (f"component:{bundle.metric_id}",),
+                evidence=tuple(spec.evidence) + (f"component:{requirement.metric}",),
                 unsupported_reason=None,
                 sort=None,
             )
             component_plan = QueryPlan(
-                intent=bundle.executor_intent,
+                intent=requirement.executor_intent,
                 start=spec.time.start,
                 end=spec.time.end,
                 confidence=spec.confidence,

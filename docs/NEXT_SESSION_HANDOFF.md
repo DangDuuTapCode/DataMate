@@ -576,3 +576,10 @@ The Public Submissions JSONL candidate is prepared and structurally verified, bu
 - Run `44548265235` executed 219 tests; all schema catalog tests passed and 217 tests passed overall.
 - Two pre-existing `CODEX PROGRESS` hygiene failures remain.
 - Run: https://github.com/pl2n/DataMate/actions/runs/44548265235
+
+
+## Resume — 2026-11-19 — requirement extraction
+
+- Read `tools/checkpoints/2026-11-19_REQUIREMENT_EXTRACTION.md`.
+- `RequirementExtractor` translates the existing `financial_metric_comparison` QuerySpec into two independent metric requirements.
+- It does not split arbitrary conjunctions or enable other metric combinations yet.

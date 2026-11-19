@@ -126,3 +126,10 @@ CI run `44547696247`: 216 tests, 214 passed; the only two failures are the pre-e
 The versioned `BusinessSchemaCatalog` now combines exact semantic column mappings with key/cardinality relationship evidence. It keeps table identity source-qualified and serializes all mapping and relationship evidence. This catalog is a metadata layer only; it does not perform joins or make metrics executable.
 
 CI run `44548265235`: 219 tests, 217 passed. The only two failures are pre-existing repository-hygiene checks on `CODEX PROGRESS`.
+
+
+## Requirement extraction
+
+`src/datamate/requirements.py` separates requirement extraction from plan compilation. The initial allowlisted rule translates the already-recognized `financial_metric_comparison` QuerySpec into two independent requirements: `revenue` and `collected_amount`.
+
+The composite planner consumes these requirements, resolves each through `BundleRegistry`, and creates separate existing executor plans. Single intents and unknown/unresolved requirements do not enter the composite path. Arbitrary conjunction splitting remains explicitly unsupported.
