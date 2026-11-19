@@ -10,7 +10,7 @@ class BusinessSchemaCatalog:
     business_id: str | None
     table_schemas: tuple
     relationships: tuple
-    schema_version: str = "1.0.0"
+    schema_version: str = "1.1.0"
 
     def get_table_schema(self, table_name, source=None):
         matches = [
