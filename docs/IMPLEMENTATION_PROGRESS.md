@@ -127,3 +127,22 @@ Regression coverage:
 - Duplicate detail rows are counted once only when the active rulebook explicitly authorizes it; otherwise joined revenue abstains.
 
 CI on commit `21469c4be7a3d93e5bd2befb879315f3c9c36afd`: 286 tests, 284 passed. The only two failures remain inherited repository-hygiene checks for the existing `CODEX PROGRESS` artifact (`test_no_large_files` and `test_no_secret_like_strings`). All feature tests passed.
+
+
+## Conservative multi-hop relationship path discovery
+
+Added `src/datamate/relationship_paths.py` and `tests/test_relationship_paths.py`.
+
+The resolver:
+- traverses only validated relationship edges;
+- uses exact source-qualified table identities;
+- preserves single or composite canonical keys and physical column indices;
+- evaluates direction-aware cardinality and explicitly rejects one-to-many fanout;
+- accepts only a unique path within a bounded hop count;
+- returns explicit `no_path`, `ambiguous`, `fanout_risk`, `invalid_request`, or `unique_safe` outcomes.
+
+Seven synthetic tests cover a safe two-hop many-to-one chain, fanout rejection, competing paths, unvalidated edges, source-file identity, composite key preservation, and invalid arguments.
+
+GitHub Actions run `44578825930` on commit `68564ac356af305e63aabe1703ce76d98aadb08f`: 293 tests executed, 291 passed. All feature tests passed. The only two failures remain the inherited `CODEX PROGRESS` artifact findings in `test_no_large_files` and `test_no_secret_like_strings`. No local checkout or local test execution was used.
+
+Important limitation: this resolver is discovery-only and is not yet connected to the query planner or Executor. It must not be described as general multi-hop JOIN execution.
