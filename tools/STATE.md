@@ -551,3 +551,11 @@ python qstats.py public_test/ 15
 - Component verification reuses the existing verifier. Any required component failure abstains the entire composite.
 - Added synthetic tests and architecture documentation. CI workflow has been added; verification is pending.
 - Known non-goals: arbitrary conjunction splitting, derived differences, cross-period comparisons, dynamic bundle discovery, and partial composite answers.
+
+
+### CI status — 2026-11-19
+
+- Implementation commit: `77dbd90e204356211c70a2cf56f7f52249cde01a`.
+- GitHub Actions ran 197 tests. Composite and functional tests passed; 2 hygiene tests failed against pre-existing tracked `CODEX PROGRESS` (over 1 MB and matching secret-like regex). The file was not modified.
+- Do not mark the branch verified until the archive/hygiene issue is resolved without weakening secret scanning, then the full suite passes.
+- Workflow: https://github.com/pl2n/DataMate/actions/runs/44541834717

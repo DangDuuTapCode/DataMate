@@ -247,3 +247,9 @@
 - Routed the recognized revenue + collected-amount question through two independent existing metric executions.
 - Added synthetic tests for shared period context, unsupported cases, successful table output, and component failure abstention.
 - Added ingestion and multi-bundle architecture documentation plus a GitHub Actions test workflow. CI verification pending.
+
+
+### CI follow-up — 2026-11-19
+
+- The feature-branch workflow ran 197 tests. The newly added composite tests and functional tests passed; two repository-hygiene checks failed on the pre-existing `CODEX PROGRESS` file (size limit and secret-like pattern match).
+- No attempt was made to weaken the hygiene checks or remove the pre-existing file. See the checkpoint for details.

@@ -525,3 +525,11 @@ Review package: work/submission-build/public-test-submission-2026-11-15. JSONL S
 - Existing single-metric executors and verifier are reused per component; composite verification is all-or-nothing.
 - Added synthetic regression coverage and a feature-branch GitHub Actions test workflow.
 - CI verification is pending; no local test execution is claimed. See `tools/checkpoints/2026-11-19_MULTI_BUNDLE_VERTICAL_SLICE.md`.
+
+
+### CI result — commit `77dbd90e204356211c70a2cf56f7f52249cde01a`
+
+- GitHub Actions executed 197 tests. The new composite tests and other functional tests passed; the job failed only in two existing repository-hygiene checks.
+- Both failures identify the pre-existing tracked file `CODEX PROGRESS`: it exceeds the 1,000,000-byte hygiene limit and contains strings matching the repository's secret-like regex scan.
+- The file predates this implementation and was not modified. Do not weaken the secret scan or delete the file as a shortcut. Resolve its archival/storage policy separately, then rerun the complete suite.
+- Workflow: https://github.com/pl2n/DataMate/actions/runs/44541834717

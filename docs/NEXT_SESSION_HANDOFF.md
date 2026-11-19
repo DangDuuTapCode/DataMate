@@ -498,3 +498,10 @@ The Public Submissions JSONL candidate is prepared and structurally verified, bu
 - First supported composite: same-period side-by-side revenue + collected amount. It reuses `Executor.execute_with_reason` and `verify_with_reason` for each component.
 - Any required component failure abstains the entire composite. Arithmetic differences, cross-period comparisons, arbitrary conjunction splitting, and dynamic bundle discovery remain unsupported.
 - Inspect GitHub Actions before treating the work as verified. Do not claim tests passed until the run is green.
+
+
+### CI follow-up — 2026-11-19
+
+- Workflow run for implementation commit `77dbd90e204356211c70a2cf56f7f52249cde01a`: 197 tests executed; functional/composite tests passed, but the job failed in two pre-existing hygiene assertions against tracked `CODEX PROGRESS` (oversized file and secret-like regex hit).
+- This file was not changed. Do not suppress the secret scan or remove the artifact without maintainer review. Resolve the archive policy and rerun all tests.
+- Run URL: https://github.com/pl2n/DataMate/actions/runs/44541834717
