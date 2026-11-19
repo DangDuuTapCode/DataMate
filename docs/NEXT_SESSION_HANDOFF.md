@@ -193,3 +193,24 @@ Verification baseline before these changes: Actions run `44565561293` on `5a6085
 - `docs/BUNDLE_CAPABILITY_RESOLUTION.md`
 - `docs/IMPLEMENTATION_PROGRESS.md`
 - `tools/STATE.md`
+
+
+## Multi-hop relationship path discovery milestone (2026-11-20)
+
+Current branch before this documentation update: `68564ac356af305e63aabe1703ce76d98aadb08f`.
+
+Added:
+- `src/datamate/relationship_paths.py`: bounded graph traversal over validated relationship candidates.
+- `tests/test_relationship_paths.py`: seven synthetic regression tests.
+
+Safety properties:
+- Exact `(table_name, source_filename)` node identity.
+- Validated edges only.
+- Preserve canonical composite-key names and both endpoint column-index tuples.
+- Direction-aware cardinality: many-to-one and one-to-one preserve current grain; one-to-many traversal returns `fanout_risk`.
+- Only one unique path within the hop limit is accepted. Competing paths return `ambiguous`; missing paths return `no_path`.
+- Path discovery does not perform joins or enable a metric bundle.
+
+CI run `44578825930`: 293 tests, 291 passed. All new feature tests passed; the two existing repository hygiene checks still fail only on the inherited `CODEX PROGRESS` artifact. Run: https://github.com/pl2n/DataMate/actions/runs/44578825930
+
+Next engineering step: design a query-specific execution contract on top of the path result. It must name the fact table/grain, aggregation stage, exact path, and whether any fanout is semantically permitted. Keep multi-hop execution disabled until that contract and a realistic synthetic fixture prove there is no metric multiplication. Do not infer polymorphic document references from a shared raw ID alone.
