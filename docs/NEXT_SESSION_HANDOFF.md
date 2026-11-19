@@ -603,3 +603,10 @@ The Public Submissions JSONL candidate is prepared and structurally verified, bu
 
 - Run `44549585604`: 226 tests, no code/test errors; 224 passed. Only the two pre-existing `CODEX PROGRESS` hygiene checks fail.
 - Run: https://github.com/pl2n/DataMate/actions/runs/44549585604
+
+
+## Resume — 2026-11-19 — composite rule registry
+
+- Read `tools/checkpoints/2026-11-19_COMPOSITE_RULE_REGISTRY.md`.
+- Requirement extraction is driven by `CompositeRuleRegistry`; default rule remains revenue + collected amount only.
+- Additional combinations require an explicit rule and registered bundles. Natural-language parsing has not been generalized to arbitrary conjunctions.

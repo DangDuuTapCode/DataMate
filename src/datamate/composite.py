@@ -39,12 +39,14 @@ class CompositeQueryPlan:
 class CompositePlanner:
     """Build a composite plan only for explicitly supported combinations."""
 
-    def __init__(self, rule_planner, bundle_registry=None):
+    def __init__(self, rule_planner, bundle_registry=None, composite_rule_registry=None):
         self.rule_planner = rule_planner
-        self.requirement_extractor = RequirementExtractor(bundle_registry)
+        self.requirement_extractor = RequirementExtractor(
+            bundle_registry, composite_rule_registry
+        )
 
     def plan(self, spec: QuerySpec | None) -> CompositeQueryPlan | None:
-        if spec is None or spec.intent != "financial_metric_comparison":
+        if spec is None:
             return None
         if spec.time is None or spec.time.kind != "period":
             return None

@@ -1,7 +1,11 @@
 import unittest
 
 from datamate.bundles import BundleDefinition, BundleRegistry
-from datamate.requirements import RequirementExtractor
+from datamate.requirements import (
+    CompositeRule,
+    CompositeRuleRegistry,
+    RequirementExtractor,
+)
 from datamate.composite import CompositePlanner, verify_composite_with_reason
 from datamate.metrics import Executor
 from datamate.types import Table
@@ -16,6 +20,25 @@ from datamate.requirements import (
     validate_requirement_extraction_payload,
 )
 from datamate.understanding import RulePlanner
+
+
+class CompositeRuleRegistryTests(unittest.TestCase):
+    def test_rule_registry_rejects_duplicate_intents_and_duplicate_metrics(self):
+        with self.assertRaisesRegex(ValueError, "intents"):
+            CompositeRuleRegistry((
+                CompositeRule("pair", ("revenue", "collected_amount")),
+                CompositeRule("pair", ("quantity", "order_count")),
+            ))
+        with self.assertRaisesRegex(ValueError, "unique metrics"):
+            CompositeRuleRegistry((
+                CompositeRule("pair", ("revenue", "revenue")),
+            ))
+
+    def test_rule_registry_rejects_unsupported_comparison_modes(self):
+        with self.assertRaisesRegex(ValueError, "comparison type"):
+            CompositeRuleRegistry((
+                CompositeRule("pair", ("revenue", "collected_amount"), "difference"),
+            ))
 
 
 class RequirementContractTests(unittest.TestCase):
@@ -152,6 +175,43 @@ class CompositePlannerTests(unittest.TestCase):
             "doanh thu và tiền thực thu tháng này", "2026-03-04", "biz_synthetic"
         )
         self.assertIsNone(planner.plan(spec))
+
+    def test_custom_allowlisted_metric_pair_can_be_composed_without_text_splitting(self):
+        from dataclasses import replace
+
+        bundle_registry = BundleRegistry((
+            BundleDefinition("quantity", "quantity", "quantity"),
+            BundleDefinition("orders", "order_count", "order_count"),
+        ))
+        rule_registry = CompositeRuleRegistry((
+            CompositeRule("quantity_and_orders", ("quantity", "order_count")),
+        ))
+        base_spec = self.rule_planner.interpret(
+            "doanh thu và tiền thực thu tháng này", "2026-03-04", "biz_synthetic"
+        )
+        custom_spec = replace(base_spec, intent="quantity_and_orders")
+        planner = CompositePlanner(self.rule_planner, bundle_registry, rule_registry)
+
+        composite = planner.plan(custom_spec)
+
+        self.assertIsNotNone(composite)
+        self.assertEqual(
+            [component.requirement.metric for component in composite.components],
+            ["quantity", "order_count"],
+        )
+        self.assertEqual(
+            [component.query_plan.intent for component in composite.components],
+            ["quantity", "order_count"],
+        )
+
+    def test_unknown_composite_intent_does_not_get_split_automatically(self):
+        from dataclasses import replace
+
+        base_spec = self.rule_planner.interpret(
+            "doanh thu và tiền thực thu tháng này", "2026-03-04", "biz_synthetic"
+        )
+        unknown_spec = replace(base_spec, intent="unregistered_multi_metric")
+        self.assertIsNone(self.composite_planner.plan(unknown_spec))
 
     def test_derived_difference_is_not_misrepresented_as_side_by_side(self):
         spec = self.rule_planner.interpret(

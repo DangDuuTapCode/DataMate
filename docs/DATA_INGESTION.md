@@ -154,3 +154,8 @@ It does not split arbitrary text on `và` / `and`, and it does not treat a singl
 ## Versioned requirement contract
 
 The output of `RequirementExtractor` is serialized and validated against `schemas/requirement_extraction.v1.schema.json`. Runtime validation checks the supported JSON Schema subset plus unique requirement IDs/metrics and status/reason consistency. The composite planner fails closed if this contract is invalid.
+
+
+## Composite rule registry foundation
+
+The explicit `CompositeRuleRegistry` decouples recognized composite intents from requirement extraction. Each rule maps one existing/recognized QuerySpec intent to an ordered metric list and comparison mode. New combinations require an explicit registry rule and registered bundles; no conjunction is split automatically.

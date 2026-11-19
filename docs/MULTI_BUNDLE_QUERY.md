@@ -148,3 +148,8 @@ The output of `RequirementExtractor` is serialized and validated against `schema
 ## Versioned requirement contract status
 
 The composite requirement payload is versioned at `1.0.0` and validated before component planning. CI run `44549585604` executed 226 tests with no code/test errors; 224 passed. Only two pre-existing repository-hygiene checks against `CODEX PROGRESS` remain failing.
+
+
+## Explicit composite rule registry
+
+`RequirementExtractor` now resolves QuerySpec intents through `CompositeRuleRegistry`. Each rule declares the recognized intent, ordered metric IDs, and comparison type. The default registry contains only the current financial pair. This permits future reviewed combinations without embedding more metric pairs inside the planner, but does not itself add new parser cues or arbitrary text splitting.

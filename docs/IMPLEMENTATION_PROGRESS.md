@@ -652,3 +652,13 @@ Review package: work/submission-build/public-test-submission-2026-11-15. JSONL S
 - GitHub Actions run `44549585604` executed 226 tests with no code/test errors. 224 passed.
 - The only two failures remain pre-existing hygiene assertions against tracked `CODEX PROGRESS` (size limit and secret-like regex). No checks were disabled.
 - Run: https://github.com/pl2n/DataMate/actions/runs/44549585604
+
+
+## 2026-11-19 — composite rule registry
+
+- Replaced the fixed intent-to-metric dictionary in `RequirementExtractor` with an explicit `CompositeRuleRegistry`.
+- Rules declare a recognized QuerySpec intent, an ordered list of metric IDs, and a supported comparison type.
+- The default registry still contains only `financial_metric_comparison` → `revenue` + `collected_amount`.
+- `CompositePlanner` now compiles any explicitly registered intent; unregistered intents still fail closed. No arbitrary conjunction parsing was added.
+- Added tests for registry uniqueness, invalid rule definitions, custom allowlisted metric composition, and unknown-intent abstention.
+- Checkpoint: `tools/checkpoints/2026-11-19_COMPOSITE_RULE_REGISTRY.md`.
