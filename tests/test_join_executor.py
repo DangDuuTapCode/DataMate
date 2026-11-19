@@ -4,7 +4,6 @@ from datamate.join_contracts import build_fact_join_contract
 from datamate.join_executor import execute_fact_join_contract
 from datamate.relationship_paths import resolve_relationship_path
 from datamate.relationships import RelationshipCandidate, discover_relationships
-from datamate.semantic import map_table_schema
 from datamate.types import Table
 
 
@@ -128,21 +127,15 @@ class FactJoinExecutorTests(unittest.TestCase):
         bad_orders = Table(
             self.orders.name,
             self.orders.headers,
-            self.orders.rows + [["ORD4", "KH404", "2025-10-04"]],
+            [
+                ["ORD1", "KH1", "2025-10-01"],
+                ["ORD2", "", "2025-10-02"],
+                ["ORD3", "KH404", "2025-10-03"],
+            ],
             self.orders.source,
         )
-        bad_details = Table(
-            self.details.name,
-            self.details.headers,
-            self.details.rows + [["ORD4", "SP1", "20000"]],
-            self.details.source,
-        )
-        contract = self._contract(
-            [bad_details, bad_orders, self.customers],
-            join_type="left",
-        )
         self.assertIsNone(execute_fact_join_contract(
-            [bad_details, bad_orders, self.customers], contract
+            [self.details, bad_orders, self.customers], self.contract
         ))
 
     def test_rejects_duplicate_target_keys(self):
@@ -152,16 +145,9 @@ class FactJoinExecutorTests(unittest.TestCase):
             self.customers.rows + [["KH1", "sỉ"]],
             self.customers.source,
         )
-        contract = self._contract(
-            [self.details, self.orders, duplicate_customers],
-            join_type="left",
-        )
-        # Discovery itself cannot produce a unique path for a duplicated
-        # target; a forged contract is also rejected by the executor.
-        if contract is None:
-            return
+        self.assertIsNotNone(self.contract)
         self.assertIsNone(execute_fact_join_contract(
-            [self.details, self.orders, duplicate_customers], contract
+            [self.details, self.orders, duplicate_customers], self.contract
         ))
 
     def test_rejects_blank_source_key_without_left_join_evidence(self):
@@ -175,6 +161,46 @@ class FactJoinExecutorTests(unittest.TestCase):
         from dataclasses import replace
         forged = replace(forged, path_hops=(first, altered_second))
 
+        self.assertIsNone(execute_fact_join_contract(
+            [self.details, self.orders, self.customers], forged
+        ))
+
+    def test_rejects_measure_header_mismatch_and_unhashable_contract_values(self):
+        from dataclasses import replace
+
+        self.assertIsNone(execute_fact_join_contract(
+            [self.details, self.orders, self.customers],
+            replace(self.contract, measure_field="not the source header"),
+        ))
+        self.assertIsNone(execute_fact_join_contract(
+            [self.details, self.orders, self.customers],
+            replace(self.contract, join_type=[]),
+        ))
+        first, second = self.contract.path_hops
+        malformed = type(second)(
+            second.from_table, second.to_table, second.canonical_keys,
+            second.from_column_indices, second.to_column_indices,
+            [], second.fanout, second.requires_left_join,
+        )
+        self.assertIsNone(execute_fact_join_contract(
+            [self.details, self.orders, self.customers],
+            replace(self.contract, path_hops=(first, malformed)),
+        ))
+        self.assertIsNone(execute_fact_join_contract(
+            [self.details, self.orders, self.customers],
+            replace(self.contract, path_hops=(object(),)),
+        ))
+
+    def test_rejects_key_indices_not_backed_by_semantic_mapping(self):
+        from dataclasses import replace
+
+        first, second = self.contract.path_hops
+        malformed = type(first)(
+            first.from_table, first.to_table, first.canonical_keys,
+            (1,), first.to_column_indices, first.cardinality,
+            first.fanout, first.requires_left_join,
+        )
+        forged = replace(self.contract, path_hops=(malformed, second))
         self.assertIsNone(execute_fact_join_contract(
             [self.details, self.orders, self.customers], forged
         ))
