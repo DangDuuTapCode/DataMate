@@ -220,3 +220,11 @@ Important limitation: this resolver is discovery-only and is not yet connected t
 - Added source-context semantic aliases, `validated_left_join` relationship evidence, `left_join_required` path status, and contract enforcement that rejects INNER JOIN for these paths.
 - Added a synthetic README-shaped integration test and `docs/CONTEST_BIZ129_JOIN_CASE.md`.
 - No contest source data was committed. Runtime wiring remains disabled. CI is not yet verified and no local tests were run.
+
+
+### Contest LEFT JOIN CI follow-up
+
+- Corrected two new regression-test issues found by the first Actions run.
+- Replaced the oversized historical `CODEX PROGRESS` transcript with a short handoff pointer; the old file breached the repository size check and matched a sensitive-looking token pattern.
+- GitHub Actions run `44586527843`, commit `4f7077120f19b29717f5be46f1c53fe9d80d01f4`: **318 tests passed**.
+- Draft PR #2 is open and remains unmerged: https://github.com/DangDuuTapCode/DataMate/pull/2.
