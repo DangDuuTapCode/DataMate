@@ -462,6 +462,11 @@ class Executor:
                 return None
             row_key = tuple((type(value).__name__, repr(value)) for value in row)
             if row_key in seen_line_rows:
+                # An exact duplicate sale line is an export error only when
+                # the active rulebook explicitly authorizes counting it once.
+                # Without that policy, do not silently change the metric.
+                if not self.rules.deduplicate_identical_order_lines:
+                    return None
                 continue
             seen_line_rows.add(row_key)
             order_date, order_status, order_id = order_rows[key]
