@@ -46,7 +46,8 @@ class CustomerGroupRevenueShareTests(unittest.TestCase):
             revenue_excluded_statuses=frozenset(
                 {"cancelled", "returned", "delivery_failed"}
             ),
-            revenue_included_statuses=frozenset(),
+            revenue_included_statuses=frozenset({"in_transit"}),
+            deduplicate_identical_order_lines=True,
         )
 
     def run_query(self, tables=None, rules=None, group="thân thiết"):
@@ -78,6 +79,30 @@ class CustomerGroupRevenueShareTests(unittest.TestCase):
         )
         self.assertIsNone(reason)
         self.assertEqual(candidate["answer"], 44.44)
+
+    def test_exact_contest_wordings_resolve_only_the_share_questions(self):
+        planner = RulePlanner(split_rules=self.rules)
+        questions = (
+            "Trong tổng doanh thu tháng 10/2025, phần của khách nhóm thân thiết là mấy phần trăm?",
+            "Tỉ trọng doanh thu của khách nhóm thân thiết trong tổng doanh thu tháng 6/2025 là bao nhiêu phần trăm?",
+        )
+        for question in questions:
+            with self.subTest(question=question):
+                spec = planner.interpret(question, "2026-08-14", "biz_129")
+                self.assertEqual(spec.intent, "customer_group_revenue_share")
+                self.assertTrue(spec.executable)
+                self.assertEqual(dict(spec.filters)["customer_group"], "thân thiết")
+
+    def test_group_revenue_amount_questions_do_not_drop_the_customer_filter(self):
+        planner = RulePlanner(split_rules=self.rules)
+        questions = (
+            "tháng 3/2025, các khách thuoocj nhóm thân thiết mua total bao nhieeu tiền hàng",
+            "Cho tôi biết doanh thu các đơn của khách nhóm thân thiết tháng 6/2025.",
+        )
+        for question in questions:
+            with self.subTest(question=question):
+                spec = planner.interpret(question, "2026-08-14", "biz_129")
+                self.assertFalse(spec.executable)
 
     def test_unrecognized_customer_group_does_not_become_a_generic_category_share(self):
         planner = RulePlanner(split_rules=self.rules)
@@ -141,6 +166,36 @@ class CustomerGroupRevenueShareTests(unittest.TestCase):
         candidate, reason = self.run_query(rules=rules)
         self.assertIsNone(candidate)
         self.assertEqual(reason, "rulebook_unavailable")
+
+    def test_in_transit_orders_are_included_when_rulebook_says_so(self):
+        orders = Table(
+            self.orders.name,
+            self.orders.headers,
+            [
+                ["ORD1", "KH1", "01/10/2025", "in transit"],
+                ["ORD2", "", "02/10/2025", "completed"],
+                ["ORD3", "KH2", "03/10/2025", "cancelled"],
+            ],
+            self.orders.source,
+        )
+        candidate, reason = self.run_query([self.details, orders, self.customers])
+        self.assertIsNone(reason)
+        self.assertEqual(candidate["answer"], 44.44)
+
+    def test_returned_order_is_excluded_in_full(self):
+        orders = Table(
+            self.orders.name,
+            self.orders.headers,
+            [
+                ["ORD1", "KH1", "01/10/2025", "completed"],
+                ["ORD2", "", "02/10/2025", "completed"],
+                ["ORD3", "KH2", "03/10/2025", "returned"],
+            ],
+            self.orders.source,
+        )
+        candidate, reason = self.run_query([self.details, orders, self.customers])
+        self.assertIsNone(reason)
+        self.assertEqual(candidate["answer"], 44.44)
 
     def test_requires_rulebook_in_transit_revenue_policy(self):
         rules = replace(self.rules, revenue_included_statuses=frozenset())
