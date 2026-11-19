@@ -350,3 +350,9 @@
 - Added rulebook-driven order filters, duplicate line handling, and whole-shop denominator semantics that retain guest orders through LEFT JOIN.
 - Added synthetic and full-main integration tests; Actions run `44594130571` reports 352 passing tests on commit `59a7444cb530801e59018149f653bcbdfd76b4e7`.
 - Added independent biz_129 archive audit values in `docs/CONTEST_BIZ129_JOIN_CASE.md`.
+
+
+### Branch-tip verification
+
+- Latest branch tip `0cd8fb90fe0c197752f84b847537763b09217e2c` passed Actions run `44594377793`: 352 tests.
+- PR #2 remains draft and unmerged.
