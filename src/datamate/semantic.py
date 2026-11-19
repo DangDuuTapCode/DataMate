@@ -85,6 +85,10 @@ _EXACT_ALIASES = {
     "branch_id": {
         "ma chi nhanh", "branch id",
     },
+    "payment_transaction_id": {
+        "ma thanh toan", "ma phieu thu", "ma tt", "ma gd",
+        "payment id", "payment transaction id", "receipt id",
+    },
     "imei": {
         "imei", "so imei", "imei may",
     },
