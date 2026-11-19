@@ -18,6 +18,7 @@ class ContestBiz129JoinContractTests(unittest.TestCase):
                 ["ORD1", "SP1", "50000"],
                 ["ORD1", "SP2", "30000"],
                 ["ORD2", "SP1", "100000"],
+                ["ORD3", "SP2", "25000"],
             ],
             "chi_tiet_don.csv",
         )
@@ -27,6 +28,7 @@ class ContestBiz129JoinContractTests(unittest.TestCase):
             [
                 ["ORD1", "KH1", "2025-10-01", "completed"],
                 ["ORD2", "", "2025-10-02", "completed"],
+                ["ORD3", "KH1", "2025-10-03", "completed"],
             ],
             "don_hang.csv",
         )
