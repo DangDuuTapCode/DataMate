@@ -126,3 +126,10 @@ Implemented:
 The runtime-mounted `data/rulebook.md` is not versioned in this repository. Do not assume it contains the collection clause; without it, collection stays unavailable.
 
 Next: review CI, then design controlled SHA-256 verification against allowlisted input-root files. No local checkout or local test execution is available in this workflow.
+
+
+## Latest CI result
+
+Run `44561508605` on `211941c8b8bdaafabd5f0c85477f1ce99bdf041b`: 264 tests; 262 passed. All feature tests passed. Only the two inherited `CODEX PROGRESS` repository-hygiene checks failed.
+
+Next: bind the exact evidence-approved source scope to Executor candidate selection, then implement controlled SHA-256 verification under the input root.

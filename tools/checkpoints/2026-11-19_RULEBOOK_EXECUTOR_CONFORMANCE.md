@@ -34,7 +34,11 @@ If the actual mounted rulebook lacks the explicit collection status policy, the 
 
 ## Verification
 
-CI is pending for the commit that records this checkpoint. No local checkout exists, so no local test command or local git status is claimed.
+GitHub Actions run `44561508605` on commit `211941c8b8bdaafabd5f0c85477f1ce99bdf041b` executed 264 tests; 262 passed. All feature tests passed. The only two failures are inherited `CODEX PROGRESS` size and secret-like-pattern hygiene checks.
+
+Run: https://github.com/pl2n/DataMate/actions/runs/44561508605
+
+No local checkout exists, so no local test command or local git status is claimed.
 
 ## Next work
 

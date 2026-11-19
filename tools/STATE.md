@@ -60,3 +60,12 @@
 - Resolver cross-checks evidence against the active SplitRules. Collection's successful-only policy requires an explicit active rulebook clause.
 - CompositePlanner passes the active SplitRules into bundle capability resolution.
 - The mounted runtime rulebook is not committed. Do not assume it contains the collection clause.
+
+
+## Latest verified conformance milestone
+
+- Payment status has its own classifier; unknown labels abstain.
+- Evidence assertions are checked against active SplitRules; collection requires an explicit successful-only rulebook clause.
+- CompositePlanner passes active SplitRules into capability resolution.
+- CI run `44561508605`: 264 tests; 262 passed. All feature tests passed; only two inherited CODEX PROGRESS hygiene failures.
+- Next: bind evidence-approved table scope to Executor candidate selection; then implement controlled digest verification.

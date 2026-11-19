@@ -109,3 +109,10 @@ Review the evidence file's provenance against controlled, known source locations
 - Added `classify_payment_status` and changed collected-amount execution to use it instead of the order-status classifier. Unknown payment statuses abstain; recognized pending/failed/cancelled/refunded states are excluded.
 - Regression coverage includes `Đã thanh toán`, `Chờ thanh toán`, failed, cancelled, refunded, unknown status, and evidence/rulebook mismatch.
 - The actual mounted rulebook is supplied at runtime and is not committed here. Its collection clause has not been inspected in this repository; absence means the collection bundle remains unavailable.
+
+
+## CI verification — 2026-11-19
+
+GitHub Actions run `44561508605` on commit `211941c8b8bdaafabd5f0c85477f1ce99bdf041b` executed 264 tests. 262 passed, including all feature tests. The only two failures remain the inherited `CODEX PROGRESS` large-file and secret-like-pattern hygiene checks.
+
+Run: https://github.com/pl2n/DataMate/actions/runs/44561508605
