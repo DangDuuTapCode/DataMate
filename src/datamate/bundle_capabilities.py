@@ -239,23 +239,27 @@ class BundleCapabilityResolver:
                 unverified_capabilities.append("revenue_executor_source_shape")
             elif len(shape_scope) == 2:
                 line_table, order_table = shape.table_scope
-                line_name, order_name = line_table.table_name, order_table.table_name
+                line_identity = (line_table.table_name, line_table.source)
+                order_identity = (order_table.table_name, order_table.source)
                 matching = [
                     item for item in schema_catalog.relationships
                     if item.canonical_key == "order_id"
-                    and {item.from_table, item.to_table} == {line_name, order_name}
+                    and {
+                        (item.from_table, item.from_source),
+                        (item.to_table, item.to_source),
+                    } == {line_identity, order_identity}
                 ]
                 validated = [
                     item for item in matching
                     if item.status == "validated" and (
                         (
-                            item.from_table == line_name
-                            and item.to_table == order_name
+                            (item.from_table, item.from_source) == line_identity
+                            and (item.to_table, item.to_source) == order_identity
                             and item.cardinality in {"many_to_one", "one_to_one"}
                         )
                         or (
-                            item.from_table == order_name
-                            and item.to_table == line_name
+                            (item.from_table, item.from_source) == order_identity
+                            and (item.to_table, item.to_source) == line_identity
                             and item.cardinality in {"one_to_many", "one_to_one"}
                         )
                     )
