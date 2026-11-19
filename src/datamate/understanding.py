@@ -20,6 +20,7 @@ class RulePlanner:
     EXECUTABLE = {
         "revenue", "collected_amount", "quantity", "order_count", "cancellation_rate",
         "sales_ranking", "daily_revenue_threshold_count", "order_revenue_threshold_count",
+        "customer_group_revenue_share",
     }
     RANKING_INTENTS = {
         "sales_ranking", "customer_ranking", "debt_ranking", "period_ranking",
@@ -193,6 +194,19 @@ class RulePlanner:
         if len(matches) == 1:
             return next(iter(matches)), False
         return None, len(matches) > 1
+
+    @staticmethod
+    def _customer_group_filter(question):
+        """Resolve only the reviewed group label supported by this query slice."""
+        q = fold(question)
+        if any(phrase in q for phrase in (
+            "nhom than thiet",
+            "khach hang than thiet",
+            "khach hang trong nhom than thiet",
+            "khach hang thuoc nhom than thiet",
+        )):
+            return "thân thiết"
+        return None
 
     @staticmethod
     def _intent(question):
@@ -418,7 +432,13 @@ class RulePlanner:
             scope = TemporalScope(kind="as_of", as_of=as_of_date)
         entity, entity_ambiguous = self._resolve_entity(question, entity_catalog)
         explicit_entity_filter = self._has_unresolved_entity_filter(question)
-        unresolved_entity = entity_ambiguous or (explicit_entity_filter and entity is None)
+        customer_group_filter = (
+            self._customer_group_filter(question)
+            if intent == "customer_group_revenue_share" else None
+        )
+        unresolved_entity = entity_ambiguous or (
+            explicit_entity_filter and entity is None and customer_group_filter is None
+        )
         unsupported_breakdown = self._has_unimplemented_breakdown(question)
         unsupported_monthly_output = self._has_unimplemented_monthly_output(question)
         threshold = (
@@ -443,6 +463,8 @@ class RulePlanner:
         filters = (("revenue_gte", threshold),) if threshold is not None and intent in {
             "daily_revenue_threshold_count", "order_revenue_threshold_count",
         } else ()
+        if customer_group_filter is not None:
+            filters = (("customer_group", customer_group_filter),)
         unsupported_reason = None
         if not executable:
             unsupported_reason = (
@@ -465,7 +487,10 @@ class RulePlanner:
             entity=entity,
             metric=metric,
             filters=filters,
-            unit=self._explicit_unit(question),
+            unit=(
+                "percent" if intent == "customer_group_revenue_share"
+                else self._explicit_unit(question)
+            ),
             sort=SortSpec(metric, "desc") if intent in self.RANKING_INTENTS else None,
             ambiguity_flags=tuple(ambiguity_flags),
             unsupported_reason=unsupported_reason,
@@ -487,6 +512,7 @@ class RulePlanner:
             compare_start=spec.time.comparison_start,
             compare_end=spec.time.comparison_end,
             threshold=dict(spec.filters).get("revenue_gte"),
+            filters=spec.filters,
         )
 
 
