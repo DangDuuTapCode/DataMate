@@ -61,3 +61,11 @@ The rulebook says guest orders do not belong to any customer group, but they sti
 - Replaced the 2 MB historical `CODEX PROGRESS` transcript with a concise pointer because it exceeded the repository size limit and matched a sensitive-looking token pattern.
 - Follow-up Actions run `44586527843` on `4f7077120f19b29717f5be46f1c53fe9d80d01f4`: 318 tests passed.
 - Draft PR #2 is open and not merged.
+
+
+## Multi-hop executor follow-up
+
+- Added `src/datamate/join_executor.py` and `tests/test_join_executor.py`.
+- The executor consumes only a prebuilt contract; it does not infer paths, apply business filters, aggregate, or calculate a share.
+- It revalidates semantic field indices, exact table identities, non-fanout cardinality, target-key uniqueness, and reachable nonblank key matches. LEFT JOIN preserves guest facts and duplicate fact lines.
+- Actions run `44587842656` on `6a0bc0b7ad4aef0cb510b234d05b5455a73eb8db`: 328 tests passed.
