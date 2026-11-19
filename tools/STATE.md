@@ -1,106 +1,46 @@
-# Current state — 2026-11-19
+# DataMate current state — 2026-11-19
 
-- Repository: pl2n/DataMate (user fork).
-- Branch: feature/multi-bundle-query.
-- Upstream DangDuuTapCode/DataMate: do not modify.
-- Implementation commit: c06e7c42befd1500d743219ab1a3ec3883213ef8.
-- Work uses GitHub APIs; no local checkout or local git status was available.
-- Completed: grouped-header ingestion, semantic mappings, relationship validation, schema catalog, bundle registry, requirement extraction/schema, composite rule registry, shared-context guard, bundle capability resolver, and production runtime catalog gating.
-- Revenue source alternatives and collection source-role/status semantics remain unverified. Default financial composites must fail closed until evidence contracts are implemented.
-- Latest CI: run 44555242526; 242 tests, 240 passed; two inherited CODEX PROGRESS hygiene failures. Do not weaken checks or alter that inherited artifact.
-- Next: inspect split_rules.py and Executor source discovery; design a versioned business-rule evidence contract for source shapes, status semantics, rule-profile version, and provenance.
-- Source of truth: docs/NEXT_SESSION_HANDOFF.md, docs/IMPLEMENTATION_PROGRESS.md, docs/MULTI_BUNDLE_QUERY.md, and dated checkpoints.
+## Repository
 
+- Work only in fork `pl2n/DataMate`, branch `feature/multi-bundle-query`.
+- Do not modify upstream `DangDuuTapCode/DataMate`; do not create a PR unless requested.
+- GitHub API workflow only; no local checkout, local git status, or local test execution.
+- Latest implementation baseline: `a6eade98f01e55326ae53bf6423800868b6f77b3`.
+- Latest documentation commits: `bc01731c4e445841bbff72ab32b74bbcc18dfb6e` (provenance guide) and `382a75c33fb0bf51617dde33cee1ba172854ef65` (handoff).
 
-## Business-rule evidence contract
+## Implemented
 
-- Added versioned contract `schemas/business_rule_evidence.v1.schema.json` and strict reader `src/datamate/rule_evidence.py`.
-- Evidence is business/profile scoped, uses closed capability/assertion vocabularies, exact table identities, SHA-256 provenance, reviewer, and timezone-aware review timestamp.
-- No default bundle is enabled; no executor calculation is changed.
-- Next: integrate per-business evidence into capability resolution and runtime. Collection bundle must require unambiguous payment_status because executor filtering is conditional on its presence.
+- Grouped Excel headers and retained header metadata.
+- Exact semantic mapping with ambiguity handling; relationship validation without automatic joins.
+- BusinessSchemaCatalog, bundle registry, requirement extraction/schema, composite rules, and shared-context guard.
+- BundleCapabilityResolver checks exact canonical fields, co-location, validated relationships, and explicit business-rule evidence.
+- Runtime constructs per-business catalogs/planners and records evidence/capability decisions.
+- SplitRules/executor conformance for revenue amount/date/status semantics and collection successful-payment policy.
+- Dedicated payment-status classifier; unknown values abstain.
+- Evidence-approved exact table scope and revenue source shape are enforced by component-specific Executors.
+- Business-rule evidence v1 contract and strict local SHA-256 provenance verification.
 
+## Safety and capability boundaries
 
-## Latest verified commit
+- Missing, malformed, wrong-business, rejected, incorrectly scoped, unsupported, or digest-invalid evidence blocks composite execution.
+- Revenue source shape must be explicitly reviewed as `direct_line` or `detail_to_order`; detail-to-order requires a validated `order_id` relationship.
+- Collection requires payment-event amount/date/status in the exact single table scoped by both source-role and settlement-policy claims.
+- Collection remains unavailable unless the active rulebook explicitly states the supported successful-payment-only policy.
+- Provenance allowlist remains narrow: input-root `rulebook.md`; business-local `data_dictionary.csv/.xlsx/.md`; business-local `operator_attestation.json`.
+- SHA-256 proves byte correspondence only; it does not authenticate reviewer identity or provide a signature.
+- No arbitrary path access, automatic joins, fuzzy inference, arbitrary conjunction splitting, or new metrics.
 
-- Branch head: `f6d5115ea4099311ed3d01eeb0257abfa37818c4` (business-rule evidence contract and test expectation correction).
-- CI run `44556933123`: 250 tests; 248 passed, including all new evidence-contract tests. Only the two inherited `CODEX PROGRESS` hygiene checks failed.
-- Run: https://github.com/pl2n/DataMate/actions/runs/44556933123
+## CI
 
+- Run `44564104588` on commit `a6eade98f01e55326ae53bf6423800868b6f77b3`: 272 tests; 270 passed. All feature tests passed. Two inherited `CODEX PROGRESS` hygiene checks failed (large-file limit and secret-like-pattern false positive).
+- Run: https://github.com/pl2n/DataMate/actions/runs/44564104588
+- Two docs-only commits followed that run; inspect their Actions results before further code edits.
+- Never weaken or modify the inherited hygiene artifact to hide those failures.
 
-## Latest business-rule evidence runtime state
+## Active blocker / next step
 
-- Runtime loads `data/<business_id>/business_rule_evidence.json` and passes valid evidence into composite capability resolution.
-- Missing/invalid evidence is recorded in trace and blocks composite planning.
-- Collection composite requires payment-event amount, payment date, and payment status; status and source-role claims must be scoped to the same exact table.
-- Revenue detail-to-order evidence requires a validated many-to-one `order_id` relationship.
-- CI run `44558398515`: 256 tests, 254 passed; two inherited hygiene failures only. Feature tests passed.
-- Next: cross-check claims against the actual split rulebook/executor profile and design safe digest verification.
+The actual mounted business input files are not in the GitHub repository. `data/` is gitignored except for `data/README.md`. The repository does not establish the exact real filenames or placement for a data dictionary or operator attestation.
 
+Obtain the actual input directory listing/input contract and mounted `rulebook.md`. Only then may exact additional filenames or parser support be added. Until then, keep the allowlist narrow and both default financial bundles evidence-gated.
 
-## Session close state
-
-- Runtime integration commit: `02dc61c983de696ded042f021e2f64f2b886c8e6`.
-- Latest docs/schema commit: `96d63298a940a0e449c7303bbe668508d74c0637`.
-- CI run `44559194129`: 256 tests, 254 passed; only two inherited `CODEX PROGRESS` hygiene failures.
-- Next: validate evidence assertions against actual rulebook/executor behavior and add safe digest verification.
-
-## Evidence-scope hardening
-
-- Collection's payment amount/date/status fields must be co-located in the exact table scoped by both reviewed collection claims.
-- Revenue detail-to-order validates the line/order relationship independent of catalog edge orientation; direct_line evidence must scope one table.
-- End-to-end valid-evidence runner test passes; missing/invalid evidence still blocks.
-- Latest CI run 44560238399: 259 tests, 257 passed; only two inherited CODEX PROGRESS hygiene failures.
-- Next: design controlled source-digest verification; never fetch arbitrary external references.
-
-
-## Rulebook/executor conformance
-
-- Payment statuses are classified independently from order statuses; unknown payment states abstain.
-- SplitRules exposes revenue amount/date semantics and an optional collection status policy.
-- Resolver cross-checks evidence against the active SplitRules. Collection's successful-only policy requires an explicit active rulebook clause.
-- CompositePlanner passes the active SplitRules into bundle capability resolution.
-- The mounted runtime rulebook is not committed. Do not assume it contains the collection clause.
-
-
-## Latest verified conformance milestone
-
-- Payment status has its own classifier; unknown labels abstain.
-- Evidence assertions are checked against active SplitRules; collection requires an explicit successful-only rulebook clause.
-- CompositePlanner passes active SplitRules into capability resolution.
-- CI run `44561508605`: 264 tests; 262 passed. All feature tests passed; only two inherited CODEX PROGRESS hygiene failures.
-- Next: bind evidence-approved table scope to Executor candidate selection; then implement controlled digest verification.
-
-
-## Evidence-scoped runtime state
-
-- BundleCapabilityResolution returns approved exact table identities and revenue source shape.
-- QueryComponent carries those fields; runtime builds a component-specific Executor using only approved tables.
-- Executor honors direct_line/detail_to_order rather than reselecting another source shape.
-- New regression adds unreviewed competing sales and payment tables.
-- Previous CI run `44561508605`: 264 tests, 262 passed; only two inherited hygiene failures.
-- Next: verify SHA-256 only against allowlisted files under the input root.
-
-
-## Controlled evidence digest verification
-
-- Runtime recomputes SHA-256 from exact bytes for each claim.
-- Allowlist only: input-root rulebook.md; business-scoped data_dictionary.csv/.xlsx/.md; business-scoped operator_attestation.json.
-- No arbitrary paths, path traversal, external fetch, unknown filenames, any symlink source, or paths resolving outside input root.
-- Digest mismatch or missing source invalidates evidence and blocks composite planning.
-- Next: inspect CI and add symlink-escape regression if needed.
-
-
-## Latest verified state
-
-- Evidence digests are recomputed from exact bytes of allowlisted files.
-- Path traversal, external URLs, unknown filenames, missing files, symlink escapes, and digest mismatch invalidate evidence.
-- CI run `44563411248`: 271 tests; 269 passed. All feature tests passed; only two inherited hygiene failures.
-- Next: confirm actual source filename contract and only expand exact allowlist entries when documented.
-
-
-## Latest provenance verification
-
-- SHA-256 recomputed from allowlisted local files.
-- All symlink source files are rejected; resolved paths must stay under the input root.
-- CI run `44563864531`: 272 tests; 270 passed; all feature tests passed.
-- Next: confirm exact filenames for optional data dictionary and operator attestation sources before any allowlist expansion.
+See `docs/NEXT_SESSION_HANDOFF.md` for the continuation checklist and `docs/IMPLEMENTATION_PROGRESS.md` for milestone history.
