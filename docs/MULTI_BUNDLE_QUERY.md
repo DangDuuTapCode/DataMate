@@ -112,3 +112,10 @@ The first registry contains only:
 - `collected_amount` → `collection` bundle → existing `collected_amount` executor.
 
 `CompositePlanner` resolves the fixed first-slice pair through this registry. Unknown or duplicate requirements fail closed. This is a registry foundation, not yet general multi-intent extraction or dynamic bundle discovery.
+
+
+### Bundle registry implementation status
+
+The composite planner now resolves its existing revenue/collected-amount pair through `BundleRegistry`. Unknown metrics, duplicate requirements, unsupported output types, or bundle definitions that do not support the shared period/entity context fail closed. This remains a fixed first-slice pair; it is not arbitrary multi-intent parsing.
+
+CI run `44547696247`: 216 tests, 214 passed; the only two failures are the pre-existing repository-hygiene checks against `CODEX PROGRESS`. See https://github.com/pl2n/DataMate/actions/runs/44547696247.

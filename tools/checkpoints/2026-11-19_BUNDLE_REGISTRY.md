@@ -30,3 +30,10 @@ Synthetic tests cover default definitions, unknown/duplicate requirement resolut
 1. Run GitHub Actions and inspect the results.
 2. Add a versioned bundle metadata schema if definitions stabilize.
 3. Generalize requirement extraction only after bundle resolution has a clear, testable contract.
+
+
+## CI result
+
+GitHub Actions run `44547696247` executed 216 tests. All bundle-registry and composite tests passed; 214 tests passed overall. The only failures are the two pre-existing repository-hygiene assertions against `CODEX PROGRESS` (size limit and secret-like regex). No hygiene checks were weakened.
+
+Run: https://github.com/pl2n/DataMate/actions/runs/44547696247

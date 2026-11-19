@@ -582,3 +582,10 @@ python qstats.py public_test/ 15
 - GitHub Actions run `44546976679`: 210 tests executed; 208 passed. All relationship discovery tests passed.
 - Two pre-existing repository-hygiene failures remain on tracked `CODEX PROGRESS` (size > 1 MB and secret-like regex match).
 - Run: https://github.com/pl2n/DataMate/actions/runs/44546976679
+
+
+## 2026-11-19 — bundle registry CI result
+
+- GitHub Actions run `44547696247`: 216 tests executed; 214 passed. Bundle registry and composite tests passed.
+- Two pre-existing repository-hygiene failures remain on `CODEX PROGRESS` (size > 1 MB and secret-like regex match). No security checks were weakened.
+- Run: https://github.com/pl2n/DataMate/actions/runs/44547696247

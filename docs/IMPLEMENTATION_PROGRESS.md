@@ -586,3 +586,10 @@ Review package: work/submission-build/public-test-submission-2026-11-15. JSONL S
 - Unknown or duplicate metric requirements fail closed. Existing executor and verifier behavior is retained.
 - Added registry validation tests. This does not yet generalize question parsing beyond the fixed first financial pair.
 - Checkpoint: `tools/checkpoints/2026-11-19_BUNDLE_REGISTRY.md`.
+
+
+### CI result — bundle registry and composite integration
+
+- GitHub Actions run `44547696247` executed 216 tests. The registry tests and composite regressions passed; 214 tests passed overall.
+- The only two failures remain pre-existing hygiene assertions on tracked `CODEX PROGRESS` (size limit and secret-like regex). No hygiene check was bypassed.
+- Run: https://github.com/pl2n/DataMate/actions/runs/44547696247

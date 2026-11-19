@@ -549,3 +549,10 @@ The Public Submissions JSONL candidate is prepared and structurally verified, bu
 - Read `tools/checkpoints/2026-11-19_BUNDLE_REGISTRY.md`.
 - `BundleRegistry` is an explicit allowlist. It currently contains only revenue and collected-amount definitions.
 - `CompositePlanner` resolves its current two metrics through the registry. Do not claim arbitrary multi-bundle question parsing is implemented.
+
+
+### CI result — bundle registry
+
+- Run `44547696247` executed 216 tests; all new bundle-registry and composite tests passed, 214 passed overall.
+- Two pre-existing hygiene checks still fail on `CODEX PROGRESS`. Preserve the checks and resolve the file policy separately.
+- Run: https://github.com/pl2n/DataMate/actions/runs/44547696247
