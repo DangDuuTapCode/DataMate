@@ -18,3 +18,10 @@
 - Evidence is business/profile scoped, uses closed capability/assertion vocabularies, exact table identities, SHA-256 provenance, reviewer, and timezone-aware review timestamp.
 - No default bundle is enabled; no executor calculation is changed.
 - Next: integrate per-business evidence into capability resolution and runtime. Collection bundle must require unambiguous payment_status because executor filtering is conditional on its presence.
+
+
+## Latest verified commit
+
+- Branch head: `f6d5115ea4099311ed3d01eeb0257abfa37818c4` (business-rule evidence contract and test expectation correction).
+- CI run `44556933123`: 250 tests; 248 passed, including all new evidence-contract tests. Only the two inherited `CODEX PROGRESS` hygiene checks failed.
+- Run: https://github.com/pl2n/DataMate/actions/runs/44556933123

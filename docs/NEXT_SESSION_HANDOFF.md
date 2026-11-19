@@ -64,3 +64,8 @@ Important boundaries:
 ## Next step
 
 Wire the optional per-business evidence file (suggested path: `data/<business_id>/business_rule_evidence.json`) into `main.run`, `CompositePlanner`, and `BundleCapabilityResolver`. Missing/invalid/mismatched evidence must leave the bundle unavailable. Add tests for both valid and invalid runtime evidence. No automatic joins, fuzzy inference, or parser expansion.
+
+
+## Business-rule evidence contract verification
+
+Commit `f6d5115ea4099311ed3d01eeb0257abfa37818c4` adds the strict reader/schema/tests and docs. GitHub Actions run `44556933123` executed 250 tests; all new evidence-contract tests passed, with 248 total passing. Only the two inherited `CODEX PROGRESS` hygiene checks failed. Run: https://github.com/pl2n/DataMate/actions/runs/44556933123

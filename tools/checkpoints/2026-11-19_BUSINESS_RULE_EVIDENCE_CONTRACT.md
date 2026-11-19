@@ -36,3 +36,10 @@ It does not generate evidence from column names or samples, enable default bundl
 ## Next milestone
 
 Load `data/<business_id>/business_rule_evidence.json` per business, pass validated evidence through CompositePlanner to BundleCapabilityResolver, require exact business/table scope, and keep missing/invalid evidence fail-closed. Add runtime and resolver tests before considering any capability executable.
+
+
+## CI result
+
+Run `44556933123` on commit `f6d5115ea4099311ed3d01eeb0257abfa37818c4` executed 250 tests. All 8 new evidence-contract tests passed; 248 tests passed overall. Only the two inherited `CODEX PROGRESS` hygiene checks failed.
+
+Run: https://github.com/pl2n/DataMate/actions/runs/44556933123

@@ -53,3 +53,11 @@ Tests added: `tests/test_rule_evidence.py`. Design note: `docs/BUSINESS_RULE_EVI
 ## Next step
 
 Integrate validated evidence with `BundleCapabilityResolver` and per-business runtime loading. Require `payment_status` for a collection bundle because the current executor only filters to successful payment statuses when that column exists. Keep absent/invalid evidence fail-closed.
+
+
+### Business-rule evidence CI
+
+- Commit: `f6d5115ea4099311ed3d01eeb0257abfa37818c4`.
+- GitHub Actions run `44556933123`: 250 tests executed; all 8 new business-rule evidence tests passed. 248 tests passed overall; the only two failures are the inherited `CODEX PROGRESS` repository-hygiene checks.
+- Run: https://github.com/pl2n/DataMate/actions/runs/44556933123
+- Follow-up docs guide: `docs/BUSINESS_RULE_EVIDENCE.md`.
