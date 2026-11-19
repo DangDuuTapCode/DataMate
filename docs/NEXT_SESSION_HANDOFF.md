@@ -214,3 +214,15 @@ Safety properties:
 CI run `44578825930`: 293 tests, 291 passed. All new feature tests passed; the two existing repository hygiene checks still fail only on the inherited `CODEX PROGRESS` artifact. Run: https://github.com/pl2n/DataMate/actions/runs/44578825930
 
 Next engineering step: design a query-specific execution contract on top of the path result. It must name the fact table/grain, aggregation stage, exact path, and whether any fanout is semantically permitted. Keep multi-hop execution disabled until that contract and a realistic synthetic fixture prove there is no metric multiplication. Do not infer polymorphic document references from a shared raw ID alone.
+
+
+## 2026-11-20 — relationship path candidate-bound hardening
+
+- Fixed an off-by-one condition in `resolve_relationship_path`: reaching exactly `max_candidates` is no longer treated as overflow. The resolver now observes one additional path before reporting that the configured bound was exceeded.
+- Invalid limits (non-positive, boolean, or non-integer) and malformed/blank table identities now fail closed as `invalid_request` instead of raising comparison/type errors or creating weak graph nodes.
+- Added six synthetic regressions: exact candidate limit, candidate-limit overflow, reverse-direction fanout, hop-limit enforcement, invalid limits, and cycle handling.
+- This remains discovery-only; no JOIN execution or metric enablement was added.
+- Commits: `4212165cece5a9167095984865aca98ae6362890` (resolver fix), `fe799c55ac9757a64007fbe03ef0a9028e6ff1f2` (tests).
+- CI pending for this commit range. No local checkout or local test execution was used.
+
+Next: wait for CI on the current branch head. If feature tests pass, design (but do not yet wire) a query-specific join/execution contract that binds a declared fact grain, aggregation stage, exact path, and fanout policy. The contest archive is not currently available through the file library in this session; do not claim a fresh public-test coverage audit or infer additional semantics without the source files.
