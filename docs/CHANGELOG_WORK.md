@@ -332,3 +332,11 @@
 - Replaced the oversized historical `CODEX PROGRESS` transcript with a handoff pointer.
 - Actions run `44586527843`: 318 tests passed on commit `4f7077120f19b29717f5be46f1c53fe9d80d01f4`.
 - Draft PR #2 remains open and unmerged.
+
+
+### Explicit join executor
+
+- Added a contract-driven multi-hop join executor with source/schema revalidation, target uniqueness checks, LEFT JOIN enforcement, and fact-row preservation.
+- Added synthetic executor tests covering guest rows and failure cases.
+- Actions run `44587842656`: 328 tests passed.
+- Public query/runtime integration remains deferred.
