@@ -14,6 +14,7 @@
 - Excel grouped/multi-row headers are retained and combined with leaf headers when the workbook has clear merged group headings.
 - Semantic mapping uses conservative exact aliases and grouped-header context. Ambiguous/colliding fields are not silently selected.
 - Relationship discovery uses exact key overlap, uniqueness, cardinality, blanks, and unmatched values. It validates candidates but does not execute joins.
+- Exact relationship-key aliases now cover order, customer, product, payment receipt, employee, supplier, purchase receipt, batch/lot, branch, and device IMEI identifiers. Generic row numbers/reference labels remain unmapped; identifiers are compared as exact strings.
 - A versioned `BusinessSchemaCatalog` stores table schemas and relationship evidence.
 
 ### Multi-bundle planning
@@ -79,3 +80,9 @@ The archive now supplies a concrete benchmark for the next feature milestone. Pr
 Verification baseline before these changes: GitHub Actions run `44565561293` executed 272 tests (270 passed; two inherited `CODEX PROGRESS` repository-hygiene failures). The new README allowlist/test changes have not yet been verified by a new CI run. No local checkout or local test execution is available in this workflow.
 
 See `docs/NEXT_SESSION_HANDOFF.md` for the resume checklist and `tools/STATE.md` for the compact current state.
+
+## Multi-source relationship expansion
+
+The contest archive exposed identifier families absent from the original four-key relationship vocabulary. The semantic mapper and relationship discovery now include exact aliases for employee IDs, supplier IDs, purchase receipt IDs, lot/batch IDs, branch IDs, and IMEI, while extending order/customer/product/payment receipt aliases. Generic `STT` and `Mã tham chiếu` remain unmapped. Relationship discovery still compares exact string values, checks overlap/cardinality/blanks/unmatched keys, and never executes joins.
+
+Regression coverage was added for exact alias mapping, generic-label rejection, and six many-to-one relationship families. These new code/test commits have not yet been verified by GitHub Actions; no local checkout or local test run is available.
