@@ -12,6 +12,7 @@
 
 - Grouped Excel headers and retained header metadata.
 - Exact semantic mapping with ambiguity handling; relationship validation without automatic joins. Key families include order/customer/product/payment receipt plus employee, supplier, purchase receipt, batch/lot, branch, and IMEI; generic row numbers/reference labels remain unmapped.
+- Relationship evidence carries both table names and source filenames; capability checks use exact `(table_name, source)` identity to distinguish repeated worksheet names.
 - BusinessSchemaCatalog, bundle registry, requirement extraction/schema, composite rules, and shared-context guard.
 - BundleCapabilityResolver checks exact canonical fields, co-location, validated relationships, and explicit business-rule evidence.
 - Runtime constructs per-business catalogs/planners and records evidence/capability decisions.
@@ -61,3 +62,11 @@ Next: audit public-test questions against the 14 input shapes, then build minima
 - Added synthetic tests for exact aliases and six many-to-one relationship families.
 - Commits: `8ff2c09`, `37f66c3`, `a784b4f`, `2d866ee`, `a64ba34`, `0465e9d`, `dccf1ba`, `45b3667`, `9d2ceab`.
 - CI for these changes is not yet verified. The last known baseline remains run `44565561293` (272 tests; 270 passed, two inherited hygiene failures).
+
+## Source-qualified relationship identity fix
+
+- `RelationshipCandidate` now includes `from_source` and `to_source`.
+- Revenue detail-to-order validation compares exact table identities, not worksheet names alone.
+- Regression tests cover duplicate `Sheet1` names across workbooks and same-name scoped source pairs.
+- Commits: `c4278e8`, `5d2b62e`, `5e67aff`, `abfc0df`, `dfe61ce`, `d16c67a`, `6e3af74`, `38a85ba`.
+- CI remains unverified for this continuation.
