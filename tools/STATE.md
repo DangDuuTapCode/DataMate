@@ -179,3 +179,18 @@ Next: audit public-test questions against the 14 input shapes, then build minima
 - Latest verified fork branch head: `ee45d81a81ee044bb8d05d103b5c5a255bc5a519`.
 - This head includes the contract hardening, regression tests, CI trigger update, and synchronized progress/handoff documentation.
 - PR #1 remains merged; no new PR has been opened for this continuation branch.
+
+
+## Contest archive analysis and blank-key LEFT JOIN support — 2026-11-20
+
+- Received the user's uploaded `Contest.zip` at `/mnt/data/Contest.zip`. Archive contains 308 entries; it was inspected in place and was not copied into the repository.
+- Selected `biz_129` as a real multi-source training case. Source basis: `Contest/train/data/biz_129/README.md`, `Contest/train/rulebook.md`, and questions `q_264a7294b457`, `q_6ee842fa8f92`, `q_635440e343cc`, `q_d361c00c6829`.
+- Measured structure: sales detail 145,479 rows; order header 38,499 rows with unique order IDs; customer catalog 220 rows with unique customer IDs; payment events 38,072 rows. Detail order IDs all match order headers. All 23,309 nonblank order customer IDs match the customer catalog; 15,190 order rows have blank customer IDs.
+- Payment events have 37,748 distinct order IDs and up to four payment rows per order. Do not join payment events directly to sales-line fact rows; that can multiply line revenue. Collection queries need their own payment-grain aggregation.
+- Added README-scoped semantic aliases for `Số CT` in `chi_tiet_don`, `Số phiếu` in `don_hang`, and `Mã giao dịch` in `thanh_toan`. These remain unmapped in unrelated source contexts.
+- Added `validated_left_join` for a non-fanout relationship where target keys are unique and every nonblank source key matches, but source-side blank keys exist. Such a relationship is not promoted to ordinary `validated`, so existing bundle capability checks remain fail-closed.
+- Relationship paths now propagate `left_join_required` and mark the exact hop. `FactJoinContract` refuses an inner join for such a path and accepts only a LEFT JOIN.
+- Added synthetic README-shaped integration coverage for the sales-detail → order → customer-group path. No contest rows or archive contents were added to the repo.
+- Added `docs/CONTEST_BIZ129_JOIN_CASE.md` with the rulebook-backed query family, observed structural counts, and payment-fanout warning.
+- Runtime Executor/Planner wiring remains disabled. The contract is still structural; it does not execute joins or calculate the group-share numerator/denominator.
+- CI has not surfaced a workflow run or commit status for this continuation branch. No local checkout or local test run was used. Obtain CI through a draft/normal PR before treating tests as passed.
