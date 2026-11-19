@@ -201,12 +201,15 @@ class CustomerGroupRevenueShareTests(unittest.TestCase):
             output = root / "answers.jsonl"
             run(root, output, log_directory=root / "logs")
             record = json.loads(output.read_text(encoding="utf-8").strip())
+            trace = json.loads(
+                (root / "logs" / "trace.jsonl").read_text(encoding="utf-8").strip()
+            )
 
         self.assertEqual(record, {
             "id": "q_share",
             "type": "percent",
             "answer": 44.44,
-        })
+        }, trace)
 
     def test_unrecognized_customer_group_does_not_become_a_generic_category_share(self):
         planner = RulePlanner(split_rules=self.rules)
