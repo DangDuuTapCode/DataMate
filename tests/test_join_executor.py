@@ -134,8 +134,14 @@ class FactJoinExecutorTests(unittest.TestCase):
             ],
             self.orders.source,
         )
+        bad_details = Table(
+            self.details.name,
+            self.details.headers,
+            self.details.rows + [["ORD3", "SP1", "20000"]],
+            self.details.source,
+        )
         self.assertIsNone(execute_fact_join_contract(
-            [self.details, bad_orders, self.customers], self.contract
+            [bad_details, bad_orders, self.customers], self.contract
         ))
 
     def test_rejects_duplicate_target_keys(self):
