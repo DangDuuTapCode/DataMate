@@ -340,6 +340,7 @@ class PipelineTests(unittest.TestCase):
             ["F", "2026-02-06", "completed"],
         ])
         rules = SplitRules.from_text("""| Đơn tính vào doanh thu | đơn không huỷ và không trả hàng. Đơn đang giao vẫn tính |
+| Hai dòng của cùng một đơn giống nhau ở mọi ô | lỗi xuất file, tính một lần |
 | Đơn thuộc kỳ nào | theo ngày đặt |
 | Doanh thu một đơn | thành tiền các dòng đã trừ giảm giá trên từng dòng |
 | Bán chạy | theo số lượng |
