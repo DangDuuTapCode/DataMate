@@ -628,3 +628,11 @@ The Public Submissions JSONL candidate is prepared and structurally verified, bu
 
 - Run `44550780980`: 232 tests, no code/test errors; 230 passed. Only the two existing `CODEX PROGRESS` hygiene checks fail.
 - Run: https://github.com/pl2n/DataMate/actions/runs/44550780980
+
+
+### Repository hygiene baseline clarified — 2026-11-19
+
+- The two recurring CI failures are inherited from upstream `DangDuuTapCode/DataMate` `main`; the fork contains the identical `CODEX PROGRESS` blob (SHA `1190ffbe02bd0081e84786f6fb4f09ee5d7f588f`).
+- The file is 2,058,368 bytes, causing the existing 1 MB hygiene limit to fail.
+- The configured secret-like regex has one match inside a Google search URL's `mstk` query parameter in that file; the surrounding context identifies it as a search URL parameter, not an API-key field. The other configured credential patterns have no matches.
+- No credential value is copied into this note. The file and hygiene tests were not changed because this is an inherited upstream artifact, not part of the feature work.

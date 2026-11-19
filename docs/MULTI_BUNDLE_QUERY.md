@@ -163,3 +163,11 @@ Composite intent-to-metric combinations are now data-driven through an explicit 
 ## Shared-context compatibility gate
 
 Before creating component plans, the composite planner now rejects populated filters, non-metric dimensions, sort options, and top-k settings. This prevents the previous component-spec construction from silently clearing a constraint that the user asked for. The parser's internal `metric` dimension marker remains allowed.
+
+
+### Repository hygiene baseline clarified — 2026-11-19
+
+- The two recurring CI failures are inherited from upstream `DangDuuTapCode/DataMate` `main`; the fork contains the identical `CODEX PROGRESS` blob (SHA `1190ffbe02bd0081e84786f6fb4f09ee5d7f588f`).
+- The file is 2,058,368 bytes, causing the existing 1 MB hygiene limit to fail.
+- The configured secret-like regex has one match inside a Google search URL's `mstk` query parameter in that file; the surrounding context identifies it as a search URL parameter, not an API-key field. The other configured credential patterns have no matches.
+- No credential value is copied into this note. The file and hygiene tests were not changed because this is an inherited upstream artifact, not part of the feature work.
