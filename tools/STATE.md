@@ -172,3 +172,10 @@ Next: audit public-test questions against the 14 input shapes, then build minima
 - Updated `.github/workflows/tests.yml` so pushes to `feature/**` branches run the Python test workflow; pull requests targeting `main` or `feature/**` are covered.
 - Commit: `e74d43413c3966d7d80e6fbe8f985fb5b6ac4de9`.
 - The GitHub connector did not surface a workflow run or commit status for this push. Do not claim CI passed; obtain a run from a subsequent PR/check before merge.
+
+
+### Current checkpoint pointer
+
+- Latest verified fork branch head: `ee45d81a81ee044bb8d05d103b5c5a255bc5a519`.
+- This head includes the contract hardening, regression tests, CI trigger update, and synchronized progress/handoff documentation.
+- PR #1 remains merged; no new PR has been opened for this continuation branch.
