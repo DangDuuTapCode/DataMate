@@ -76,6 +76,26 @@ The resolver returns exact approved table identities. `CompositePlanner` stores 
 At runtime, every evidence claim's SHA-256 is recomputed from the exact bytes of a strictly allowlisted local file:
 - `rulebook.md` at the input root;
 - `data_dictionary.csv`, `data_dictionary.xlsx`, or `data_dictionary.md` inside the business data directory;
+- `README.md` inside the business data directory (the contest input uses this file to document file roles, columns, and data conventions);
 - `operator_attestation.json` inside the business data directory.
 
+A business-local `README.md` is accepted only as a named schema/documentation source under the existing `data_dictionary` provenance type. This does not turn README content into verified evidence automatically: a reviewer must still create the evidence record, identify the exact table scope, and verify the claim against the relevant rulebook or documented source. The runtime only verifies that the referenced bytes match the recorded digest.
+
 An optional fragment after `#` is treated only as a citation anchor; it is never interpreted as a path. Absolute paths, separators, traversal, URLs, unknown filenames, missing files, any symlink source, files resolving outside the input root, and digest mismatches invalidate the evidence. No external URL is fetched. The digest proves that the referenced local file matches the recorded bytes; it does not independently authenticate the reviewer's identity or create a cryptographic signature.
+
+
+## Confirmed contest input layout (2026-11-19)
+
+The supplied `Contest.zip` has two separate input roots:
+- `Contest/train/`: 30 business directories (`biz_101`–`biz_130`), 3,000 questions, answers, a calendar, and its own `rulebook.md`.
+- `Contest/public_test/`: 14 business directories (`dev_001`–`dev_014`), 1,000 questions, a calendar, and a separate `rulebook.md`.
+
+Each root follows the runtime layout expected by DataMate: `rulebook.md`, `questions.jsonl`, `calendar.csv`, and `data/<business_id>/`. Run the two splits with their respective root directories; do not combine their business folders under one root because their rulebooks are distinct.
+
+The business-local `README.md` files are present in this input and document source files, table grain, column meanings, key relationships, units, and shop-specific conventions. They are now an explicitly named, digest-verifiable schema/documentation source. The input does not include a separate `data_dictionary.*` or `operator_attestation.json` file in the inspected business directories.
+
+The train and public-test rulebooks are not byte-identical. The public-test rulebook adds further conventions, including cash-by-shift semantics, weekday averages, extra customer/employee rankings, and industry-specific rules for mother-and-baby shops, vehicle repair, and phone shops. Always load the rulebook from the selected split root.
+
+Neither supplied rulebook contains the explicit successful-payment-only policy clause recognized by `SplitRules`. Therefore `collection_status_policy` remains unsupported for these contest inputs, and the collection bundle must stay unavailable. Payment columns or a payment table alone are not sufficient to prove which statuses count as collected money.
+
+The archive is an evaluation corpus, not a source of automatic business-rule attestations. Do not synthesize `business_rule_evidence.json` from filenames, headers, sample values, or README text alone.
