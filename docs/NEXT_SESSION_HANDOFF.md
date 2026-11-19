@@ -97,3 +97,15 @@ Validate evidence assertions against the actual split rulebook and supported exe
 - Latest docs/schema commit: `96d63298a940a0e449c7303bbe668508d74c0637`.
 - Latest CI: run `44559194129`, 256 tests / 254 passed. Only the two inherited repository-hygiene checks failed; feature tests passed. Run: https://github.com/pl2n/DataMate/actions/runs/44559194129
 - Resume by cross-checking the six capability assertions with `SplitRules` and the exact `Executor` behavior, then implement controlled source-digest verification. Do not auto-generate evidence or weaken fail-closed behavior.
+
+## Latest scope-validation milestone
+
+Implementation commit: c7d251de506acd54093578639a7b1aac2711aed4.
+
+- Collection required fields are restricted to the exact single table shared by both reviewed collection claims.
+- Revenue detail-to-order accepts equivalent validated edge orientation from catalog table order: many-to-one line→order or one-to-many order→line. Evidence scope itself remains ordered line then order.
+- Direct-line revenue evidence must scope exactly one table.
+- Added a valid evidence-backed end-to-end runner test. It confirms the runtime loads the file, authorizes both bundles, executes both components, and returns the side-by-side table.
+- CI run 44560238399: 259 tests; 257 passed; only the two inherited CODEX PROGRESS hygiene checks failed. Feature tests passed.
+
+Next: validate evidence provenance/digests against controlled known sources. Do not retrieve arbitrary references or treat a syntactically valid hash as proof of source correspondence.

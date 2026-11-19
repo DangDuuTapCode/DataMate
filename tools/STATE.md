@@ -43,3 +43,11 @@
 - Latest docs/schema commit: `96d63298a940a0e449c7303bbe668508d74c0637`.
 - CI run `44559194129`: 256 tests, 254 passed; only two inherited `CODEX PROGRESS` hygiene failures.
 - Next: validate evidence assertions against actual rulebook/executor behavior and add safe digest verification.
+
+## Evidence-scope hardening
+
+- Collection's payment amount/date/status fields must be co-located in the exact table scoped by both reviewed collection claims.
+- Revenue detail-to-order validates the line/order relationship independent of catalog edge orientation; direct_line evidence must scope one table.
+- End-to-end valid-evidence runner test passes; missing/invalid evidence still blocks.
+- Latest CI run 44560238399: 259 tests, 257 passed; only two inherited CODEX PROGRESS hygiene failures.
+- Next: design controlled source-digest verification; never fetch arbitrary external references.

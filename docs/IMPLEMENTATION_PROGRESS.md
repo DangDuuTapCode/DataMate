@@ -86,3 +86,16 @@ Validate evidence assertions against the active split rulebook and executor prof
 - Documentation/schema clarification commit: `96d63298a940a0e449c7303bbe668508d74c0637`.
 - CI run `44559194129` on the documentation/schema commit: 256 tests, 254 passed; only the two inherited `CODEX PROGRESS` hygiene checks failed. Feature tests passed.
 - Next work: validate business-rule assertions against actual split-rulebook semantics and design controlled digest verification.
+
+## Evidence-scope hardening — 2026-11-19
+
+- Collection's three required canonical fields are now checked only inside the exact one-table scope shared by payment-source-role and settlement-policy claims.
+- Revenue detail-to-order checks accept the validated relationship in either catalog edge orientation (many-to-one line→order or one-to-many order→line), while the evidence scope remains ordered line table then order table.
+- Unsupported flexible source-shape assertions are not accepted; only direct_line and detail_to_order are supported.
+- Added regression tests for out-of-scope payment fields, reversed catalog order, and a valid evidence-backed end-to-end runner execution.
+- Latest CI run 44560238399: 259 tests executed; 257 passed. Only the two inherited CODEX PROGRESS hygiene checks failed.
+- Run: https://github.com/pl2n/DataMate/actions/runs/44560238399
+
+## Next step
+
+Review the evidence file's provenance against controlled, known source locations and define a safe digest-verification path. Do not fetch arbitrary external references or infer reviewer attestations.

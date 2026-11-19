@@ -214,3 +214,9 @@ CI run 44555242526: 242 tests, 240 passed; only the two inherited CODEX PROGRESS
 A business may supply `data/<business_id>/business_rule_evidence.json`, validated against `schemas/business_rule_evidence.v1.schema.json`. The runtime loads it per business and passes it to `CompositePlanner` / `BundleCapabilityResolver`. Missing or invalid evidence blocks the composite and is recorded in the trace. Evidence must match the exact business and table identities.
 
 The resolver also requires a validated many-to-one `order_id` path for a revenue detail-to-order source shape. Collection requires the payment amount, date, and status fields together, with the source-role and settled-status claims scoped to the same payment table. Existing single-metric behavior remains unchanged.
+
+## Evidence-scope validation
+
+Collection fields are checked only within the exact payment table named by both reviewed claims. Revenue detail-to-order validates the relationship between the ordered line/order scope, allowing the catalog's edge orientation to reflect source-table iteration order. Direct-line claims must scope one table.
+
+The runner has an end-to-end regression proving that a valid evidence file enables the two-bundle side-by-side result; absent or invalid evidence remains fail-closed. Latest CI run 44560238399: 259 tests, 257 passed, with only the two inherited CODEX PROGRESS hygiene failures.
