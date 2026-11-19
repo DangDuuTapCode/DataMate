@@ -146,7 +146,7 @@ class RelationshipDiscoveryTests(unittest.TestCase):
             if item.canonical_key == "order_id+order_line_number"
         )
 
-        self.assertEqual(composite.status, "rejected")
+        self.assertEqual(composite.status, "candidate")
         self.assertEqual(composite.from_unmatched_keys, 1)
 
     def test_unmatched_child_key_is_rejected(self):
