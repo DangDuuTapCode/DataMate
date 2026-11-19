@@ -1,5 +1,6 @@
 import unittest
 import datetime as dt
+from dataclasses import replace
 
 from datamate.metrics import Executor
 from datamate.rules import classify_order_status
@@ -81,6 +82,65 @@ class PipelineTests(unittest.TestCase):
 
         self.assertEqual(forced["answer"], 42000)
         self.assertEqual(automatic["answer"], 999000)
+
+    def test_detail_to_order_duplicate_line_abstains_without_rulebook_policy(self):
+        details = Table(
+            "chi_tiet_don_hang",
+            ["Mã đơn hàng", "Mã hàng", "Tên hàng", "Thành tiền"],
+            [
+                ["A", "SP-1", "Trà", 42000],
+                ["A", "SP-1", "Trà", 42000],
+            ],
+            source="chi_tiet_don_hang.csv",
+        )
+        orders = Table(
+            "don_hang",
+            ["Mã đơn hàng", "Ngày đặt", "Trạng thái đơn hàng"],
+            [["A", "2026-03-01", "Hoàn thành"]],
+            source="don_hang.csv",
+        )
+        question = "doanh thu tháng này"
+        plan = self.planner.plan(question, "2026-03-04")
+        rules = replace(
+            SplitRules.test_defaults(),
+            deduplicate_identical_order_lines=False,
+        )
+
+        candidate = Executor(
+            [details, orders], rules=rules, revenue_source_shape="detail_to_order"
+        ).execute(plan, question)
+
+        self.assertIsNone(candidate)
+
+    def test_detail_to_order_duplicate_line_counts_once_with_rulebook_policy(self):
+        details = Table(
+            "chi_tiet_don_hang",
+            ["Mã đơn hàng", "Mã hàng", "Tên hàng", "Thành tiền"],
+            [
+                ["A", "SP-1", "Trà", 42000],
+                ["A", "SP-1", "Trà", 42000],
+            ],
+            source="chi_tiet_don_hang.csv",
+        )
+        orders = Table(
+            "don_hang",
+            ["Mã đơn hàng", "Ngày đặt", "Trạng thái đơn hàng"],
+            [["A", "2026-03-01", "Hoàn thành"]],
+            source="don_hang.csv",
+        )
+        question = "doanh thu tháng này"
+        plan = self.planner.plan(question, "2026-03-04")
+        rules = replace(
+            SplitRules.test_defaults(),
+            deduplicate_identical_order_lines=True,
+        )
+
+        candidate = Executor(
+            [details, orders], rules=rules, revenue_source_shape="detail_to_order"
+        ).execute(plan, question)
+
+        self.assertIsNotNone(candidate)
+        self.assertEqual(candidate["answer"], 42000)
 
     def test_revenue_drops_cancelled_orders(self):
         self.assertEqual(self.answer("doanh thu tháng này")["answer"], 40000)
