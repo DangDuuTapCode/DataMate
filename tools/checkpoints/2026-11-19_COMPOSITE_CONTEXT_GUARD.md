@@ -18,3 +18,10 @@ Added synthetic regressions for explicit filters, unsupported dimensions, and ra
 ## Boundary
 
 This is a compatibility gate only. It does not add filter-aware multi-bundle execution or ranking composites.
+
+
+## CI result
+
+GitHub Actions run `44550780980` executed 232 tests with no code/test errors; 230 tests passed. The only two failures remain the pre-existing repository-hygiene checks against `CODEX PROGRESS` (size limit and secret-like regex). No checks were weakened.
+
+Run: https://github.com/pl2n/DataMate/actions/runs/44550780980

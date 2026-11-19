@@ -622,3 +622,9 @@ The Public Submissions JSONL candidate is prepared and structurally verified, bu
 
 - Read `tools/checkpoints/2026-11-19_COMPOSITE_CONTEXT_GUARD.md`.
 - Composite planner now fails closed if source QuerySpec contains filters, non-metric dimensions, sort, or top-k settings that component plans would otherwise drop.
+
+
+### CI result — composite context guard
+
+- Run `44550780980`: 232 tests, no code/test errors; 230 passed. Only the two existing `CODEX PROGRESS` hygiene checks fail.
+- Run: https://github.com/pl2n/DataMate/actions/runs/44550780980
