@@ -14,6 +14,22 @@ A resolution is available only when:
 
 The result distinguishes missing/ambiguous fields, field-group conflicts, missing/rejected relationships, unverified/rejected business capabilities, and the rule-profile version.
 
+## Supported relationship-key families
+
+The semantic catalog and relationship discovery currently recognize these exact identifier families:
+- order/invoice IDs: `order_id`;
+- customer IDs: `customer_id`;
+- product/item IDs and barcodes: `product_id`;
+- payment receipt/transaction IDs: `payment_transaction_id`;
+- employee/staff IDs: `employee_id`;
+- supplier/vendor IDs: `supplier_id`;
+- purchase receipt IDs: `purchase_receipt_id`;
+- lot/batch IDs: `batch_id`;
+- branch IDs: `branch_id`;
+- device IMEIs: `imei`.
+
+The alias list is deliberately exact. Generic labels such as `STT`, `Mã tham chiếu`, `Mã`, and generic amount/date/status headers are not treated as keys. Identifier values are compared as exact strings; leading zeroes are preserved. Relationship results still require overlap and safe cardinality evidence. A detected or validated relationship is not an instruction to execute a join.
+
 ## Business-rule evidence
 
 The v1 contract is defined in `schemas/business_rule_evidence.v1.schema.json` and read by `src/datamate/rule_evidence.py`. A business supplies an optional file at:
