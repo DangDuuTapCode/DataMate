@@ -99,3 +99,8 @@ The train and public-test rulebooks are not byte-identical. The public-test rule
 Neither supplied rulebook contains the explicit successful-payment-only policy clause recognized by `SplitRules`. Therefore `collection_status_policy` remains unsupported for these contest inputs, and the collection bundle must stay unavailable. Payment columns or a payment table alone are not sufficient to prove which statuses count as collected money.
 
 The archive is an evaluation corpus, not a source of automatic business-rule attestations. Do not synthesize `business_rule_evidence.json` from filenames, headers, sample values, or README text alone.
+
+
+## Rulebook-backed exact duplicate line handling
+
+The active split rulebook may explicitly state that two rows of the same order that are identical in every cell are an export error and count once. When that exact clause is present, `SplitRules.deduplicate_identical_order_lines` enables exact-row deduplication only while profiling the composite `order_id + order_line_number` relationship. If the clause is absent, duplicate composite keys remain ambiguous. This does not alter source tables, deduplicate executor input, or authorize a join by itself.
