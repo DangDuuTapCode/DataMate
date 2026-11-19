@@ -29,3 +29,12 @@ Six synthetic tests cover:
 ## Verification and limitations
 
 GitHub Actions verification is pending. No local checkout or local test execution was available. The resolver remains discovery-only and is not connected to the planner or Executor. No arbitrary join, new metric, or capability enablement was introduced.
+
+
+## Follow-up CI result
+
+The initial edge-case CI run revealed two fixture mistakes, not implementation defects: the reverse traversal test used the forward direction, and the cycle test asserted three hops while its graph included a direct one-hop target edge. Both fixtures were corrected in commit `2522abbafdccb6bb930d3f79f9f0f13af8302d4f`.
+
+GitHub Actions run `44580683573` executed 299 tests: 297 passed, including all relationship-path tests. The only two failures are the inherited `CODEX PROGRESS` hygiene checks. Run: https://github.com/pl2n/DataMate/actions/runs/44580683573
+
+The branch is also the head of existing upstream PR #1 targeting `main`; no PR mutation or merge was performed here. GitHub currently reports `mergeable=false`.
