@@ -6,7 +6,7 @@ remain the source of truth for each component.
 """
 from dataclasses import dataclass, replace
 
-from .requirements import RequirementExtractor
+from .requirements import MetricRequirement, RequirementExtractor
 from .normalise import fold
 from .output import valid_record
 from .types import QueryPlan, QuerySpec
@@ -15,7 +15,7 @@ from .verify import verify_with_reason
 
 @dataclass(frozen=True)
 class QueryComponent:
-    requirement: QueryRequirement
+    requirement: MetricRequirement
     query_spec: QuerySpec
     query_plan: QueryPlan
 
