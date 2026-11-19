@@ -32,6 +32,51 @@ def _write_test_calendar(root):
     )
 
 
+def _write_complete_business_rule_evidence(data_dir):
+    def claim(capability_id, assertion, table_name, source):
+        return {
+            "capability_id": capability_id,
+            "status": "verified",
+            "assertion": assertion,
+            "table_scope": [{"table_name": table_name, "source": source}],
+            "provenance": {
+                "source_type": "rulebook",
+                "reference": "rulebook.md#reviewed-financial-policy",
+                "sha256": "a" * 64,
+                "reviewed_by": "synthetic-reviewer",
+                "reviewed_at": "2026-11-19T10:00:00+07:00",
+            },
+        }
+
+    payload = {
+        "schema_version": "1.0.0",
+        "business_id": "biz",
+        "profiles": [
+            {
+                "profile_id": "revenue_rules",
+                "version": "1.0.0",
+                "evidence": [
+                    claim("revenue_executor_source_shape", "direct_line", "sales", "sales.csv"),
+                    claim("eligible_sales_amount", "line_amount_after_line_discount", "sales", "sales.csv"),
+                    claim("sale_period", "order_date", "sales", "sales.csv"),
+                    claim("order_status_semantics", "exclude_cancelled_returned_failed", "sales", "sales.csv"),
+                ],
+            },
+            {
+                "profile_id": "collection_rules",
+                "version": "1.0.0",
+                "evidence": [
+                    claim("payment_source_role", "payment_event_or_receipt", "payments", "payments.csv"),
+                    claim("settled_payment_status_policy", "successful_status_only", "payments", "payments.csv"),
+                ],
+            },
+        ],
+    }
+    (data_dir / "business_rule_evidence.json").write_text(
+        json.dumps(payload), encoding="utf-8"
+    )
+
+
 class ApiTests(unittest.TestCase):
     def test_inprocess_api_is_offline_and_deterministic(self):
         table = Table("sales", ["Ngày đặt", "Tên sản phẩm", "Thành tiền", "Trạng thái"], [["2026-03-01", "Trà", 42, "Hoàn thành"]])
@@ -123,6 +168,48 @@ class ApiTests(unittest.TestCase):
             self.assertIn(
                 "business_rule_capabilities_unverified",
                 trace["bundle_capability_resolutions"][0]["reasons"],
+            )
+
+    def test_runner_executes_composite_with_valid_scoped_business_evidence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            _write_test_rulebook(root)
+            data = root / "data" / "biz"
+            data.mkdir(parents=True)
+            (data / "sales.csv").write_text(
+                "Ngày đặt,Tên sản phẩm,Thành tiền,Trạng thái\n"
+                "2026-03-01,Trà,42,Hoàn thành\n",
+                encoding="utf-8",
+            )
+            (data / "payments.csv").write_text(
+                "Thanh toán / Giá trị,Thanh toán / Ngày,Thanh toán / Trạng thái\n"
+                "30,2026-03-01,Thành công\n",
+                encoding="utf-8",
+            )
+            _write_complete_business_rule_evidence(data)
+            (root / "questions.jsonl").write_text(
+                json.dumps({
+                    "id": "q",
+                    "business_id": "biz",
+                    "question": "doanh thu và tiền thực thu tháng này",
+                    "as_of_date": "2026-03-02",
+                }) + "\n",
+                encoding="utf-8",
+            )
+            output, logs = root / "result" / "submission.jsonl", root / "result" / "logs"
+            run(root, output, logs)
+
+            record = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(record["type"], "table")
+            self.assertEqual(
+                record["answer"]["rows"],
+                [["revenue", 42], ["collected_amount", 30]],
+            )
+            trace = json.loads((logs / "trace.jsonl").read_text(encoding="utf-8"))
+            self.assertEqual(trace["business_rule_evidence"]["status"], "loaded")
+            self.assertEqual(
+                [item["status"] for item in trace["bundle_capability_resolutions"]],
+                ["available", "available"],
             )
 
     def test_runner_rejects_invalid_business_rule_evidence_without_crashing(self):
