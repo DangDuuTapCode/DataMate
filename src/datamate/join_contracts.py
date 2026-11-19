@@ -53,7 +53,11 @@ def _valid_hop(hop):
         return False
     if not _valid_identity(hop.from_table) or not _valid_identity(hop.to_table):
         return False
-    if hop.from_table == hop.to_table or hop.fanout is not False:
+    if (
+        hop.from_table == hop.to_table
+        or hop.fanout is not False
+        or not isinstance(hop.requires_left_join, bool)
+    ):
         return False
     if (
         not isinstance(hop.cardinality, str)
@@ -126,6 +130,9 @@ def build_fact_join_contract(
     if hops[0].from_table != fact_table or hops[-1].to_table != target_table:
         return None
 
+    if any(hop.requires_left_join for hop in hops) and join_type != "left":
+        return None
+
     visited_tables = {fact_table}
     for index, hop in enumerate(hops):
         if not _valid_hop(hop):
@@ -136,8 +143,8 @@ def build_fact_join_contract(
             return None
         visited_tables.add(hop.to_table)
 
-    # Validated relationships currently require complete key coverage and no
-    # blank keys. The contract remains structural and does not execute joins.
+    # Source-side blank keys are permitted only when the path explicitly
+    # requires LEFT JOIN, preserving otherwise-unmatched fact rows.
     return FactJoinContract(
         fact_table=fact_table,
         target_table=target_table,
