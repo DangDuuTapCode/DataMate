@@ -2,8 +2,10 @@ import unittest
 from dataclasses import replace
 
 from datamate.customer_group_revenue import execute_customer_group_revenue_share
+from datamate.metrics import Executor
 from datamate.split_rules import SplitRules
 from datamate.types import Table
+from datamate.understanding import RulePlanner
 
 
 class CustomerGroupRevenueShareTests(unittest.TestCase):
@@ -55,6 +57,37 @@ class CustomerGroupRevenueShareTests(unittest.TestCase):
             "2025-10-31",
             group,
         )
+
+    def test_question_planner_and_executor_run_the_allowlisted_query_family(self):
+        question = (
+            "Tỷ trọng doanh thu khách hàng thuộc nhóm thân thiết tháng 10/2025"
+        )
+        planner = RulePlanner(split_rules=self.rules)
+        spec = planner.interpret(question, "2025-11-01", "biz_129")
+        self.assertEqual(spec.intent, "customer_group_revenue_share")
+        self.assertEqual(spec.dimensions, ("customer_group",))
+        self.assertEqual(spec.filters, (("customer_group", "thân thiết"),))
+        self.assertEqual(spec.unit, "percent")
+        self.assertTrue(spec.executable)
+
+        plan = planner.plan(question, "2025-11-01")
+        self.assertEqual(plan.intent, "customer_group_revenue_share")
+        self.assertEqual(plan.filters, (("customer_group", "thân thiết"),))
+        candidate, reason = Executor(self.tables, rules=self.rules).execute_with_reason(
+            plan, question, spec=spec
+        )
+        self.assertIsNone(reason)
+        self.assertEqual(candidate["answer"], 44.44)
+
+    def test_unrecognized_customer_group_does_not_become_a_generic_category_share(self):
+        planner = RulePlanner(split_rules=self.rules)
+        spec = planner.interpret(
+            "Tỷ trọng doanh thu nhóm VIP tháng 10/2025",
+            "2025-11-01",
+            "biz_129",
+        )
+        self.assertNotEqual(spec.intent, "customer_group_revenue_share")
+        self.assertFalse(spec.executable)
 
     def test_guest_sales_stay_in_whole_shop_denominator(self):
         candidate, reason = self.run_query()
