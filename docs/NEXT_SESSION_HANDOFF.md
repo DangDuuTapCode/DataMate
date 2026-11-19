@@ -336,3 +336,12 @@ Business semantics: the rulebook says guest orders belong to no customer group b
 Runtime join execution remains off. Before wiring, design explicit handling for status/date filters, customer-group numerator vs all-shop denominator, and separate payment-grain calculations.
 
 CI is still unverified: GitHub queries returned no workflow runs/statuses for the latest commits. Do not claim tests passed or run locally.
+
+
+### Latest CI checkpoint
+
+- First CI run `44586101398`: 318 tests, 4 failures (two new test expectation/fixture issues and two repository-hygiene failures).
+- Fixed the test fixture to model multiple orders for the same customer and changed the partial-overlap expectation to `candidate`.
+- Replaced the oversized `CODEX PROGRESS` historical transcript with a short pointer to current handoff documents. The old tracked file exceeded 1 MB and matched one sensitive-looking token pattern; the replacement does not retain that text.
+- Follow-up GitHub Actions run `44586527843` on `4f7077120f19b29717f5be46f1c53fe9d80d01f4`: **318 tests passed, workflow conclusion success**.
+- Draft PR #2: https://github.com/DangDuuTapCode/DataMate/pull/2. Do not merge without the user's instruction.
