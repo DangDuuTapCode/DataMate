@@ -64,6 +64,29 @@ The user supplied `Contest.zip` (approximately 192 MB). It was inspected without
   - `a33ccdd32355f163069c47872e42acdb87b79489` — evidence contract documentation.
   - `7edf33b418cce8ed782cc64282c8b7376f08ce40` — implementation progress and benchmark findings.
 
+## Multi-source identifier expansion
+
+The public-test archive showed that the original relationship vocabulary (order, customer, product, payment transaction) was too narrow for the supplied business schemas. Added exact aliases and relationship-key support for:
+- employee/staff IDs;
+- supplier/vendor IDs;
+- purchase receipt IDs;
+- lot/batch IDs;
+- branch IDs;
+- device IMEI;
+- additional explicit order, customer, product/barcode, and payment-receipt aliases.
+
+The change intentionally does not map generic `STT`, `Mã tham chiếu`, or generic `Mã`. Relationship validation still requires exact string overlap and safe cardinality; it does not perform joins.
+
+Commits:
+- `8ff2c0935536c4c31b21e845bb7fc02464b3bbda` — exact business identifier aliases.
+- `37f66c385021eb49a22d6adbce6dfcd7951f6a5b` — expanded relationship-key vocabulary.
+- `a784b4fb9524b54493474cd36a418bf25deace9b` — semantic alias regression test.
+- `2d866ee9585211b69a39dcb226c911eb03041f2b` — relationship regression test.
+- `a64ba3439d2a82dcc73d324b9ba6cdefeab1bd67` — payment receipt aliases.
+- `0465e9d9d06b4c3c65d4cba48c1520458daa9619` — payment alias test update.
+- `dccf1bab63c1ac511294d0f7f10b896ee53cc1a4` — relationship capability documentation.
+- `45b3667a5f8db22ea9f9ca1cb66ea6294db70a7a` — implementation progress update.
+
 ## Next engineering step
 
 Use the 14 public-test businesses and 1,000 public-test questions as a coverage map. Prioritize representative multi-source cases and add small synthetic fixtures for them; do not commit the 192 MB archive or its full business data. Focus on source-role and relationship contracts, not a universal join. Extend only with explicit README/rulebook evidence. Keep collection unavailable until a supported settlement policy is present.
