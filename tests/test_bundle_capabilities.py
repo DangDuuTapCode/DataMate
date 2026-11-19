@@ -321,6 +321,16 @@ class BundleCapabilityResolverTests(unittest.TestCase):
             (("sales_details", "details.xlsx"), ("orders", "orders.xlsx")),
         )
         self.assertEqual(valid.executor_source_shape, "detail_to_order")
+        self.assertEqual(
+            valid.revenue_join_contract.to_dict(),
+            {
+                "line_table": {"table_name": "sales_details", "source": "details.xlsx"},
+                "order_table": {"table_name": "orders", "source": "orders.xlsx"},
+                "line_key_column_index": 0,
+                "order_key_column_index": 0,
+                "canonical_keys": ["order_id"],
+            },
+        )
 
         broken_orders = Table("orders", ["Mã đơn hàng"], [["A2"]], "orders.xlsx")
         rejected = self.resolver.resolve(
