@@ -195,7 +195,7 @@ class CustomerGroupRevenueShareTests(unittest.TestCase):
                     "business_id": "biz_129",
                     "question": "Trong tổng doanh thu tháng 10/2025, phần của khách nhóm thân thiết là mấy phần trăm?",
                     "as_of_date": "2026-08-14",
-                }, ensure_ascii=False) + "\\n",
+                }, ensure_ascii=False) + "\n",
                 encoding="utf-8",
             )
             output = root / "answers.jsonl"
