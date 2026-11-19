@@ -27,6 +27,9 @@ class SplitRules:
     tie_breaker: str | None
     tet_lunar_window: tuple[int, int, int, int, int, int] | None
     tet_preceding_comparison_supported: bool
+    revenue_amount_basis: str | None = None
+    revenue_period_basis: str | None = None
+    collection_status_policy: str | None = None
 
     @classmethod
     def from_text(cls, text):
@@ -53,6 +56,12 @@ class SplitRules:
         rank_rule = row("ban chay", "best-selling")
         cancellation_rule = row("ti le don huy trong ky", "cancellation rate")
         tet_rule = row("tet nam y dip tet mua tet", "tet")
+        collection_status_rule = row(
+            "trang thai thanh toan duoc tinh la tien thuc thu",
+            "giao dich thanh toan duoc tinh la tien thuc thu",
+            "payment status counted as collected",
+            "collected payment status policy",
+        )
         tet_rule_symbols = "".join(
             character
             for character in unicodedata.normalize(
@@ -80,12 +89,16 @@ class SplitRules:
 
         if "ngay dat" in date_rule or "order date" in date_rule:
             date_headers = ("ngay dat", "order date", "ngay tao don")
+            period_basis = "order_date"
         elif "ngay giao" in date_rule or "delivery date" in date_rule:
             date_headers = ("ngay giao", "delivery date")
+            period_basis = "delivery_date"
         elif "ngay ban" in date_rule or "sales date" in date_rule:
             date_headers = ("ngay ban", "sales date")
+            period_basis = "sales_date"
         else:
             date_headers = ()
+            period_basis = None
 
         cancellation_numerator = set()
         if "don huy" in cancellation_rule or "cancelled" in cancellation_rule or "canceled" in cancellation_rule:
@@ -103,6 +116,17 @@ class SplitRules:
             "line amounts", "after line-level discounts",
         ))
         revenue_supported = bool(status_rule and line_amount and date_headers and excluded)
+        amount_basis = "line_amount_after_line_discount" if line_amount else None
+
+        collection_status_policy = None
+        if (
+            ("chi " in collection_status_rule or "only " in collection_status_rule)
+            and (
+                ("thanh toan" in collection_status_rule and "thanh cong" in collection_status_rule)
+                or ("payment" in collection_status_rule and "successful" in collection_status_rule)
+            )
+        ):
+            collection_status_policy = "successful_status_only"
 
         if "so luong" in rank_rule or "quantity" in rank_rule:
             ranking_default = "quantity"
@@ -146,6 +170,9 @@ class SplitRules:
             tie_breaker=tie_breaker,
             tet_lunar_window=tet_window,
             tet_preceding_comparison_supported=bool(tet_window and "truoc tet" in tet_rule and "cung so ngay" in tet_rule),
+            revenue_amount_basis=amount_basis,
+            revenue_period_basis=period_basis,
+            collection_status_policy=collection_status_policy,
         )
 
     @classmethod
@@ -176,4 +203,7 @@ class SplitRules:
             tie_breaker="code_or_name",
             tet_lunar_window=(23, 12, -1, 10, 1, 0),
             tet_preceding_comparison_supported=True,
+            revenue_amount_basis="line_amount_after_line_discount",
+            revenue_period_basis="order_date",
+            collection_status_policy=None,
         )

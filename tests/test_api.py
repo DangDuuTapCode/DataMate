@@ -17,6 +17,7 @@ def _write_test_rulebook(root):
         "| Bán chạy | theo số lượng |\n"
         "| Bằng nhau | theo mã tăng dần; không có mã thì theo tên |\n"
         "| Tỉ lệ đơn hủy trong kỳ | phần trăm đơn hủy trong mọi đơn đặt trong kỳ, mọi trạng thái |\n"
+        "| Trạng thái thanh toán được tính là tiền thực thu | chỉ giao dịch thanh toán thành công |\n"
         "| Tết năm Y, dịp Tết, mùa Tết | Từ ngày 23 tháng Chạp năm âm Y-1 đến hết mùng 10 tháng Giêng năm âm Y. Khi so sánh với trước Tết, lấy cùng số ngày ngay trước ngày bắt đầu. |\n",
         encoding="utf-8",
     )

@@ -70,3 +70,14 @@ detail_to_order.
 An end-to-end runner test now proves that a valid, correctly scoped evidence
 file can enable both default components and produce a verified side-by-side
 result. Missing and malformed evidence continue to abstain.
+
+
+## Active-rulebook conformance
+
+Reviewed claims are checked against the active `SplitRules` object before they can satisfy a bundle:
+- `eligible_sales_amount` must match the parsed line-amount-after-line-discount rule.
+- `sale_period` must match the active order/delivery/sales date basis.
+- `order_status_semantics` is accepted only when the executor rule profile excludes cancelled, returned, and failed-delivery orders.
+- `settled_payment_status_policy` is accepted only when the active rulebook explicitly states that only successful payment transactions count as collected money. If this clause is absent, collection remains unavailable.
+
+The executor now classifies payment statuses independently from order statuses. Explicit paid/successful states are included; pending, failed, cancelled, refunded, and reversed states are excluded. Unknown statuses cause abstention. This prevents order-status semantics from being reused as proof of payment settlement.

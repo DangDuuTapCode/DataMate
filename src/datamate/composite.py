@@ -110,7 +110,8 @@ class CompositePlanner:
                 return None
             if self.schema_catalog is not None:
                 resolution = self.capability_resolver.resolve(
-                    bundle, self.schema_catalog, self.rule_evidence
+                    bundle, self.schema_catalog, self.rule_evidence,
+                    split_rules=getattr(self.rule_planner, "split_rules", None),
                 )
                 self.last_capability_resolutions.append(resolution.to_dict())
                 if not resolution.available:

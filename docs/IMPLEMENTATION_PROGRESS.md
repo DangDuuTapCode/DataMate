@@ -99,3 +99,13 @@ Validate evidence assertions against the active split rulebook and executor prof
 ## Next step
 
 Review the evidence file's provenance against controlled, known source locations and define a safe digest-verification path. Do not fetch arbitrary external references or infer reviewer attestations.
+
+
+## Rulebook/executor conformance — 2026-11-19
+
+- Added parsed `revenue_amount_basis`, `revenue_period_basis`, and optional `collection_status_policy` to SplitRules.
+- The evidence resolver now checks revenue claims against the active rulebook: line amount after line discount, matching period basis, and exclusion of cancelled/returned/failed-delivery outcomes.
+- Collection's `successful_status_only` claim is accepted only if the active rulebook contains an explicit supported collection-status clause.
+- Added `classify_payment_status` and changed collected-amount execution to use it instead of the order-status classifier. Unknown payment statuses abstain; recognized pending/failed/cancelled/refunded states are excluded.
+- Regression coverage includes `Đã thanh toán`, `Chờ thanh toán`, failed, cancelled, refunded, unknown status, and evidence/rulebook mismatch.
+- The actual mounted rulebook is supplied at runtime and is not committed here. Its collection clause has not been inspected in this repository; absence means the collection bundle remains unavailable.

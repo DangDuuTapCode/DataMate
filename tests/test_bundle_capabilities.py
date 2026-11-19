@@ -183,7 +183,9 @@ class BundleCapabilityResolverTests(unittest.TestCase):
         bundle = default_bundle_registry().resolve("collected_amount")
         evidence = _complete_rule_evidence()
 
-        result = self.resolver.resolve(bundle, catalog, evidence)
+        result = self.resolver.resolve(
+            bundle, catalog, evidence, split_rules=_reviewed_split_rules()
+        )
 
         self.assertTrue(result.available)
         self.assertEqual(result.rule_profile_version, "1.0.0")
@@ -199,9 +201,62 @@ class BundleCapabilityResolverTests(unittest.TestCase):
             bundle,
             build_schema_catalog([without_status], business_id="biz_synthetic"),
             evidence,
+            split_rules=_reviewed_split_rules(),
         )
         self.assertFalse(blocked.available)
         self.assertEqual(blocked.missing_fields, ("payment_status",))
+
+    def test_revenue_status_evidence_requires_all_reviewed_exclusions(self):
+        table = Table(
+            "sales", ["Tổng sau giảm giá", "Ngày đặt", "Trạng thái đơn hàng"],
+            [[100, "2026-01-01", "Hoàn thành"]], "sales.xlsx",
+        )
+        rules = replace(
+            _reviewed_split_rules(),
+            revenue_excluded_statuses=frozenset({"cancelled", "delivery_failed"}),
+        )
+        result = self.resolver.resolve(
+            default_bundle_registry().resolve("revenue"),
+            build_schema_catalog([table], business_id="biz_synthetic"),
+            _complete_rule_evidence(),
+            split_rules=rules,
+        )
+        self.assertFalse(result.available)
+        self.assertIn("order_status_semantics", result.unverified_capabilities)
+
+    def test_collection_policy_claim_needs_matching_active_rulebook_clause(self):
+        table = Table(
+            "payments",
+            ["Thanh toán / Giá trị", "Thanh toán / Ngày", "Thanh toán / Trạng thái"],
+            [[100, "2026-01-01", "Đã thanh toán"]],
+            "payments.xlsx",
+        )
+        bundle = default_bundle_registry().resolve("collected_amount")
+        result = self.resolver.resolve(
+            bundle,
+            build_schema_catalog([table], business_id="biz_synthetic"),
+            _complete_rule_evidence(),
+            split_rules=SplitRules.test_defaults(),
+        )
+        self.assertFalse(result.available)
+        self.assertIn("settled_payment_status_policy", result.unverified_capabilities)
+
+    def test_revenue_evidence_must_match_active_rulebook_period(self):
+        table = Table(
+            "sales", ["Tổng sau giảm giá", "Ngày đặt", "Trạng thái đơn hàng"],
+            [[100, "2026-01-01", "Hoàn thành"]], "sales.xlsx",
+        )
+        payload = _complete_rule_evidence().to_dict()
+        payload["profiles"][0]["evidence"][2]["assertion"] = "delivery_date"
+        evidence = BusinessRuleEvidence.from_dict(payload)
+        result = self.resolver.resolve(
+            default_bundle_registry().resolve("revenue"),
+            build_schema_catalog([table], business_id="biz_synthetic"),
+            evidence,
+            split_rules=_reviewed_split_rules(),
+        )
+        self.assertFalse(result.available)
+        self.assertIn("sale_period", result.unverified_capabilities)
 
     def test_collection_evidence_must_scope_role_and_policy_to_same_table(self):
         payments = Table(
@@ -219,7 +274,8 @@ class BundleCapabilityResolverTests(unittest.TestCase):
         bundle = default_bundle_registry().resolve("collected_amount")
 
         result = self.resolver.resolve(
-            bundle, build_schema_catalog([payments, other], business_id="biz_synthetic"), evidence
+            bundle, build_schema_catalog([payments, other], business_id="biz_synthetic"),
+            evidence, split_rules=_reviewed_split_rules(),
         )
 
         self.assertFalse(result.available)
@@ -246,7 +302,8 @@ class BundleCapabilityResolverTests(unittest.TestCase):
         bundle = default_bundle_registry().resolve("revenue")
 
         valid = self.resolver.resolve(
-            bundle, build_schema_catalog([details, orders], business_id="biz_synthetic"), evidence
+            bundle, build_schema_catalog([details, orders], business_id="biz_synthetic"),
+            evidence, split_rules=_reviewed_split_rules(),
         )
         self.assertTrue(valid.available)
 
@@ -255,6 +312,7 @@ class BundleCapabilityResolverTests(unittest.TestCase):
             bundle,
             build_schema_catalog([details, broken_orders], business_id="biz_synthetic"),
             evidence,
+            split_rules=_reviewed_split_rules(),
         )
         self.assertFalse(rejected.available)
         self.assertEqual(rejected.reasons, ("rejected_required_relationships",))
@@ -274,6 +332,7 @@ class BundleCapabilityResolverTests(unittest.TestCase):
             bundle,
             build_schema_catalog([reviewed, unreviewed], business_id="biz_synthetic"),
             evidence,
+            split_rules=_reviewed_split_rules(),
         )
 
         self.assertFalse(result.available)
@@ -303,6 +362,7 @@ class BundleCapabilityResolverTests(unittest.TestCase):
             bundle,
             build_schema_catalog([orders, details], business_id="biz_synthetic"),
             evidence,
+            split_rules=_reviewed_split_rules(),
         )
 
         self.assertTrue(result.available)

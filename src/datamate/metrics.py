@@ -4,7 +4,7 @@ from functools import lru_cache
 
 from .normalization import infer_decimal_separator, parse_date, parse_decimal
 from .normalise import fold, tokens
-from .rules import classify_order_status
+from .rules import classify_order_status, classify_payment_status
 from .split_rules import SplitRules
 from .types import Table
 
@@ -1022,10 +1022,12 @@ class Executor:
                 settled = []
                 nonsettled = {"cancelled", "returned", "delivery_failed", "pending", "in_transit"}
                 for row in rows:
-                    status_class = classify_order_status(row[status_col])
+                    status_class = classify_payment_status(row[status_col])
                     if status_class == "successful":
                         settled.append(row)
-                    elif status_class in nonsettled:
+                    elif status_class in nonsettled or status_class in {
+                        "failed", "refunded", "reversed",
+                    }:
                         continue
                     else:
                         return None

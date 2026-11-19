@@ -51,3 +51,12 @@
 - End-to-end valid-evidence runner test passes; missing/invalid evidence still blocks.
 - Latest CI run 44560238399: 259 tests, 257 passed; only two inherited CODEX PROGRESS hygiene failures.
 - Next: design controlled source-digest verification; never fetch arbitrary external references.
+
+
+## Rulebook/executor conformance
+
+- Payment statuses are classified independently from order statuses; unknown payment states abstain.
+- SplitRules exposes revenue amount/date semantics and an optional collection status policy.
+- Resolver cross-checks evidence against the active SplitRules. Collection's successful-only policy requires an explicit active rulebook clause.
+- CompositePlanner passes the active SplitRules into bundle capability resolution.
+- The mounted runtime rulebook is not committed. Do not assume it contains the collection clause.

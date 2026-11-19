@@ -32,6 +32,10 @@ class PipelineTests(unittest.TestCase):
             ["Thanh toán / Giá trị", "Thanh toán / Ngày", "Thanh toán / Trạng thái"],
             [
                 [40000, "2026-03-01", "Hoàn thành"],
+                [10000, "2026-03-01", "Đã thanh toán"],
+                [20000, "2026-03-02", "Chờ thanh toán"],
+                [30000, "2026-03-02", "Thanh toán thất bại"],
+                [40000, "2026-03-02", "Đã hoàn tiền"],
                 [60000, "2026-03-02", "Đã hủy"],
             ],
             source="payments.xlsx",
@@ -40,7 +44,18 @@ class PipelineTests(unittest.TestCase):
         plan = self.planner.plan(question, "2026-03-04")
         candidate = Executor([table]).execute(plan, question)
 
-        self.assertEqual(candidate["answer"], 40000)
+        self.assertEqual(candidate["answer"], 50000)
+
+    def test_collected_amount_abstains_on_unknown_payment_status(self):
+        table = Table(
+            "payments",
+            ["Ngày thu", "Giá trị", "Trạng thái thanh toán"],
+            [["2026-03-01", 40000, "Đã thanh toán"], ["2026-03-02", 10000, "Đang đối soát"]],
+            source="payments.xlsx",
+        )
+        question = "tiền thực thu tháng này"
+        plan = self.planner.plan(question, "2026-03-04")
+        self.assertIsNone(Executor([table]).execute(plan, question))
 
     def test_revenue_drops_cancelled_orders(self):
         self.assertEqual(self.answer("doanh thu tháng này")["answer"], 40000)
@@ -408,6 +423,7 @@ class PipelineTests(unittest.TestCase):
 | Bán chạy | theo **số lượng** quy về đơn vị cơ bản |
 | Bằng nhau | theo **mã tăng dần**; không có mã thì theo tên |
 | Tỉ lệ đơn hủy trong kỳ | phần trăm đơn hủy trong mọi đơn đặt trong kỳ, mọi trạng thái |
+| Trạng thái thanh toán được tính là tiền thực thu | chỉ giao dịch thanh toán thành công |
 """)
         self.assertTrue(rules.revenue_supported)
         self.assertEqual(rules.revenue_excluded_statuses, frozenset({"cancelled", "returned", "delivery_failed"}))
@@ -415,6 +431,19 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(rules.ranking_default, "quantity")
         self.assertEqual(rules.tie_breaker, "code_or_name")
         self.assertEqual(rules.cancellation_numerator_statuses, frozenset({"cancelled"}))
+        self.assertEqual(rules.revenue_amount_basis, "line_amount_after_line_discount")
+        self.assertEqual(rules.revenue_period_basis, "order_date")
+        self.assertEqual(rules.collection_status_policy, "successful_status_only")
+
+    def test_split_rulebook_without_collection_clause_does_not_authorize_payment_policy(self):
+        rules = SplitRules.from_text("""| Đơn tính vào doanh thu | đơn không huỷ, không trả hàng |
+| Đơn thuộc kỳ nào | theo ngày đặt |
+| Doanh thu một đơn | thành tiền các dòng hàng đã trừ giảm giá |
+| Bán chạy | theo số lượng |
+| Bằng nhau | theo mã tăng dần; không có mã thì theo tên |
+| Tỉ lệ đơn hủy trong kỳ | đơn hủy |
+""")
+        self.assertIsNone(rules.collection_status_policy)
 
     def test_revenue_does_not_fall_back_to_order_total(self):
         table = Table("orders", ["Mã đơn", "Ngày đặt", "Tổng đơn", "Phải thu"], [

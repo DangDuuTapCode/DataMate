@@ -52,3 +52,10 @@ No default evidence file is generated. A bundle becomes available only when stru
 GitHub Actions run `44558398515` executed 256 tests; 254 passed. All feature tests passed. The only two failures are inherited repository-hygiene checks against the upstream `CODEX PROGRESS` artifact.
 
 Run: https://github.com/pl2n/DataMate/actions/runs/44558398515
+
+
+## Active rulebook compatibility
+
+A verified evidence payload is necessary but not sufficient. The resolver cross-checks revenue amount, period, and order-status assertions against the active `SplitRules`. It also requires the collection successful-status-only assertion to match an explicit supported clause in the active rulebook. Missing collection policy leaves that bundle unavailable.
+
+The collection executor uses a dedicated payment-status classifier, separate from `classify_order_status`. Unknown payment labels cause abstention; recognized pending, failed, cancelled, refunded, or reversed states are excluded.

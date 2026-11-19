@@ -80,7 +80,7 @@ class BundleCapabilityResolver:
                 rejected[claim.capability_id] = claim
         return verified, rejected, profile.version
 
-    def resolve(self, bundle, schema_catalog, rule_evidence=None):
+    def resolve(self, bundle, schema_catalog, rule_evidence=None, *, split_rules=None):
         if schema_catalog is None:
             raise ValueError("schema catalog is required")
 
@@ -107,6 +107,44 @@ class BundleCapabilityResolver:
                 rejected_capabilities.append(capability)
             else:
                 unverified_capabilities.append(capability)
+
+        # A provenance claim is not sufficient if the active split rulebook
+        # or deterministic executor profile does not implement that policy.
+        if bundle.rule_profile == "revenue_rules":
+            required_exclusions = {"cancelled", "returned", "delivery_failed"}
+            checks = {
+                "eligible_sales_amount": (
+                    split_rules is not None
+                    and split_rules.revenue_amount_basis == "line_amount_after_line_discount"
+                ),
+                "sale_period": split_rules is not None and split_rules.revenue_period_basis is not None,
+                "order_status_semantics": (
+                    split_rules is not None
+                    and required_exclusions.issubset(split_rules.revenue_excluded_statuses)
+                ),
+            }
+            for capability, compatible in checks.items():
+                claim = verified.get(capability)
+                if claim is None:
+                    continue
+                expected_assertion = (
+                    split_rules.revenue_period_basis
+                    if capability == "sale_period" and split_rules is not None
+                    else "line_amount_after_line_discount"
+                    if capability == "eligible_sales_amount"
+                    else "exclude_cancelled_returned_failed"
+                )
+                if not compatible or claim.assertion != expected_assertion:
+                    verified.pop(capability, None)
+                    unverified_capabilities.append(capability)
+        elif bundle.rule_profile == "collection_rules":
+            claim = verified.get("settled_payment_status_policy")
+            if claim is not None and (
+                split_rules is None
+                or split_rules.collection_status_policy != claim.assertion
+            ):
+                verified.pop("settled_payment_status_policy", None)
+                unverified_capabilities.append("settled_payment_status_policy")
 
         # Collection fields must be present together in the exact single table
         # reviewed for both payment-source role and settlement policy.

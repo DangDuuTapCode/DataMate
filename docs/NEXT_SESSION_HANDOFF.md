@@ -109,3 +109,20 @@ Implementation commit: c7d251de506acd54093578639a7b1aac2711aed4.
 - CI run 44560238399: 259 tests; 257 passed; only the two inherited CODEX PROGRESS hygiene checks failed. Feature tests passed.
 
 Next: validate evidence provenance/digests against controlled known sources. Do not retrieve arbitrary references or treat a syntactically valid hash as proof of source correspondence.
+
+
+## Latest continuation — rulebook/executor conformance
+
+Starting branch head: `ab834e246fdfe36d4b2025b32bbfeace0c36f5aa`.
+
+Implemented:
+- Payment status now has a dedicated classifier; collection no longer reuses order-status classification.
+- Explicit successful/paid states are included; pending, failed, cancelled, refunded/reversed are excluded; unknown statuses abstain.
+- SplitRules parses revenue amount basis, period basis, and an optional collection successful-status-only clause.
+- BundleCapabilityResolver cross-checks revenue evidence against active SplitRules. Collection policy evidence is accepted only when the active rulebook explicitly supports it.
+- CompositePlanner passes its RulePlanner's active SplitRules to capability resolution.
+- Synthetic tests cover payment states, unknown states, and evidence/rulebook mismatches.
+
+The runtime-mounted `data/rulebook.md` is not versioned in this repository. Do not assume it contains the collection clause; without it, collection stays unavailable.
+
+Next: review CI, then design controlled SHA-256 verification against allowlisted input-root files. No local checkout or local test execution is available in this workflow.
