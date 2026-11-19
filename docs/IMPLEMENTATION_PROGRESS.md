@@ -15,6 +15,7 @@
 - Semantic mapping uses conservative exact aliases and grouped-header context. Ambiguous/colliding fields are not silently selected.
 - Relationship discovery uses exact key overlap, uniqueness, cardinality, blanks, and unmatched values. It validates candidates but does not execute joins.
 - Exact relationship-key aliases now cover order, customer, product, payment receipt, employee, supplier, purchase receipt, batch/lot, branch, and device IMEI identifiers. Generic row numbers/reference labels remain unmapped; identifiers are compared as exact strings.
+- Relationship records now retain both table name and source filename. Bundle validation compares full table identities, so identically named worksheets from different workbooks cannot be mistaken for the same table.
 - A versioned `BusinessSchemaCatalog` stores table schemas and relationship evidence.
 
 ### Multi-bundle planning
