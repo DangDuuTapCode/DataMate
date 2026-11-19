@@ -301,3 +301,38 @@ No new Actions run is verified for this branch yet. Do not claim local tests or 
 - Latest verified fork branch head: `ee45d81a81ee044bb8d05d103b5c5a255bc5a519`.
 - This head includes the contract hardening, regression tests, CI trigger update, and synchronized progress/handoff documentation.
 - PR #1 remains merged; no new PR has been opened for this continuation branch.
+
+
+## Contest archive and LEFT JOIN continuation — 2026-11-20
+
+The user re-uploaded `Contest.zip`. It was inspected directly from the upload path; it has 308 entries and was not added to GitHub.
+
+### Chosen real case: biz_129 customer-group revenue
+
+Read:
+- `Contest/train/data/biz_129/README.md`
+- `Contest/train/rulebook.md`
+- `Contest/train/questions.jsonl`
+
+Relevant questions: `q_264a7294b457`, `q_6ee842fa8f92`, `q_635440e343cc`, `q_d361c00c6829`.
+
+Observed counts:
+- `chi_tiet_don.csv`: 145,479 sales lines.
+- `don_hang.csv`: 38,499 orders, unique order key.
+- `khach_hang.csv`: 220 unique customer keys.
+- `thanh_toan.csv`: 38,072 payment events, 37,748 distinct order IDs, max 4 events/order.
+- 23,309 orders have a nonblank customer ID and all match the catalog; 15,190 orders have blank customer IDs.
+
+Business semantics: the rulebook says guest orders belong to no customer group but still count in whole-shop revenue. Therefore a full sales-line → order → customer path must preserve guest rows with LEFT JOIN. Payment events must not be joined directly to sales lines because multiple events per order can multiply revenue.
+
+### Code added on `feature/query-specific-join-execution`
+
+- Source-scoped exact aliases for `Số CT`, `Số phiếu`, and `Mã giao dịch`, only in the README-documented source roles.
+- Relationship status `validated_left_join` for safe many-to-one/one-to-one patterns with blank source keys but complete matching of all nonblank source keys.
+- Path status `left_join_required` and per-hop metadata; fact join contract rejects inner joins when any hop requires LEFT JOIN.
+- Synthetic integration test mirroring biz_129 headers/roles and the guest-customer case; no contest records copied.
+- Case study: `docs/CONTEST_BIZ129_JOIN_CASE.md`.
+
+Runtime join execution remains off. Before wiring, design explicit handling for status/date filters, customer-group numerator vs all-shop denominator, and separate payment-grain calculations.
+
+CI is still unverified: GitHub queries returned no workflow runs/statuses for the latest commits. Do not claim tests passed or run locally.
