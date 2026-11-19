@@ -102,6 +102,62 @@ class FactJoinExecutorTests(unittest.TestCase):
             2, ("don_hang", "don_hang.csv"), 1
         ), "")
 
+    def test_executes_complete_inner_join_when_no_source_keys_are_blank(self):
+        known_customer_orders = Table(
+            self.orders.name,
+            self.orders.headers,
+            [
+                ["ORD1", "KH1", "2025-10-01"],
+                ["ORD2", "KH1", "2025-10-02"],
+                ["ORD3", "KH1", "2025-10-03"],
+            ],
+            self.orders.source,
+        )
+        contract = self._contract(
+            [self.details, known_customer_orders, self.customers],
+            join_type="inner",
+        )
+        result = execute_fact_join_contract(
+            [self.details, known_customer_orders, self.customers], contract
+        )
+
+        self.assertIsNotNone(result)
+        self.assertEqual(result.join_type, "inner")
+        self.assertEqual(result.row_count, 3)
+        self.assertEqual(result.column(
+            ("khach_hang", "khach_hang.csv"), 1
+        ), ("thân thiết", "thân thiết", "thân thiết"))
+
+    def test_identifier_matching_preserves_leading_zeroes(self):
+        details = Table(
+            self.details.name, self.details.headers,
+            [["001", "SP1", "10000"]], self.details.source,
+        )
+        orders = Table(
+            self.orders.name, self.orders.headers,
+            [["001", "KH1", "2025-10-01"]], self.orders.source,
+        )
+        contract = self._contract([details, orders, self.customers], join_type="inner")
+        self.assertIsNotNone(execute_fact_join_contract(
+            [details, orders, self.customers], contract
+        ))
+
+        numeric_looking_mismatch = Table(
+            orders.name, orders.headers,
+            [["1", "KH1", "2025-10-01"]], orders.source,
+        )
+        self.assertIsNone(execute_fact_join_contract(
+            [details, numeric_looking_mismatch, self.customers], contract
+        ))
+
+    def test_rejects_blank_fact_grain(self):
+        from dataclasses import replace
+
+        self.assertIsNone(execute_fact_join_contract(
+            [self.details, self.orders, self.customers],
+            replace(self.contract, fact_grain=" "),
+        ))
+
     def test_preserves_duplicate_fact_lines(self):
         duplicate_details = Table(
             self.details.name,
