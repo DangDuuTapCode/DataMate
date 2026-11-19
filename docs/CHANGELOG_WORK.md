@@ -314,3 +314,13 @@
 - Expanded the Python test workflow to cover all `feature/**` push branches and PRs targeting `main` or `feature/**`.
 - Commit: `e74d43413c3966d7d80e6fbe8f985fb5b6ac4de9`.
 - Workflow result not yet verified.
+
+
+## 2026-11-20 — Contest-backed LEFT JOIN contract
+
+- Analyzed Contest `biz_129` sales, orders, customers, and payment-event sources.
+- Added source-context exact aliases for documented order keys.
+- Added a distinct `validated_left_join` relationship state for blank source keys with complete nonblank-key coverage; propagated the requirement through relationship paths and enforced LEFT JOIN in FactJoinContract.
+- Added synthetic integration coverage and a documented case study.
+- Kept runtime execution disabled; payment events remain separate from sales-line facts to avoid join multiplication.
+- CI has not yet been verified.
