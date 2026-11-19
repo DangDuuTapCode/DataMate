@@ -180,7 +180,7 @@ class RelationshipDiscoveryTests(unittest.TestCase):
         self.assertEqual(relationship.confidence, 0.5)
 
     def test_blank_child_key_requires_left_join_instead_of_rejecting_safe_cardinality(self):
-        details = Table("details", ["Mã đơn"], [["A1"], [None]], "details.csv")
+        details = Table("details", ["Mã đơn"], [["A1"], ["A1"], [None]], "details.csv")
         orders = Table("orders", ["Mã đơn"], [["A1"]], "orders.csv")
 
         [relationship] = discover_relationships([details, orders])
@@ -189,6 +189,16 @@ class RelationshipDiscoveryTests(unittest.TestCase):
         self.assertEqual(relationship.cardinality, "many_to_one")
         self.assertEqual(relationship.from_blank_keys, 1)
         self.assertIn("blank_source_keys_require_left_join", relationship.evidence)
+
+    def test_one_to_one_blank_source_key_is_left_join_validated(self):
+        left = Table("left", ["Mã khách"], [["C1"], [None]], "left.csv")
+        right = Table("right", ["Mã khách"], [["C1"]], "right.csv")
+
+        [relationship] = discover_relationships([left, right])
+
+        self.assertEqual(relationship.status, "validated_left_join")
+        self.assertEqual(relationship.cardinality, "one_to_one")
+        self.assertEqual(relationship.from_blank_keys, 1)
 
     def test_unmatched_nonblank_child_key_still_rejects_blank_aware_validation(self):
         details = Table("details", ["Mã đơn"], [["A1"], ["A2"], [None]], "details.csv")
