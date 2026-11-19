@@ -220,3 +220,10 @@ Next: audit public-test questions against the 14 input shapes, then build minima
 - Latest branch tip at this checkpoint: `e95608eb8b34281ac5327ecf67d58f16dbab5e38`.
 - GitHub Actions run `44588291394` on that exact commit completed successfully: **328 tests passed**.
 - PR #2 (`feature/query-specific-join-execution` → upstream `main`) remains open as a draft and has not been merged.
+
+
+### Join executor hardening
+
+- Added explicit fact-grain validation and tests for complete INNER JOIN paths and exact identifier matching (including leading zeroes).
+- Latest code/test commit: `647f6a40bc23aef80f26180214342848e86eb576`.
+- Actions run `44588678999` on that commit: **331 tests passed**.
