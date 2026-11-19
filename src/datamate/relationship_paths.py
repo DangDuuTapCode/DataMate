@@ -107,10 +107,19 @@ def resolve_relationship_path(
     validated relationships are traversable. Multiple paths are never ranked
     heuristically, and one-to-many traversal is explicitly marked as fanout.
     """
+    valid_identity = lambda value: (
+        isinstance(value, tuple)
+        and len(value) == 2
+        and all(isinstance(part, str) and part.strip() for part in value)
+    )
+    valid_limit = lambda value: (
+        isinstance(value, int) and not isinstance(value, bool) and value >= 1
+    )
     if (
-        not isinstance(source_table, tuple) or len(source_table) != 2
-        or not isinstance(target_table, tuple) or len(target_table) != 2
-        or max_hops < 1 or max_candidates < 1
+        not valid_identity(source_table)
+        or not valid_identity(target_table)
+        or not valid_limit(max_hops)
+        or not valid_limit(max_candidates)
     ):
         return RelationshipPathResolution("invalid_request", reasons=("invalid_path_arguments",))
     source = _identity(*source_table)
@@ -138,7 +147,9 @@ def resolve_relationship_path(
             candidate = hops + (hop,)
             if hop.to_table == target:
                 paths.append(candidate)
-                if len(paths) >= max_candidates:
+                # We need one extra path to prove that the configured limit
+                # was exceeded. Reaching the limit alone is not an overflow.
+                if len(paths) > max_candidates:
                     overflow = True
                     return
             else:
