@@ -25,7 +25,9 @@ _RELATIONSHIP_KEYS = {
 @dataclass(frozen=True)
 class RelationshipCandidate:
     from_table: str
+    from_source: str
     to_table: str
+    to_source: str
     canonical_key: str
     from_column_index: int
     to_column_index: int
@@ -48,7 +50,9 @@ class RelationshipCandidate:
     def to_dict(self):
         return {
             "from_table": self.from_table,
+            "from_source": self.from_source,
             "to_table": self.to_table,
+            "to_source": self.to_source,
             "canonical_key": self.canonical_key,
             "from_column_index": self.from_column_index,
             "to_column_index": self.to_column_index,
@@ -142,7 +146,9 @@ def _candidate(left, right, field, left_index, right_index):
 
     return RelationshipCandidate(
         from_table=left.name,
+        from_source=left.source,
         to_table=right.name,
+        to_source=right.source,
         canonical_key=field,
         from_column_index=left_index,
         to_column_index=right_index,
