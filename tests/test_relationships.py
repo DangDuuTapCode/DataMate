@@ -179,13 +179,25 @@ class RelationshipDiscoveryTests(unittest.TestCase):
         self.assertEqual(relationship.cardinality, "one_to_one")
         self.assertEqual(relationship.confidence, 0.5)
 
-    def test_blank_child_key_prevents_validation(self):
+    def test_blank_child_key_requires_left_join_instead_of_rejecting_safe_cardinality(self):
         details = Table("details", ["Mã đơn"], [["A1"], [None]], "details.csv")
         orders = Table("orders", ["Mã đơn"], [["A1"]], "orders.csv")
 
         [relationship] = discover_relationships([details, orders])
 
+        self.assertEqual(relationship.status, "validated_left_join")
+        self.assertEqual(relationship.cardinality, "many_to_one")
+        self.assertEqual(relationship.from_blank_keys, 1)
+        self.assertIn("blank_source_keys_require_left_join", relationship.evidence)
+
+    def test_unmatched_nonblank_child_key_still_rejects_blank_aware_validation(self):
+        details = Table("details", ["Mã đơn"], [["A1"], ["A2"], [None]], "details.csv")
+        orders = Table("orders", ["Mã đơn"], [["A1"]], "orders.csv")
+
+        [relationship] = discover_relationships([details, orders])
+
         self.assertEqual(relationship.status, "rejected")
+        self.assertEqual(relationship.from_unmatched_keys, 1)
         self.assertEqual(relationship.from_blank_keys, 1)
 
     def test_unmapped_generic_labels_never_create_relationships(self):
