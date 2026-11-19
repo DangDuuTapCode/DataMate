@@ -54,3 +54,6 @@ The builder now independently checks the path-resolution envelope rather than tr
 - Unsupported or malformed join-type values return unavailable instead of raising a type error.
 
 This is defense in depth for manually constructed or malformed resolution objects. It does not broaden join execution or establish business semantics.
+
+
+A final malformed-input regression also covers a non-string cardinality value. The validator rejects it without raising, matching the fail-closed behavior for malformed join-type values.
