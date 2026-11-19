@@ -559,3 +559,12 @@ python qstats.py public_test/ 15
 - GitHub Actions ran 197 tests. Composite and functional tests passed; 2 hygiene tests failed against pre-existing tracked `CODEX PROGRESS` (over 1 MB and matching secret-like regex). The file was not modified.
 - Do not mark the branch verified until the archive/hygiene issue is resolved without weakening secret scanning, then the full suite passes.
 - Workflow: https://github.com/pl2n/DataMate/actions/runs/44541834717
+
+
+## 2026-11-19 — bounded Excel grouped-header support
+
+- Added explicit two-row merged-group header recognition in XLSX ingestion.
+- Preserved raw header rows and physical row numbers on `Table`; surfaced them in ingestion `profile()`.
+- Tests cover grouped header mapping, source provenance, profile serialization, and rejecting a single merged report title as a grouped header.
+- CI `44545450222`: 199 tests ran; 197 passed and 2 existing repository-hygiene tests failed on `CODEX PROGRESS` (size and secret-like regex). No hygiene rule was bypassed.
+- See `tools/checkpoints/2026-11-19_EXCEL_GROUPED_HEADERS.md`.

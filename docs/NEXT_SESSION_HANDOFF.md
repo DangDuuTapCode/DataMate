@@ -505,3 +505,12 @@ The Public Submissions JSONL candidate is prepared and structurally verified, bu
 - Workflow run for implementation commit `77dbd90e204356211c70a2cf56f7f52249cde01a`: 197 tests executed; functional/composite tests passed, but the job failed in two pre-existing hygiene assertions against tracked `CODEX PROGRESS` (oversized file and secret-like regex hit).
 - This file was not changed. Do not suppress the secret scan or remove the artifact without maintainer review. Resolve the archive policy and rerun all tests.
 - Run URL: https://github.com/pl2n/DataMate/actions/runs/44541834717
+
+
+## Resume — 2026-11-19 — XLSX grouped-header support
+
+- Read `tools/checkpoints/2026-11-19_EXCEL_GROUPED_HEADERS.md`.
+- Branch: `feature/multi-bundle-query`; implementation commits: `add80f2` and `477a544`.
+- Excel ingestion now recognizes only a narrow, explicit two-row merged-group header pattern; raw header rows and source row numbers are preserved and included in `profile()`.
+- CI run `44545450222`: 199 tests; new tests pass; 197 pass overall and 2 pre-existing hygiene failures remain for `CODEX PROGRESS`. Do not claim the full workflow is green.
+- Next: consider adding an explicit structural-analysis result object for ambiguous header candidates before broadening beyond this conservative pattern. Do not infer arbitrary multi-row headers.

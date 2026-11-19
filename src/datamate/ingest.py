@@ -462,7 +462,15 @@ def read_questions(path):
 
 
 def profile(tables):
-    return [{"name": t.name, "source": t.source, "rows": len(t.rows), "columns": t.headers,
-             "date_system": t.date_system, "issues": list(t.issues),
-             "ingestion_stats": vars(t.ingestion_stats),
-             "reconciled": t.ingestion_stats.reconciled} for t in tables]
+    return [{
+        "name": table.name,
+        "source": table.source,
+        "rows": len(table.rows),
+        "columns": table.headers,
+        "header_rows": [list(row) for row in table.header_rows],
+        "header_row_numbers": list(table.header_row_numbers),
+        "date_system": table.date_system,
+        "issues": list(table.issues),
+        "ingestion_stats": vars(table.ingestion_stats),
+        "reconciled": table.ingestion_stats.reconciled,
+    } for table in tables]

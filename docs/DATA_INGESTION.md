@@ -17,11 +17,14 @@ The existing `src/datamate/ingest.py` supports CSV, XLSX, and SQLite sources and
 - Reads worksheet XML incrementally.
 - Resolves worksheet targets inside the workbook package.
 - Preserves the 1900/1904 date system.
-- Searches the first 32 rows for a complete text header and selects the widest candidate.
+- Searches the first 32 rows for a header candidate.
+- Recognizes a conservative two-row grouped header only when the first row contains at least two distinct horizontal merged groups and the immediately following row contains complete leaf labels.
+- Combines grouped labels and leaf labels as `Group / Field`, while preserving the original header rows and their physical row numbers on `Table`.
+- Does not mistake one merged report title for a grouped header.
 - Tracks preamble, blank, and repeated header rows.
-- Preserves worksheet row locations.
+- Preserves worksheet row locations and Excel date system.
 
-This is not yet a general multi-row or merged-header reconstruction engine. Grouped labels are not concatenated or guessed.
+This is not a general arbitrary-depth header reconstruction engine. Ambiguous or irregular layouts are not guessed; the existing one-row detection remains the fallback.
 
 ### SQLite
 

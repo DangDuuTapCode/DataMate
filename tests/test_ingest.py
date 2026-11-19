@@ -8,7 +8,7 @@ import zipfile
 from pathlib import Path
 from unittest.mock import patch
 
-from datamate.ingest import IngestionError, read_business
+from datamate.ingest import IngestionError, profile, read_business
 from datamate.types import SourceLocation
 
 
@@ -86,6 +86,9 @@ class CsvIngestionTests(unittest.TestCase):
             self.assertEqual(table.headers, ["order_id", "amount"])
             self.assertEqual(table.rows, [["A", "12.50"], ["B", "3.00"]])
             self.assertEqual(table.source, "sales.csv")
+            self.assertEqual(table.header_rows, (("order_id", "amount"),))
+            self.assertEqual(table.header_row_numbers, (1,))
+            self.assertEqual(profile([table])[0]["header_row_numbers"], [1])
             self.assertEqual(table.row_locations, [
                 SourceLocation("sales.csv", "sales", 2),
                 SourceLocation("sales.csv", "sales", 3),
@@ -245,6 +248,10 @@ class XlsxIngestionTests(unittest.TestCase):
                 ("Mã đơn", "Ngày đặt", "Giá trị", "Trạng thái"),
             ))
             self.assertEqual(table.header_row_numbers, (1, 2))
+            self.assertEqual(profile([table])[0]["header_rows"], [
+                ["Thông tin đơn hàng", "", "Thanh toán", ""],
+                ["Mã đơn", "Ngày đặt", "Giá trị", "Trạng thái"],
+            ])
             self.assertEqual(table.rows, [["A1", "2026-03-01", 100000, "completed"]])
             self.assertEqual(table.row_locations, [SourceLocation("grouped.xlsx", "grouped:Data", 3)])
             self.assertEqual(table.ingestion_stats.header_rows, 2)

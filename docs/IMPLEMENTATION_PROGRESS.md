@@ -533,3 +533,13 @@ Review package: work/submission-build/public-test-submission-2026-11-15. JSONL S
 - Both failures identify the pre-existing tracked file `CODEX PROGRESS`: it exceeds the 1,000,000-byte hygiene limit and contains strings matching the repository's secret-like regex scan.
 - The file predates this implementation and was not modified. Do not weaken the secret scan or delete the file as a shortcut. Resolve its archival/storage policy separately, then rerun the complete suite.
 - Workflow: https://github.com/pl2n/DataMate/actions/runs/44541834717
+
+
+## 2026-11-19 — XLSX grouped-header ingestion
+
+- Added conservative support for two-row Excel headers when the first row contains at least two distinct horizontal merged groups and the next physical row contains complete leaf labels.
+- Canonical display headers use `Group / Field`; original raw header rows and physical row numbers are preserved on `Table` and exposed by `profile()`.
+- A single merged report title is not interpreted as a grouped header. Unsupported/ambiguous layouts retain the existing one-row fallback or fail closed.
+- Synthetic tests cover grouped headers, original-header preservation, row provenance, profile output, and single-title false-positive avoidance.
+- GitHub Actions run `44545450222`: 199 tests ran; both new grouped-header tests passed. 197 tests passed; 2 pre-existing hygiene tests failed on tracked `CODEX PROGRESS` (size limit and secret-like regex). No hygiene check was weakened.
+- Checkpoint: `tools/checkpoints/2026-11-19_EXCEL_GROUPED_HEADERS.md`.
