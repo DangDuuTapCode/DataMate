@@ -270,10 +270,14 @@ def _money(value):
 
 class Executor:
     """Allowlist executor. Incomplete or ambiguous evidence returns None."""
-    def __init__(self, tables, rules=None, *, revenue_source_shape=None):
+    def __init__(
+        self, tables, rules=None, *, revenue_source_shape=None,
+        revenue_join_contract=None,
+    ):
         self.tables = tables
         self.rules = rules or SplitRules.test_defaults()
         self.revenue_source_shape = revenue_source_shape
+        self.revenue_join_contract = revenue_join_contract
         self._order_metadata_cache = {}
         self._table_date_range_cache = {}
 
