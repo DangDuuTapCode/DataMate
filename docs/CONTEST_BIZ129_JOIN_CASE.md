@@ -62,3 +62,17 @@ The current relationship validator previously rejected the customer edge solely 
 ## Implementation boundary
 
 This case is a structural and semantic test fixture, not permission to enable arbitrary runtime joins. The contract still does not execute the join, apply order-status/date predicates, or calculate the percentage. Runtime wiring remains blocked until the executor can apply the exact join sequence and preserve the separate numerator/denominator semantics. No payment event is joined into this sales-line fact path.
+
+
+## Independent archive calculation checks
+
+A one-off read-only calculation over the original biz_129 CSVs was used as an external audit baseline (the rows are not committed and are not embedded as runtime constants). It applied the rulebook's exact duplicate-line rule, order-date period, full-order cancellation/return exclusion, net line amounts, and customer-group denominator semantics.
+
+| Period | Thân thiết numerator | Whole-shop denominator | Share |
+|---|---:|---:|---:|
+| October 2025 | 211,728,000 | 1,042,563,500 | 20.31% |
+| June 2025 | 213,704,500 | 1,080,078,000 | 19.79% |
+
+The audit found 145,479 detail rows, no exact duplicate detail rows, no blank detail order keys, and no unmatched detail order keys. Guest revenue included in the denominator was 415,243,000 for October and 438,133,000 for June. These figures are independent validation references, not hardcoded answers. The production executor recomputes them from the loaded files.
+
+The parser supports the three customer-group labels observed in this source (thân thiết, lẻ, sỉ), but the rulebook's guest-order exception is still applied: a blank customer ID is never assigned to the lẻ group.
