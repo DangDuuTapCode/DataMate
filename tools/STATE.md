@@ -71,3 +71,13 @@ Next: audit public-test questions against the 14 input shapes, then build minima
 - Regression tests cover duplicate `Sheet1` names across workbooks and same-name scoped source pairs.
 - Commits: `c4278e8`, `5d2b62e`, `5e67aff`, `abfc0df`, `dfe61ce`, `d16c67a`, `6e3af74`, `38a85ba`.
 - CI remains unverified for this continuation.
+
+## Composite order-line relationship milestone
+
+- Active rulebook parser now detects the exact same-order duplicate-row clause; default false when absent.
+- Exact `Số thứ tự`/`No.` aliases map to `order_line_number`; `STT` remains unmapped.
+- Relationship discovery emits composite `order_id+order_line_number` evidence, with all key columns and source-qualified table identity.
+- Exact duplicate rows are removed only for composite relationship profiling and only when the rulebook enables it. No source rows are mutated and no joins are executed.
+- Main runtime passes the active rulebook flag into schema catalog construction; catalog schema version 1.1.0.
+- Relevant commits: `107216e`, `64c426c`, `01e54b3`, `bd2b1f6`, `0f120e9`, `3191b7a`, `7016a60`, `ef200e2`, `06a579f`, `d0d75b9`, `4f6def6`, `6ae52b0`, `a6da9e4`, `4e17cd9`, `3741d34`, `aa6e746`, `ea5fb27`.
+- This change set has no verified Actions result yet; no local checkout or local test run is available.
