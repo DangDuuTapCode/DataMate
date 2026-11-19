@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DataMate Business Rule Evidence v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "business_id",
+    "profiles"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "business_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "profiles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "profile_id",
+          "version",
+          "evidence"
+        ],
+        "properties": {
+          "profile_id": {
+            "type": "string",
+            "enum": [
+              "revenue_rules",
+              "collection_rules"
+            ]
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "capability_id",
+                "status",
+                "assertion",
+                "table_scope",
+                "provenance"
+              ],
+              "properties": {
+                "capability_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "verified",
+                    "unverified",
+                    "rejected"
+                  ]
+                },
+                "assertion": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "table_scope": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "table_name",
+                      "source"
+                    ],
+                    "properties": {
+                      "table_name": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "source": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                },
+                "provenance": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "source_type",
+                    "reference",
+                    "sha256",
+                    "reviewed_by",
+                    "reviewed_at"
+                  ],
+                  "properties": {
+                    "source_type": {
+                      "type": "string",
+                      "enum": [
+                        "rulebook",
+                        "data_dictionary",
+                        "operator_attestation"
+                      ]
+                    },
+                    "reference": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "sha256": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$"
+                    },
+                    "reviewed_by": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "reviewed_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

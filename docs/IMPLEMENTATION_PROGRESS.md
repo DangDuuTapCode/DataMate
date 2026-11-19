@@ -37,3 +37,19 @@ Run: https://github.com/pl2n/DataMate/actions/runs/44555242526
 ## Next step
 
 Inspect the current rulebook contract and executor source discovery in detail. Design a versioned business-rule evidence model for revenue source alternatives, payment source role/status handling, and rule-profile provenance. Do not mark default bundles available based on headers or sample values alone. Keep automatic joins, arbitrary conjunction splitting, and new metrics out of scope.
+
+
+## Business-rule evidence contract — 2026-11-19
+
+- Added `schemas/business_rule_evidence.v1.schema.json` and strict stdlib reader `src/datamate/rule_evidence.py`.
+- Added profile-scoped, allowlisted assertions for revenue source shape, eligible sales amount, sale-period meaning, order-status semantics, payment source role, and settled-payment policy.
+- Each claim requires exact table scope and provenance (source type/reference, SHA-256, reviewer, timezone-aware timestamp).
+- Unknown claims/assertions, duplicate profiles/claims, malformed provenance, and business-ID mismatches fail closed.
+- Verified claims count only when every scoped table matches the business catalog's exact table name and source.
+- No evidence is synthesized from column names or sample values. This milestone does not enable either default bundle or change Executor behavior.
+
+Tests added: `tests/test_rule_evidence.py`. Design note: `docs/BUSINESS_RULE_EVIDENCE.md`.
+
+## Next step
+
+Integrate validated evidence with `BundleCapabilityResolver` and per-business runtime loading. Require `payment_status` for a collection bundle because the current executor only filters to successful payment statuses when that column exists. Keep absent/invalid evidence fail-closed.

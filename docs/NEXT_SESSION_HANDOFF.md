@@ -43,3 +43,24 @@ Inspect src/datamate/split_rules.py, the actual mounted rulebook contract, and E
 - rule-profile version, source provenance, and validation status.
 
 Do not infer business semantics from column names or sample values. Keep automatic joins, arbitrary natural-language splitting, and new metrics out of scope.
+
+
+## Business-rule evidence contract — latest milestone
+
+Implemented:
+- `schemas/business_rule_evidence.v1.schema.json`
+- `src/datamate/rule_evidence.py`
+- `tests/test_rule_evidence.py`
+- `docs/BUSINESS_RULE_EVIDENCE.md`
+
+The v1 payload is scoped to one business and contains versioned `revenue_rules` / `collection_rules` profiles. Each capability assertion has a closed allowlisted value, explicit exact table scope, and provenance (source type/reference, SHA-256, reviewer, timezone-aware review timestamp). Unknown or duplicate claims, unsupported assertions, malformed provenance, and business-ID mismatches are rejected.
+
+Important boundaries:
+- This is a strict contract/reader only. It does not synthesize evidence from headers/sample values, change executor calculations, or enable default bundles.
+- Verified claims count only if all exact scoped table identities exist in the matching BusinessSchemaCatalog.
+- Collection's current executor only applies successful-status filtering when a payment status column exists. The next integration must require an unambiguous `payment_status` field for the collection bundle and keep it unavailable when status is absent.
+- Revenue source shape assertions need to match actual direct-line or detail-to-order executor paths; do not let an attestation silently authorize an unimplemented path.
+
+## Next step
+
+Wire the optional per-business evidence file (suggested path: `data/<business_id>/business_rule_evidence.json`) into `main.run`, `CompositePlanner`, and `BundleCapabilityResolver`. Missing/invalid/mismatched evidence must leave the bundle unavailable. Add tests for both valid and invalid runtime evidence. No automatic joins, fuzzy inference, or parser expansion.
