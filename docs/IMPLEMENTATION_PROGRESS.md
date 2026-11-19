@@ -635,3 +635,13 @@ Review package: work/submission-build/public-test-submission-2026-11-15. JSONL S
 - Initial run `44548728199` exposed a stale type annotation after moving the requirement model; fixed in commit `45330bc6accdc30e38eff31217422c3f01121253`.
 - Follow-up run `44548881088` executed 222 tests with no import/runtime/test errors. 220 passed; the only two failures remain the pre-existing hygiene assertions against tracked `CODEX PROGRESS` (size and secret-like regex).
 - Run: https://github.com/pl2n/DataMate/actions/runs/44548881088
+
+
+## 2026-11-19 — versioned requirement extraction contract
+
+- Added `schemas/requirement_extraction.v1.schema.json`.
+- Added JSON-native serialization and validation for requirement extraction payloads.
+- Added cross-field checks: resolved composites need at least two unique requirements and no failure reason; unresolved/unsupported results cannot carry executable requirements and must explain why.
+- Composite planning now validates the requirement contract before compiling component plans.
+- Added tests for valid payloads, duplicate metrics, unresolved payloads, and status/reason mismatch.
+- Checkpoint: `tools/checkpoints/2026-11-19_REQUIREMENT_SCHEMA.md`.

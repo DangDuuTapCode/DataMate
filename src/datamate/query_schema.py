@@ -91,3 +91,8 @@ def _validate(value, schema, path="$", errors=None):
 def validate_query_spec_payload(payload, schema=None):
     """Return validation errors for the supported Draft 2020-12 schema keywords."""
     return _validate(payload, schema or load_query_spec_schema())
+
+
+def validate_payload(payload, schema):
+    """Validate a JSON-native payload against the supported schema keyword subset."""
+    return _validate(payload, schema)

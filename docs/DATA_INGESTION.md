@@ -149,3 +149,8 @@ The registry is declarative. It does not infer source tables or replace the exis
 `src/datamate/requirements.py` separates recognized multi-metric intent translation from composite plan compilation. The first extractor rule maps only the existing `financial_metric_comparison` QuerySpec to two requirements: `revenue` and `collected_amount`.
 
 It does not split arbitrary text on `và` / `and`, and it does not treat a single-metric QuerySpec as a composite.
+
+
+## Versioned requirement contract
+
+The output of `RequirementExtractor` is serialized and validated against `schemas/requirement_extraction.v1.schema.json`. Runtime validation checks the supported JSON Schema subset plus unique requirement IDs/metrics and status/reason consistency. The composite planner fails closed if this contract is invalid.

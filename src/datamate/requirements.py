@@ -4,8 +4,11 @@ This first version translates only already-recognized QuerySpec intents into
 allowlisted metric requirements. It does not split arbitrary conjunctions.
 """
 from dataclasses import dataclass
+import json
+from pathlib import Path
 
 from .bundles import BundleRegistry, default_bundle_registry
+from .query_schema import validate_payload
 
 
 @dataclass(frozen=True)
@@ -25,6 +28,7 @@ class RequirementExtraction:
     comparison_type: str | None
     requirements: tuple[MetricRequirement, ...]
     reason: str | None = None
+    schema_version: str = "1.0.0"
 
 
 class RequirementExtractor:
@@ -69,3 +73,58 @@ class RequirementExtractor:
             comparison_type=rule["comparison_type"],
             requirements=requirements,
         )
+
+
+REQUIREMENT_SCHEMA_PATH = (
+    Path(__file__).resolve().parents[2]
+    / "schemas"
+    / "requirement_extraction.v1.schema.json"
+)
+
+
+def load_requirement_extraction_schema():
+    return json.loads(REQUIREMENT_SCHEMA_PATH.read_text(encoding="utf-8"))
+
+
+def requirement_extraction_payload(extraction):
+    return {
+        "schema_version": extraction.schema_version,
+        "status": extraction.status,
+        "comparison_type": extraction.comparison_type,
+        "requirements": [
+            {
+                "requirement_id": item.requirement_id,
+                "metric": item.metric,
+                "bundle_id": item.bundle_id,
+                "executor_intent": item.executor_intent,
+                "expected_type": item.expected_type,
+                "required_capabilities": list(item.required_capabilities),
+                "rule_profile": item.rule_profile,
+            }
+            for item in extraction.requirements
+        ],
+        "reason": extraction.reason,
+    }
+
+
+def validate_requirement_extraction_payload(payload, schema=None):
+    """Validate the versioned requirement contract and its cross-field invariants."""
+    errors = validate_payload(payload, schema or load_requirement_extraction_schema())
+    if errors:
+        return errors
+    requirements = payload["requirements"]
+    if payload["status"] == "resolved" and len(requirements) < 2:
+        errors.append("$.requirements: resolved composite requires at least two requirements")
+    if payload["status"] != "resolved" and requirements:
+        errors.append("$.requirements: unresolved extraction must not contain executable requirements")
+    ids = [item["requirement_id"] for item in requirements]
+    metrics = [item["metric"] for item in requirements]
+    if len(ids) != len(set(ids)):
+        errors.append("$.requirements: requirement IDs must be unique")
+    if len(metrics) != len(set(metrics)):
+        errors.append("$.requirements: metric IDs must be unique")
+    if payload["status"] == "resolved" and payload["reason"] is not None:
+        errors.append("$.reason: resolved extraction must not include a failure reason")
+    if payload["status"] != "resolved" and not payload["reason"]:
+        errors.append("$.reason: unresolved extraction requires a reason")
+    return errors

@@ -138,3 +138,8 @@ The composite planner consumes these requirements, resolves each through `Bundle
 ## Requirement extraction status
 
 The requirement model and extraction layer are now separate from composite plan compilation. The first rule remains limited to the parser's existing `financial_metric_comparison` intent. Follow-up CI run `44548881088` executed 222 tests with no code/test errors; 220 passed, while the two pre-existing `CODEX PROGRESS` hygiene assertions remain failing.
+
+
+## Versioned requirement payload
+
+The output of `RequirementExtractor` is serialized and validated against `schemas/requirement_extraction.v1.schema.json` before plan compilation. The contract enforces typed requirement fields, unique metric IDs and requirement IDs, and consistency between resolved/unresolved status and failure reason. Invalid payloads fail closed.

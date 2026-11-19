@@ -6,7 +6,12 @@ remain the source of truth for each component.
 """
 from dataclasses import dataclass, replace
 
-from .requirements import MetricRequirement, RequirementExtractor
+from .requirements import (
+    MetricRequirement,
+    RequirementExtractor,
+    requirement_extraction_payload,
+    validate_requirement_extraction_payload,
+)
 from .normalise import fold
 from .output import valid_record
 from .types import QueryPlan, QuerySpec
@@ -68,6 +73,9 @@ class CompositePlanner:
             return None
 
         extraction = self.requirement_extractor.extract(spec)
+        extraction_payload = requirement_extraction_payload(extraction)
+        if validate_requirement_extraction_payload(extraction_payload):
+            return None
         if extraction.status != "resolved" or len(extraction.requirements) < 2:
             return None
         if extraction.comparison_type != "side_by_side":

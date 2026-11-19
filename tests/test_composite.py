@@ -8,6 +8,54 @@ from datamate.types import Table
 from datamate.understanding import RulePlanner
 
 
+import unittest
+
+from datamate.requirements import (
+    RequirementExtractor,
+    requirement_extraction_payload,
+    validate_requirement_extraction_payload,
+)
+from datamate.understanding import RulePlanner
+
+
+class RequirementContractTests(unittest.TestCase):
+    def setUp(self):
+        planner = RulePlanner()
+        spec = planner.interpret(
+            "doanh thu và tiền thực thu tháng này", "2026-03-04", "biz_synthetic"
+        )
+        self.payload = requirement_extraction_payload(RequirementExtractor().extract(spec))
+
+    def test_resolved_requirement_payload_matches_versioned_contract(self):
+        self.assertEqual(validate_requirement_extraction_payload(self.payload), [])
+        self.assertEqual(self.payload["schema_version"], "1.0.0")
+        self.assertEqual(len(self.payload["requirements"]), 2)
+
+    def test_duplicate_metric_requirements_are_rejected(self):
+        payload = dict(self.payload)
+        payload["requirements"] = list(self.payload["requirements"])
+        payload["requirements"][1] = dict(payload["requirements"][1])
+        payload["requirements"][1]["metric"] = payload["requirements"][0]["metric"]
+        errors = validate_requirement_extraction_payload(payload)
+        self.assertTrue(any("metric IDs must be unique" in error for error in errors))
+
+    def test_unresolved_payload_requires_reason_and_no_requirements(self):
+        payload = {
+            "schema_version": "1.0.0",
+            "status": "unresolved",
+            "comparison_type": "side_by_side",
+            "requirements": [],
+            "reason": "bundle_not_resolved",
+        }
+        self.assertEqual(validate_requirement_extraction_payload(payload), [])
+
+    def test_resolved_payload_cannot_include_failure_reason(self):
+        payload = dict(self.payload)
+        payload["reason"] = "not_resolved"
+        errors = validate_requirement_extraction_payload(payload)
+        self.assertTrue(any("must not include a failure reason" in error for error in errors))
+
+
 class RequirementExtractorTests(unittest.TestCase):
     def test_financial_comparison_resolves_two_independent_requirements(self):
         planner = RulePlanner()

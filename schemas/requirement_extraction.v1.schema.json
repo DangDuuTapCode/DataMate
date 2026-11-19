@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DataMate Requirement Extraction v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "comparison_type", "requirements", "reason"],
+  "properties": {
+    "schema_version": {"type": "string", "const": "1.0.0"},
+    "status": {"type": "string", "enum": ["resolved", "unsupported", "unresolved"]},
+    "comparison_type": {"type": ["string", "null"], "enum": ["side_by_side", null]},
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["requirement_id", "metric", "bundle_id", "executor_intent", "expected_type", "required_capabilities", "rule_profile"],
+        "properties": {
+          "requirement_id": {"type": "string", "minLength": 1},
+          "metric": {"type": "string", "minLength": 1},
+          "bundle_id": {"type": "string", "minLength": 1},
+          "executor_intent": {"type": "string", "minLength": 1},
+          "expected_type": {"type": "string", "enum": ["number", "percent", "date", "string", "table", "list"]},
+          "required_capabilities": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+          "rule_profile": {"type": "string"}
+        }
+      }
+    },
+    "reason": {"type": ["string", "null"]}
+  }
+}
