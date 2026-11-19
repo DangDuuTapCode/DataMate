@@ -294,6 +294,7 @@ def verify_business_rule_evidence_provenance(evidence, data_root, business_dir):
             "data_dictionary.csv": business_path,
             "data_dictionary.xlsx": business_path,
             "data_dictionary.md": business_path,
+            "README.md": business_path,
         },
         "operator_attestation": {
             "operator_attestation.json": business_path,
