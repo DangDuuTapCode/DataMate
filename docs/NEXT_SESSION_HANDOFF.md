@@ -279,3 +279,11 @@ Latest continuation commits:
 The builder now requires candidate_count=1, typed immutable hops, exact nonblank source-qualified identities, unique canonical keys, valid physical index tuples, literal false fanout, and safe join-type input validation. This is still structural validation only; it does not authorize or execute a JOIN.
 
 No new Actions run is verified for this branch yet. Do not claim local tests or local git status. Before any runtime wiring, inspect a representative real query and its exact source README/rulebook evidence. Require reviewed fact grain, measure semantics, additive behavior, exact join path/key(s), and aggregation stage. If the archive/source evidence is unavailable, keep runtime fail-closed and continue with structural tests only.
+
+
+### Final malformed-cardinality guard
+
+- Added a type check before cardinality set membership, preventing malformed unhashable values from raising.
+- Added a list-valued cardinality regression.
+- Latest commits: `101a5089d1bd71c45b17516f5753a2e01f06f151`, `4e073e4f1a35a216179094ff0d63389f27829775`.
+- Current branch head verified at `4e073e4f1a35a216179094ff0d63389f27829775`; Actions has no run for this commit yet.
