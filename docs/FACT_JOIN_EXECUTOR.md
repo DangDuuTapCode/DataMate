@@ -29,8 +29,10 @@ The executor does not:
 - join payment-event facts into sales-line facts;
 - decide whether a measure is additive or whether the declared fact grain is true.
 
-Those responsibilities remain with reviewed query/rule evidence and a future query-specific metric executor.
+Those responsibilities belong to a reviewed query-specific metric executor. The low-level join primitive intentionally remains free of business semantics.
 
 ## Current integration boundary
 
-The module is covered by synthetic multi-hop tests, but it is not yet wired into `Executor.execute`, `RulePlanner`, or the public query pipeline. The Contest `biz_129` case study motivates the path and LEFT JOIN requirement; it does not authorize arbitrary joins.
+The primitive is now consumed by `src/datamate/customer_group_revenue.py`, a narrowly allowlisted `customer_group_revenue_share` executor for `biz_129`. That query-specific layer applies the reviewed date/status policies, exact duplicate-line policy, customer-group numerator, and whole-shop denominator after the row-preserving LEFT JOIN. `RulePlanner`, `Executor.execute_with_reason`, and `main.run` are wired for this one query family.
+
+This does **not** make arbitrary JOINs available to other questions or businesses. The generic executor still does not infer paths, flatten arbitrary tables, aggregate unknown measures, or join payment-event facts into sales-line facts.
