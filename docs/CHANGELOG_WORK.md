@@ -301,3 +301,9 @@
 - Hardened `build_fact_join_contract` against forged candidate counts and malformed path-hop structures; added four focused regression cases.
 - Commits: `5c04d9b8498133e28170108ed3ba7fe8ec58301a`, `783631e99ed584fee284564c126b1275ca453edf`.
 - No runtime JOIN behavior was enabled. CI verification is pending for this continuation branch.
+
+
+### Follow-up
+
+- Hardened malformed cardinality handling and added a list-valued cardinality regression.
+- Commits: `101a5089d1bd71c45b17516f5753a2e01f06f151`, `4e073e4f1a35a216179094ff0d63389f27829775`.
