@@ -142,7 +142,9 @@ def run(data_root, output, log_directory=None, business_filter=None):
                             )),
                         }
                 else:
-                    plan = planner.plan(question.question, question.as_of_date)
+                    plan = planner.plan(
+                        question.question, question.as_of_date, question.business_id
+                    )
                     if plan:
                         candidate, execution_reason = engine.execute_with_reason(
                             plan, question.question, spec=spec
