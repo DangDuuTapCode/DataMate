@@ -57,3 +57,15 @@ This is defense in depth for manually constructed or malformed resolution object
 
 
 A final malformed-input regression also covers a non-string cardinality value. The validator rejects it without raising, matching the fail-closed behavior for malformed join-type values.
+
+
+## LEFT JOIN requirements for blank source keys
+
+A nonblank-key relationship can be structurally non-fanout even when some source rows have no key. Those rows cannot match a target row, but a LEFT JOIN preserves them at the original fact grain. To keep this distinct from a fully matched relationship:
+
+- Relationship discovery emits `validated_left_join` only when the target key is unique and every nonblank source key matches; any unmatched nonblank source key still rejects the relationship.
+- Path resolution propagates `left_join_required` and marks the affected hop.
+- The contract builder accepts that path only with `join_type="left"`; an inner join is rejected because it would discard blank-key fact rows.
+- The existing `validated` status remains unchanged for relationships with complete source keys. The bundle capability resolver does not treat `validated_left_join` as ordinary `validated` evidence.
+
+This behavior is covered by relationship, path, contract, and README-shaped integration tests. See [CONTEST_BIZ129_JOIN_CASE.md](CONTEST_BIZ129_JOIN_CASE.md) for the motivating dataset profile and rulebook-backed query family.
