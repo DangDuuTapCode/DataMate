@@ -332,6 +332,38 @@ class BundleCapabilityResolverTests(unittest.TestCase):
         self.assertFalse(rejected.available)
         self.assertEqual(rejected.reasons, ("rejected_required_relationships",))
 
+    def test_detail_to_order_scope_uses_source_identity_for_repeated_sheet_names(self):
+        details = Table(
+            "Sheet1", ["Mã đơn hàng"], [["A1"], ["A1"]], "details.xlsx"
+        )
+        orders = Table("Sheet1", ["Mã đơn hàng"], [["A1"]], "orders.xlsx")
+        unrelated = Table("Sheet1", ["Mã đơn hàng"], [["Z9"]], "unrelated.xlsx")
+        payload = _complete_rule_evidence().to_dict()
+        line_scope = [{"table_name": "Sheet1", "source": "details.xlsx"}]
+        order_scope = [{"table_name": "Sheet1", "source": "orders.xlsx"}]
+        revenue = payload["profiles"][0]["evidence"]
+        revenue[0]["assertion"] = "detail_to_order"
+        revenue[0]["table_scope"] = line_scope + order_scope
+        revenue[1]["table_scope"] = line_scope
+        revenue[2]["table_scope"] = order_scope
+        revenue[3]["table_scope"] = order_scope
+        evidence = BusinessRuleEvidence.from_dict(payload)
+
+        result = self.resolver.resolve(
+            default_bundle_registry().resolve("revenue"),
+            build_schema_catalog(
+                [details, orders, unrelated], business_id="biz_synthetic"
+            ),
+            evidence,
+            split_rules=_reviewed_split_rules(),
+        )
+
+        self.assertTrue(result.available)
+        self.assertEqual(
+            result.approved_table_scope,
+            (("Sheet1", "details.xlsx"), ("Sheet1", "orders.xlsx")),
+        )
+
     def test_collection_required_fields_must_be_in_reviewed_table_scope(self):
         reviewed = Table("payments", ["Mã giao dịch"], [["P1"]], "payments.xlsx")
         unreviewed = Table(
