@@ -171,6 +171,27 @@ class BusinessRuleEvidenceTests(unittest.TestCase):
                 verify_business_rule_evidence_provenance(evidence, root, business_dir)
             )
 
+    def test_provenance_verification_accepts_business_readme_as_schema_source(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            business_dir = root / "data" / "biz-1"
+            business_dir.mkdir(parents=True)
+            readme = business_dir / "README.md"
+            readme.write_bytes(b"# Business data dictionary\\n\\nColumns and source descriptions.")
+
+            payload = _payload()
+            digest = hashlib.sha256(readme.read_bytes()).hexdigest()
+            for claim in payload["profiles"][0]["evidence"]:
+                claim["provenance"].update({
+                    "source_type": "data_dictionary",
+                    "reference": "README.md#payments",
+                    "sha256": digest,
+                })
+            evidence = BusinessRuleEvidence.from_dict(payload)
+            self.assertTrue(
+                verify_business_rule_evidence_provenance(evidence, root, business_dir)
+            )
+
     def test_provenance_verification_rejects_internal_symlink_sources(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "input"
