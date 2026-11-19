@@ -75,6 +75,80 @@ class RelationshipDiscoveryTests(unittest.TestCase):
         self.assertEqual(relationship.cardinality, "many_to_one")
         self.assertEqual(relationship.to_dict()["to_source"], "orders.xlsx")
 
+    def test_composite_order_line_key_uses_rulebook_duplicate_policy(self):
+        lot_rows = [
+            ["A1", 1, "L1"],
+            ["A1", 1, "L2"],
+            ["A1", 2, "L3"],
+            ["A2", 1, "L4"],
+        ]
+        detail_rows = [
+            ["A1", 1, "P1"],
+            ["A1", 1, "P1"],  # exact duplicate export row
+            ["A1", 2, "P2"],
+            ["A2", 1, "P3"],
+        ]
+        lots = Table(
+            "chi_tiet_don_lo",
+            ["Mã hóa đơn", "Số thứ tự", "Mã lô"],
+            lot_rows,
+            "pos.sqlite",
+        )
+        details = Table(
+            "chi_tiet_don",
+            ["Mã hóa đơn", "Số thứ tự", "Mã hàng hóa"],
+            detail_rows,
+            "pos.sqlite",
+        )
+
+        without_policy = discover_relationships([lots, details])
+        composite_without_policy = next(
+            item for item in without_policy
+            if item.canonical_key == "order_id+order_line_number"
+        )
+        self.assertEqual(composite_without_policy.status, "ambiguous")
+        self.assertEqual(composite_without_policy.cardinality, "many_to_many")
+
+        with_policy = discover_relationships(
+            [lots, details], deduplicate_identical_order_lines=True
+        )
+        composite = next(
+            item for item in with_policy
+            if item.canonical_key == "order_id+order_line_number"
+        )
+        self.assertEqual(composite.canonical_keys, ("order_id", "order_line_number"))
+        self.assertEqual(composite.cardinality, "many_to_one")
+        self.assertEqual(composite.status, "validated")
+        self.assertEqual(composite.from_row_count, 4)
+        self.assertEqual(composite.to_row_count, 3)
+        self.assertIn("rulebook_exact_duplicate_rows_policy_applied", composite.evidence)
+        self.assertIn("exact_duplicate_rows_removed", composite.evidence)
+        self.assertEqual(composite.to_dict()["to_column_indices"], [0, 1])
+
+    def test_composite_order_line_key_rejects_unmatched_child_pair(self):
+        lots = Table(
+            "chi_tiet_don_lo",
+            ["Mã hóa đơn", "Số thứ tự", "Mã lô"],
+            [["A1", 1, "L1"], ["A9", 1, "L9"]],
+            "pos.sqlite",
+        )
+        details = Table(
+            "chi_tiet_don",
+            ["Mã hóa đơn", "Số thứ tự", "Mã hàng hóa"],
+            [["A1", 1, "P1"]],
+            "pos.sqlite",
+        )
+
+        composite = next(
+            item for item in discover_relationships(
+                [lots, details], deduplicate_identical_order_lines=True
+            )
+            if item.canonical_key == "order_id+order_line_number"
+        )
+
+        self.assertEqual(composite.status, "rejected")
+        self.assertEqual(composite.from_unmatched_keys, 1)
+
     def test_unmatched_child_key_is_rejected(self):
         details = Table("details", ["Mã đơn"], [["A1"], ["A1"], ["A3"]], "details.csv")
         orders = Table("orders", ["Mã đơn"], [["A1"], ["A2"]], "orders.csv")
