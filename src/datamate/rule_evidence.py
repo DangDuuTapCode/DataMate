@@ -278,8 +278,8 @@ def verify_business_rule_evidence_provenance(evidence, data_root, business_dir):
     """Verify claim digests against a small allowlist of local input files.
 
     References may include a fragment such as rulebook.md#section, but paths,
-    URLs, traversal, and arbitrary filenames are never followed. All resolved
-    files must remain inside the supplied input root.
+    URLs, traversal, symlink sources, and arbitrary filenames are never
+    followed. All resolved files must remain inside the supplied input root.
     """
     root = Path(data_root).resolve()
     business_path = Path(business_dir).resolve()

@@ -70,4 +70,4 @@ This prevents a second, unreviewed candidate table from being selected after the
 
 ## Provenance verification
 
-Runtime recomputes SHA-256 from exact bytes of allowlisted files only. Rulebooks resolve to the input-root `rulebook.md`; data dictionaries and operator attestations resolve to fixed filenames inside the business directory. Path traversal, external URLs, unknown names, missing files, all symlink sources, paths resolving outside the input root, and digest mismatches fail closed.
+Runtime recomputes SHA-256 from exact bytes of allowlisted files only. Rulebooks resolve to the input-root `rulebook.md`; data dictionaries and operator attestations resolve to fixed filenames inside the business directory. Path traversal, external URLs, unknown names, missing files, any symlink source, paths resolving outside the input root, and digest mismatches fail closed.

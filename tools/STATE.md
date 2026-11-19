@@ -85,7 +85,7 @@
 
 - Runtime recomputes SHA-256 from exact bytes for each claim.
 - Allowlist only: input-root rulebook.md; business-scoped data_dictionary.csv/.xlsx/.md; business-scoped operator_attestation.json.
-- No arbitrary paths, path traversal, external fetch, unknown filenames, symlink sources, or paths resolving outside input root.
+- No arbitrary paths, path traversal, external fetch, unknown filenames, any symlink source, or paths resolving outside input root.
 - Digest mismatch or missing source invalidates evidence and blocks composite planning.
 - Next: inspect CI and add symlink-escape regression if needed.
 
@@ -96,3 +96,11 @@
 - Path traversal, external URLs, unknown filenames, missing files, symlink escapes, and digest mismatch invalidate evidence.
 - CI run `44563411248`: 271 tests; 269 passed. All feature tests passed; only two inherited hygiene failures.
 - Next: confirm actual source filename contract and only expand exact allowlist entries when documented.
+
+
+## Latest provenance verification
+
+- SHA-256 recomputed from allowlisted local files.
+- All symlink source files are rejected; resolved paths must stay under the input root.
+- CI run `44563864531`: 272 tests; 270 passed; all feature tests passed.
+- Next: confirm exact filenames for optional data dictionary and operator attestation sources before any allowlist expansion.

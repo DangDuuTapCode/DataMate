@@ -95,4 +95,4 @@ At runtime, every evidence claim's SHA-256 is recomputed from exact file bytes. 
 - `data_dictionary.csv`, `data_dictionary.xlsx`, or `data_dictionary.md` inside the business data directory;
 - `operator_attestation.json` inside the business data directory.
 
-An optional fragment after `#` is treated only as a citation anchor; it is never interpreted as a path. Absolute paths, separators, traversal, URLs, unknown filenames, missing files, symlink sources, files resolving outside the input root, and digest mismatches invalidate the evidence. No external URL is fetched.
+An optional fragment after `#` is treated only as a citation anchor; it is never interpreted as a path. Absolute paths, separators, traversal, URLs, unknown filenames, missing files, any symlink source, files resolving outside the input root, and digest mismatches invalidate the evidence. No external URL is fetched.

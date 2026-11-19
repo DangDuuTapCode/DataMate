@@ -151,7 +151,7 @@ Next: inspect the new CI result, then implement safe digest verification for kno
 
 - Runtime now recomputes every evidence claim SHA-256 from exact bytes.
 - Only allowlisted local references are resolved: root `rulebook.md`, business-scoped data_dictionary CSV/XLSX/MD, and business-scoped `operator_attestation.json`.
-- Path separators/traversal, external URLs, unknown filenames, missing files, symlink sources, paths resolving outside the input root, and digest mismatches fail closed.
+- Path separators/traversal, external URLs, unknown filenames, missing files, any symlink source, paths resolving outside the input root, and digest mismatches fail closed.
 - Citation fragments are not interpreted as paths.
 - New tests cover valid digest, mismatch, traversal, external URL, and runner-level mismatch abstention.
 
@@ -163,3 +163,10 @@ Next: inspect CI. Then add coverage for symlink escape and decide whether additi
 Run `44563411248` on `404bd655012660f26486fdb6ec7e08e5baa845e4`: 271 tests; 269 passed. All feature tests passed. Only the two inherited `CODEX PROGRESS` hygiene checks failed.
 
 Next: confirm actual mounted data dictionary and operator-attestation filenames. Expand the exact allowlist only if the input contract documents a concrete filename; never allow arbitrary paths.
+
+
+## Latest CI
+
+Run `44563864531` on `bcada84044c4d38bc144d8eaa27099bdd148feeb`: 272 tests; 270 passed. All feature tests passed; only two inherited repository-hygiene failures.
+
+Next: confirm whether the actual mounted input bundle contains one of the allowlisted data-dictionary or operator-attestation filenames. If not, ask for the intended exact filename and document it before changing the allowlist.
