@@ -158,9 +158,11 @@ def execute_customer_group_revenue_share(tables, rules, start, end, customer_gro
     eligible_rows = 0
     wanted_group = fold(customer_group)
     known_groups = {
-        fold(value)
-        for value in joined_groups
-        if value is not None and str(value).strip()
+        fold(row[customer_group_column])
+        for row in customers.rows
+        if customer_group_column < len(row)
+        and row[customer_group_column] is not None
+        and str(row[customer_group_column]).strip()
     }
     if wanted_group not in known_groups:
         return None, "unresolved_filter"
