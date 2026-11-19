@@ -249,3 +249,9 @@ Important limitation: this resolver is discovery-only and is not yet connected t
 - CI run `44594130571`, commit `59a7444cb530801e59018149f653bcbdfd76b4e7`: **352 tests passed**.
 - Independent archive audit baselines: October 2025 20.31%, June 2025 19.79%. No contest rows are committed.
 - Separate customer-group revenue-total questions remain unsupported for now; the planner abstains rather than discarding the requested group filter.
+
+
+### Branch-tip verification after runtime integration
+
+- Latest branch tip `0cd8fb90fe0c197752f84b847537763b09217e2c` completed GitHub Actions run `44594377793`: **352 tests passed**.
+- PR #2 remains an open draft and is ready for user review; no merge was performed.
