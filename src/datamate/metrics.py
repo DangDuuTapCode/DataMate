@@ -407,8 +407,16 @@ class Executor:
             table, date_col, value_col, _, status_col, _ = selected
             return table, date_col, value_col, status_col, [table.name]
 
+        join_contract = self.revenue_join_contract
+        if join_contract is not None and tuple(join_contract.canonical_keys) != ("order_id",):
+            return None
+
         line_candidates = []
         for table in self.tables:
+            if join_contract is not None and (
+                table.name, table.source
+            ) != tuple(join_contract.line_table):
+                continue
             if (
                 _is_payment_table(table) or _is_inventory_table(table)
                 or _is_purchase_table(table) or _is_delivery_table(table)
@@ -416,9 +424,15 @@ class Executor:
             ):
                 continue
             value_col = _revenue_amount_column(table)
-            line_key_col = _column(table.headers, ORDER)
+            line_key_col = (
+                join_contract.line_key_column_index
+                if join_contract is not None else _column(table.headers, ORDER)
+            )
             has_item_identity = _product_column(table.headers) is not None or _product_key_column(table.headers) is not None
-            if value_col is not None and line_key_col is not None and has_item_identity:
+            if (
+                value_col is not None and line_key_col is not None
+                and 0 <= line_key_col < len(table.headers) and has_item_identity
+            ):
                 line_candidates.append((table, value_col, line_key_col))
         if len(line_candidates) != 1:
             return None
@@ -429,10 +443,19 @@ class Executor:
             for header in self.rules.revenue_date_headers
         )
         for table in self.tables:
+            if join_contract is not None and (
+                table.name, table.source
+            ) != tuple(join_contract.order_table):
+                continue
             if not _is_order_table(table):
                 continue
-            order_key_col = _column(table.headers, ORDER)
-            date_choices = self.rules.revenue_date_headers
+            order_key_col = (
+                join_contract.order_key_column_index
+                if join_contract is not None else _column(table.headers, ORDER)
+            )
+            if order_key_col is None or not 0 <= order_key_col < len(table.headers):
+                continue
+        date_choices = self.rules.revenue_date_headers
             if order_date_rule:
                 # "Ngày bán" is accepted as the order date only in a table
                 # whose role and unique invoice key are validated below.
