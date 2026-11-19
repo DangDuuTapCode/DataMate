@@ -130,12 +130,15 @@ def _candidate_from_profiles(
         status, cardinality, confidence = "rejected", "unknown", 0.0
         evidence = ("no_nonblank_key_overlap",)
     elif left_unique and right_unique:
-        if left_profile["blank_count"] or right_profile["blank_count"]:
-            status, cardinality, confidence = "rejected", "one_to_one", 0.0
-            evidence = ("canonical_key_match", "both_sides_unique", "blank_keys_prevent_validation")
-        elif left_keys == right_keys:
+        if left_keys == right_keys and left_profile["blank_count"] == 0:
             status, cardinality, confidence = "validated", "one_to_one", 1.0
-            evidence = ("canonical_key_match", "both_sides_unique", "complete_key_coverage")
+            evidence = ("canonical_key_match", "both_sides_unique", "complete_nonblank_key_coverage")
+        elif left_keys == right_keys and left_profile["blank_count"] > 0:
+            status, cardinality, confidence = "validated_left_join", "one_to_one", 0.95
+            evidence = (
+                "canonical_key_match", "both_sides_unique",
+                "complete_nonblank_key_coverage", "blank_source_keys_require_left_join",
+            )
         else:
             status, cardinality, confidence = "candidate", "one_to_one", 0.5
             evidence = ("canonical_key_match", "both_sides_unique", "partial_key_coverage")
@@ -159,6 +162,12 @@ def _candidate_from_profiles(
         if not right_unmatched and right_profile["blank_count"] == 0:
             status, cardinality, confidence = "validated", "one_to_many", 1.0
             evidence = ("canonical_key_match", "left_side_unique", "all_right_keys_match")
+        elif not right_unmatched:
+            status, cardinality, confidence = "validated_left_join", "one_to_many", 0.95
+            evidence = (
+                "canonical_key_match", "left_side_unique",
+                "all_nonblank_right_keys_match", "blank_source_keys_require_left_join",
+            )
         else:
             status, cardinality, confidence = "rejected", "one_to_many", 0.0
             evidence = ("canonical_key_match", "left_side_unique", "unmatched_or_blank_right_keys")
