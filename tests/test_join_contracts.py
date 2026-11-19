@@ -1,6 +1,10 @@
 import unittest
 
-from datamate.relationship_paths import resolve_relationship_path
+from datamate.relationship_paths import (
+    RelationshipPathHop,
+    RelationshipPathResolution,
+    resolve_relationship_path,
+)
 from datamate.relationships import RelationshipCandidate
 from datamate.join_contracts import build_fact_join_contract
 
@@ -80,9 +84,7 @@ class FactJoinContractTests(unittest.TestCase):
 
     def test_rejects_fanout_path(self):
         fanout = resolve_relationship_path(
-            [
-                relationship(self.fact, self.orders, "order_id", "one_to_many"),
-            ],
+            [relationship(self.fact, self.orders, "order_id", "one_to_many")],
             self.fact,
             self.orders,
             max_hops=1,
@@ -131,19 +133,16 @@ class FactJoinContractTests(unittest.TestCase):
             with self.subTest(value=value):
                 self.assertIsNone(self.build(measure_column_index=value))
 
-    def test_rejects_unknown_join_type(self):
-        self.assertIsNone(self.build(join_type="cross"))
+    def test_rejects_unknown_join_type_without_raising(self):
+        for value in ("cross", [], None):
+            with self.subTest(value=value):
+                self.assertIsNone(self.build(join_type=value))
 
     def test_rejects_missing_grain_or_measure_declaration(self):
         self.assertIsNone(self.build(fact_grain=" "))
         self.assertIsNone(self.build(measure_field=" "))
 
-
     def test_rejects_unknown_cardinality_even_if_path_flag_claims_safe(self):
-        from datamate.relationship_paths import (
-            RelationshipPathHop, RelationshipPathResolution,
-        )
-
         malformed = RelationshipPathResolution(
             "unique_safe",
             hops=(RelationshipPathHop(
@@ -159,11 +158,46 @@ class FactJoinContractTests(unittest.TestCase):
             measure_column_index=4,
         ))
 
-    def test_rejects_repeated_table_in_manually_constructed_path(self):
-        from datamate.relationship_paths import (
-            RelationshipPathHop, RelationshipPathResolution,
+    def test_rejects_candidate_count_that_does_not_prove_uniqueness(self):
+        malformed = RelationshipPathResolution(
+            "unique_safe",
+            hops=(RelationshipPathHop(
+                self.fact, self.orders, ("order_id",), (2,), (0,),
+                "many_to_one", False,
+            ),),
+            candidate_count=2,
         )
 
+        self.assertIsNone(build_fact_join_contract(
+            malformed, self.fact, self.orders,
+            fact_grain="order line", measure_field="amount",
+            measure_column_index=4,
+        ))
+
+    def test_rejects_malformed_hop_identity_and_duplicate_keys(self):
+        malformed_hops = (
+            RelationshipPathHop(
+                self.fact, ("", "orders.xlsx"), ("order_id",), (2,), (0,),
+                "many_to_one", False,
+            ),
+            RelationshipPathHop(
+                self.fact, self.orders, ("order_id", "order_id"), (2, 3), (0, 1),
+                "many_to_one", False,
+            ),
+        )
+
+        for hop in malformed_hops:
+            with self.subTest(hop=hop):
+                malformed = RelationshipPathResolution(
+                    "unique_safe", hops=(hop,), candidate_count=1,
+                )
+                self.assertIsNone(build_fact_join_contract(
+                    malformed, self.fact, self.orders,
+                    fact_grain="order line", measure_field="amount",
+                    measure_column_index=4,
+                ))
+
+    def test_rejects_repeated_table_in_manually_constructed_path(self):
         malformed = RelationshipPathResolution(
             "unique_safe",
             hops=(
@@ -188,7 +222,6 @@ class FactJoinContractTests(unittest.TestCase):
             fact_grain="order line", measure_field="amount",
             measure_column_index=4,
         ))
-
 
 
 if __name__ == "__main__":
