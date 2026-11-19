@@ -259,6 +259,72 @@ class BundleCapabilityResolverTests(unittest.TestCase):
         self.assertFalse(rejected.available)
         self.assertEqual(rejected.reasons, ("rejected_required_relationships",))
 
+    def test_collection_required_fields_must_be_in_reviewed_table_scope(self):
+        reviewed = Table("payments", ["Mã giao dịch"], [["P1"]], "payments.xlsx")
+        unreviewed = Table(
+            "payment_values",
+            ["Thanh toán / Giá trị", "Thanh toán / Ngày", "Thanh toán / Trạng thái"],
+            [[100, "2026-01-01", "completed"]],
+            "payment_values.xlsx",
+        )
+        bundle = default_bundle_registry().resolve("collected_amount")
+        evidence = _complete_rule_evidence()
+
+        result = self.resolver.resolve(
+            bundle,
+            build_schema_catalog([reviewed, unreviewed], business_id="biz_synthetic"),
+            evidence,
+        )
+
+        self.assertFalse(result.available)
+        self.assertEqual(
+            result.missing_fields,
+            ("payment_date", "payment_event_amount", "payment_status"),
+        )
+
+    def test_detail_to_order_accepts_reverse_catalog_table_order(self):
+        details = Table(
+            "sales_details", ["Mã đơn hàng"], [["A1"], ["A1"], ["A2"]], "details.xlsx"
+        )
+        orders = Table("orders", ["Mã đơn hàng"], [["A1"], ["A2"]], "orders.xlsx")
+        payload = _complete_rule_evidence().to_dict()
+        line_scope = [{"table_name": "sales_details", "source": "details.xlsx"}]
+        order_scope = [{"table_name": "orders", "source": "orders.xlsx"}]
+        revenue = payload["profiles"][0]["evidence"]
+        revenue[0]["assertion"] = "detail_to_order"
+        revenue[0]["table_scope"] = line_scope + order_scope
+        revenue[1]["table_scope"] = line_scope
+        revenue[2]["table_scope"] = order_scope
+        revenue[3]["table_scope"] = order_scope
+        evidence = BusinessRuleEvidence.from_dict(payload)
+        bundle = default_bundle_registry().resolve("revenue")
+
+        result = self.resolver.resolve(
+            bundle,
+            build_schema_catalog([orders, details], business_id="biz_synthetic"),
+            evidence,
+        )
+
+        self.assertTrue(result.available)
+
+    def test_flexible_revenue_shape_accepts_one_direct_line_table(self):
+        sales = Table(
+            "sales", ["Mã đơn hàng"], [["A1"]], "sales.xlsx"
+        )
+        payload = _complete_rule_evidence().to_dict()
+        for claim in payload["profiles"][0]["evidence"]:
+            claim["table_scope"] = [{"table_name": "sales", "source": "sales.xlsx"}]
+        payload["profiles"][0]["evidence"][0]["assertion"] = "direct_line_or_detail_to_order"
+        evidence = BusinessRuleEvidence.from_dict(payload)
+
+        result = self.resolver.resolve(
+            default_bundle_registry().resolve("revenue"),
+            build_schema_catalog([sales], business_id="biz_synthetic"),
+            evidence,
+        )
+
+        self.assertTrue(result.available)
+
     def test_default_financial_bundles_stay_unavailable_without_rulebook_evidence(self):
         catalog = build_schema_catalog([
             Table(
