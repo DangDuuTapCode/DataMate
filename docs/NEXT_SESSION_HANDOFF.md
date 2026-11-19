@@ -354,3 +354,10 @@ CI is still unverified: GitHub queries returned no workflow runs/statuses for th
 - Added `docs/FACT_JOIN_EXECUTOR.md`.
 - GitHub Actions run `44587842656` on `6a0bc0b7ad4aef0cb510b234d05b5455a73eb8db`: **328 tests passed**.
 - Runtime integration remains intentionally absent. The executor does not apply the revenue date/status filters, customer-group predicate, numerator/denominator calculation, or payment aggregation.
+
+
+### Latest branch verification
+
+- Current branch tip: `e95608eb8b34281ac5327ecf67d58f16dbab5e38`.
+- Actions run `44588291394` on that exact commit: **328 tests passed**.
+- PR #2 remains an open draft; do not merge without the user's instruction.
