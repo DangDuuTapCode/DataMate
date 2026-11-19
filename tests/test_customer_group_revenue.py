@@ -113,6 +113,41 @@ class CustomerGroupRevenueShareTests(unittest.TestCase):
         self.assertIsNone(reason)
         self.assertEqual(candidate["answer"], 0.0)
 
+    def test_exact_duplicate_lines_in_same_order_count_once(self):
+        details = Table(
+            self.details.name,
+            self.details.headers,
+            self.details.rows + [self.details.rows[0]],
+            self.details.source,
+        )
+        candidate, reason = self.run_query([details, self.orders, self.customers])
+        self.assertIsNone(reason)
+        self.assertEqual(candidate["answer"], 44.44)
+
+    def test_identical_line_values_in_different_orders_are_not_deduplicated(self):
+        details = Table(
+            self.details.name,
+            self.details.headers,
+            self.details.rows + [["ORD2", "SP1", "50000"]],
+            self.details.source,
+        )
+        candidate, reason = self.run_query([details, self.orders, self.customers])
+        self.assertIsNone(reason)
+        # The added guest-order line increases only the whole-shop denominator.
+        self.assertEqual(candidate["answer"], 30.77)
+
+    def test_requires_explicit_duplicate_line_policy(self):
+        rules = replace(self.rules, deduplicate_identical_order_lines=False)
+        candidate, reason = self.run_query(rules=rules)
+        self.assertIsNone(candidate)
+        self.assertEqual(reason, "rulebook_unavailable")
+
+    def test_requires_rulebook_in_transit_revenue_policy(self):
+        rules = replace(self.rules, revenue_included_statuses=frozenset())
+        candidate, reason = self.run_query(rules=rules)
+        self.assertIsNone(candidate)
+        self.assertEqual(reason, "rulebook_unavailable")
+
     def test_rejects_missing_customer_group_mapping(self):
         customers = Table(
             self.customers.name, ["Mã khách lẻ/sỉ", "Phân loại"],
