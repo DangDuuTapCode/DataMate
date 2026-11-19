@@ -156,3 +156,10 @@ Next: inspect the new CI result, then implement safe digest verification for kno
 - New tests cover valid digest, mismatch, traversal, external URL, and runner-level mismatch abstention.
 
 Next: inspect CI. Then add coverage for symlink escape and decide whether additional known source filename variants are needed; do not broaden the allowlist based on arbitrary user-provided references.
+
+
+## Latest digest-verification CI
+
+Run `44563411248` on `404bd655012660f26486fdb6ec7e08e5baa845e4`: 271 tests; 269 passed. All feature tests passed. Only the two inherited `CODEX PROGRESS` hygiene checks failed.
+
+Next: confirm actual mounted data dictionary and operator-attestation filenames. Expand the exact allowlist only if the input contract documents a concrete filename; never allow arbitrary paths.

@@ -88,3 +88,11 @@
 - No arbitrary paths, path traversal, external fetch, unknown filenames, or symlink escape outside input root.
 - Digest mismatch or missing source invalidates evidence and blocks composite planning.
 - Next: inspect CI and add symlink-escape regression if needed.
+
+
+## Latest verified state
+
+- Evidence digests are recomputed from exact bytes of allowlisted files.
+- Path traversal, external URLs, unknown filenames, missing files, symlink escapes, and digest mismatch invalidate evidence.
+- CI run `44563411248`: 271 tests; 269 passed. All feature tests passed; only two inherited hygiene failures.
+- Next: confirm actual source filename contract and only expand exact allowlist entries when documented.

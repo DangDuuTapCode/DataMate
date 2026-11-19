@@ -134,3 +134,10 @@ Run: https://github.com/pl2n/DataMate/actions/runs/44561508605
 - Strict allowlist: input-root `rulebook.md`; business-scoped `data_dictionary.csv/.xlsx/.md`; business-scoped `operator_attestation.json`.
 - Citation fragments after `#` are ignored for path resolution. Arbitrary paths, traversal, URLs, unknown names, missing files, files resolving outside the input root, and digest mismatches invalidate the evidence.
 - Added unit tests for valid local digest, mismatch, traversal, and external URL rejection, plus a runner regression proving a digest mismatch blocks composite planning.
+
+
+## CI verification — 2026-11-19
+
+GitHub Actions run `44563411248` on commit `404bd655012660f26486fdb6ec7e08e5baa845e4` executed 271 tests; 269 passed. All feature tests passed, including digest verification and symlink/path-safety regressions. The only two failures remain inherited `CODEX PROGRESS` size and secret-like-pattern hygiene checks.
+
+Run: https://github.com/pl2n/DataMate/actions/runs/44563411248

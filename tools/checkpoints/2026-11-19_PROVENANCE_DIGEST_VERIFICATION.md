@@ -30,7 +30,9 @@ A reference may include a fragment after `#`; only the basename before the fragm
 
 ## Verification
 
-CI pending for this checkpoint commit. Previous evidence-scoped execution CI run `44562435501`: 265 tests, 263 passed; only the two inherited `CODEX PROGRESS` hygiene checks failed.
+GitHub Actions run `44563411248` on commit `404bd655012660f26486fdb6ec7e08e5baa845e4` executed 271 tests; 269 passed. All feature tests passed, including path-safety and digest checks. The only two failures are inherited `CODEX PROGRESS` hygiene checks.
+
+Run: https://github.com/pl2n/DataMate/actions/runs/44563411248
 
 ## Next
 
