@@ -294,3 +294,10 @@ No new Actions run is verified for this branch yet. Do not claim local tests or 
 - `.github/workflows/tests.yml` now triggers on pushes to `feature/**` and pull requests targeting `main` or `feature/**`.
 - Commit: `e74d43413c3966d7d80e6fbe8f985fb5b6ac4de9`.
 - No workflow run/status was surfaced for this push by the available GitHub queries. CI remains unverified; do not claim success. A subsequent PR targeting `main` will also trigger the workflow.
+
+
+### Current checkpoint pointer
+
+- Latest verified fork branch head: `ee45d81a81ee044bb8d05d103b5c5a255bc5a519`.
+- This head includes the contract hardening, regression tests, CI trigger update, and synchronized progress/handoff documentation.
+- PR #1 remains merged; no new PR has been opened for this continuation branch.
