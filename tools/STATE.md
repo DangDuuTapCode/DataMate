@@ -35,3 +35,11 @@
 - Revenue detail-to-order evidence requires a validated many-to-one `order_id` relationship.
 - CI run `44558398515`: 256 tests, 254 passed; two inherited hygiene failures only. Feature tests passed.
 - Next: cross-check claims against the actual split rulebook/executor profile and design safe digest verification.
+
+
+## Session close state
+
+- Runtime integration commit: `02dc61c983de696ded042f021e2f64f2b886c8e6`.
+- Latest docs/schema commit: `96d63298a940a0e449c7303bbe668508d74c0637`.
+- CI run `44559194129`: 256 tests, 254 passed; only two inherited `CODEX PROGRESS` hygiene failures.
+- Next: validate evidence assertions against actual rulebook/executor behavior and add safe digest verification.

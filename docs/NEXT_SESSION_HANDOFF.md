@@ -89,3 +89,11 @@ CI run `44558398515`: 256 tests, 254 passed; all feature tests passed. The only 
 ## Next step
 
 Validate evidence assertions against the actual split rulebook and supported executor profile. Then design safe source-digest verification using controlled, known source locations. Keep absent/invalid evidence fail-closed; do not infer semantics from headers or sample values.
+
+
+## Resume details
+
+- Latest runtime code commit: `02dc61c983de696ded042f021e2f64f2b886c8e6`.
+- Latest docs/schema commit: `96d63298a940a0e449c7303bbe668508d74c0637`.
+- Latest CI: run `44559194129`, 256 tests / 254 passed. Only the two inherited repository-hygiene checks failed; feature tests passed. Run: https://github.com/pl2n/DataMate/actions/runs/44559194129
+- Resume by cross-checking the six capability assertions with `SplitRules` and the exact `Executor` behavior, then implement controlled source-digest verification. Do not auto-generate evidence or weaken fail-closed behavior.

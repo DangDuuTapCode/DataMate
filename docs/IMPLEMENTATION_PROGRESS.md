@@ -78,3 +78,11 @@ Run: https://github.com/pl2n/DataMate/actions/runs/44558398515
 ## Next step
 
 Validate evidence assertions against the active split rulebook and executor profile, and design safe source-digest verification using controlled, known source locations. Do not enable capabilities on a claim whose policy contradicts runtime behavior.
+
+
+## Final checkpoint for this work session
+
+- Runtime code commit: `02dc61c983de696ded042f021e2f64f2b886c8e6`.
+- Documentation/schema clarification commit: `96d63298a940a0e449c7303bbe668508d74c0637`.
+- CI run `44559194129` on the documentation/schema commit: 256 tests, 254 passed; only the two inherited `CODEX PROGRESS` hygiene checks failed. Feature tests passed.
+- Next work: validate business-rule assertions against actual split-rulebook semantics and design controlled digest verification.

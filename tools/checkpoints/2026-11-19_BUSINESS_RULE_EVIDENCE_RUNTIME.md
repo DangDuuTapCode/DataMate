@@ -26,3 +26,12 @@ Run: https://github.com/pl2n/DataMate/actions/runs/44558398515
 ## Remaining work
 
 Cross-check claims against the actual split rulebook and executor profile. SHA-256 is currently recorded and format-checked but not recomputed from external references; design digest verification using controlled, known source locations rather than arbitrary file paths.
+
+
+## Session verification and handoff
+
+Latest runtime code commit: `02dc61c983de696ded042f021e2f64f2b886c8e6`. Latest documentation/schema commit: `96d63298a940a0e449c7303bbe668508d74c0637`.
+
+CI run `44559194129` executed 256 tests; 254 passed, including all feature tests. The only two failures were inherited repository-hygiene checks.
+
+Next milestone: validate evidence assertions against actual split-rulebook/executor semantics and design controlled source digest verification.
