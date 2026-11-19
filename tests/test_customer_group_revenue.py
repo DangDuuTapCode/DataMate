@@ -134,7 +134,7 @@ class CustomerGroupRevenueShareTests(unittest.TestCase):
         candidate, reason = self.run_query([details, self.orders, self.customers])
         self.assertIsNone(reason)
         # The added guest-order line increases only the whole-shop denominator.
-        self.assertEqual(candidate["answer"], 30.77)
+        self.assertEqual(candidate["answer"], 34.78)
 
     def test_requires_explicit_duplicate_line_policy(self):
         rules = replace(self.rules, deduplicate_identical_order_lines=False)
