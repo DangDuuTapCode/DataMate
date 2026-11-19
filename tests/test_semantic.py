@@ -30,6 +30,34 @@ class SemanticMappingTests(unittest.TestCase):
         self.assertIn("exact_group_and_leaf_alias", schema.mappings[2].evidence)
         self.assertEqual(schema.to_dict()["source"], "orders.xlsx")
 
+    def test_contest_business_identifiers_map_only_exact_aliases(self):
+        table = Table(
+            "business_records",
+            [
+                "Mã hóa đơn", "Mã KH mua", "Mã hàng hóa", "Mã NV bán",
+                "Mã NCC", "Mã phiếu nhập", "Mã lô", "Mã chi nhánh", "IMEI",
+                "STT", "Mã tham chiếu",
+            ],
+            [],
+            "business.xlsx",
+        )
+
+        schema = map_table_schema(table)
+
+        self.assertEqual(schema.mapped_fields, {
+            "order_id": 0,
+            "customer_id": 1,
+            "product_id": 2,
+            "employee_id": 3,
+            "supplier_id": 4,
+            "purchase_receipt_id": 5,
+            "batch_id": 6,
+            "branch_id": 7,
+            "imei": 8,
+        })
+        self.assertEqual(schema.mappings[9].status, "unmapped")
+        self.assertEqual(schema.mappings[10].status, "unmapped")
+
     def test_generic_amount_and_total_labels_are_not_guessed(self):
         table = Table(
             "payment_history",
