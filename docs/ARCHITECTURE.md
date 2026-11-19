@@ -17,3 +17,12 @@ The shipped inference path is rule-based Python. It does not call a hosted model
 ## Extension boundary
 
 New query types should be represented in the query schema, parsed into the constrained representation, computed by deterministic code, verified against source rows, and covered by synthetic regression tests. Do not add public/private evaluation examples or answer-specific rules to the runtime.
+
+
+## Composite query extension
+
+The single-query path remains the compatibility path for supported single-metric questions. Composite questions are routed through `datamate.composite.CompositePlanner` before the single-plan compiler.
+
+The first supported composite is a same-period, side-by-side comparison of `revenue` and `collected_amount`. Each component receives its own `QuerySpec` and `QueryPlan`, shares the resolved period and entity context, and reuses the existing metric-specific executor. The composite verifier checks every component and abstains on the complete question if any required component fails.
+
+Arithmetic differences, cross-period comparisons, arbitrary conjunction splitting, and dynamic bundle discovery remain unsupported in this first slice. See `docs/DATA_INGESTION.md` and `docs/MULTI_BUNDLE_QUERY.md`.

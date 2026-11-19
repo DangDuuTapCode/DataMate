@@ -517,3 +517,11 @@ Review package: work/submission-build/public-test-submission-2026-11-15. JSONL S
 - P3 remains NOT VERIFIED / NOT PASSED because independent review was skipped. Public labels remain unopened. Source-root public JSONL is stale (998 abstain / 2 number), not v26.
 - Main v26 implementation and primary regression files match the validated snapshot; this update changes tracking documents only.
 - Next: investigate remaining sales-ranking errors generically, preserve the rulebook cancellation definition, then replay train from a new frozen output before public inference.
+
+
+## 2026-11-19 — Multi-bundle vertical slice
+
+- Added a first composite path for same-period side-by-side `revenue` + `collected_amount` questions.
+- Existing single-metric executors and verifier are reused per component; composite verification is all-or-nothing.
+- Added synthetic regression coverage and a feature-branch GitHub Actions test workflow.
+- CI verification is pending; no local test execution is claimed. See `tools/checkpoints/2026-11-19_MULTI_BUNDLE_VERTICAL_SLICE.md`.

@@ -489,3 +489,12 @@ The Public Submissions JSONL candidate is prepared and structurally verified, bu
 - Six remaining train errors: 3 sales-ranking false answers and 3 cancellation-rate label/rulebook conflicts. Keep rulebook semantics; investigate rankings with generic unit/schema evidence and regressions.
 - Do not tune on public questions or open public/private labels. Current source-root `public_submission.jsonl` is stale and not v26. No v26 public artifact is confirmed.
 - Replay only to a new directory and validate freeze before evaluator label access. No source changes were made by this report sync.
+
+
+## Handoff — 2026-11-19 multi-bundle vertical slice
+
+- Active repository: `pl2n/DataMate`; branch: `feature/multi-bundle-query`. Upstream remains untouched.
+- Read `docs/MULTI_BUNDLE_QUERY.md`, `docs/DATA_INGESTION.md`, and `tools/checkpoints/2026-11-19_MULTI_BUNDLE_VERTICAL_SLICE.md`.
+- First supported composite: same-period side-by-side revenue + collected amount. It reuses `Executor.execute_with_reason` and `verify_with_reason` for each component.
+- Any required component failure abstains the entire composite. Arithmetic differences, cross-period comparisons, arbitrary conjunction splitting, and dynamic bundle discovery remain unsupported.
+- Inspect GitHub Actions before treating the work as verified. Do not claim tests passed until the run is green.

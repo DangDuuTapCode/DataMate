@@ -541,3 +541,13 @@ python qstats.py public_test/ 15
 - Public labels not read. Existing source-root submission JSONL is stale (998 abstain / 2 number); no v26 output confirmed.
 - Core v26 code/tests were verified to match GitHub `main`; this update only synchronizes reports/status/checkpoint.
 - Next: fix sales rankings with evidence and tests; freeze and replay train; only then generate one structural public candidate without tuning from public questions.
+
+
+## 2026-11-19 — Current working state: multi-bundle vertical slice
+
+- Active repository: `pl2n/DataMate` (private fork); active branch: `feature/multi-bundle-query`.
+- Upstream repository has not been modified.
+- Added a bounded composite implementation for `financial_metric_comparison`: two components (`revenue`, `collected_amount`) share one explicit period and use existing metric logic.
+- Component verification reuses the existing verifier. Any required component failure abstains the entire composite.
+- Added synthetic tests and architecture documentation. CI workflow has been added; verification is pending.
+- Known non-goals: arbitrary conjunction splitting, derived differences, cross-period comparisons, dynamic bundle discovery, and partial composite answers.

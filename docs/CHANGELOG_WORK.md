@@ -239,3 +239,11 @@
 - Full suite: 127 run, 124 passed, 3 Git-only skips, exit 0. biz_127/biz_129 real-data smoke selected `don_hang` and `thanh_toan` respectively without printing answer amounts.
 - Frozen v8 train replay had the same prediction hash as v7 and unchanged quality: 47 correct, 37 wrong, 2,916 abstain; PA 0.33%, coverage 2.80%, answered accuracy 55.95%, runtime errors 0, p95 35 ms. In-sample only; no score improvement is claimed.
 - Checkpoint and hashes: `tools/checkpoints/2026-11-16T1103+07-00_REVENUE_COLLECTION_CONTRACT_COMPLETE.md`.
+
+
+## 2026-11-19 — Composite financial query vertical slice
+
+- Added `CompositePlanner`, requirement/component/composite-plan models, and all-or-nothing composite verification.
+- Routed the recognized revenue + collected-amount question through two independent existing metric executions.
+- Added synthetic tests for shared period context, unsupported cases, successful table output, and component failure abstention.
+- Added ingestion and multi-bundle architecture documentation plus a GitHub Actions test workflow. CI verification pending.
