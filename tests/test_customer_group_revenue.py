@@ -97,12 +97,18 @@ class CustomerGroupRevenueShareTests(unittest.TestCase):
         self.assertIn("left_join_preserves_guest_revenue", candidate["evidence"])
 
     def test_guest_only_period_contributes_zero_to_group_numerator(self):
-        details = Table(
-            self.details.name, self.details.headers,
-            [["ORD2", "SP1", "100000"]], self.details.source,
+        orders = Table(
+            self.orders.name,
+            self.orders.headers,
+            [
+                ["ORD1", "KH1", "01/09/2025", "completed"],
+                ["ORD2", "", "02/10/2025", "completed"],
+                ["ORD3", "KH2", "03/09/2025", "cancelled"],
+            ],
+            self.orders.source,
         )
         candidate, reason = self.run_query(
-            [details, self.orders, self.customers]
+            [self.details, orders, self.customers]
         )
         self.assertIsNone(reason)
         self.assertEqual(candidate["answer"], 0.0)
