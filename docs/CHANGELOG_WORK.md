@@ -292,3 +292,12 @@
 - The only two failures remain `test_no_large_files` and `test_no_secret_like_strings`, both reporting the pre-existing `CODEX PROGRESS` artifact.
 - Run: https://github.com/pl2n/DataMate/actions/runs/44581612778
 - Existing PR #1 remains open against upstream `main`, head updated with this branch. GitHub reports `mergeable=false`; no merge or PR mutation was performed.
+
+
+## 2026-11-20 — PR merge and FactJoinContract hardening
+
+- Confirmed upstream PR #1 merged at `99478a179919a7b5121b00072f90522c50117aba`; upstream `main` is identical to the merge commit.
+- Created fork continuation branch `feature/query-specific-join-execution` from merged PR head `15430b417d650e6145ed4e64cb637ebe2a00677c`.
+- Hardened `build_fact_join_contract` against forged candidate counts and malformed path-hop structures; added four focused regression cases.
+- Commits: `5c04d9b8498133e28170108ed3ba7fe8ec58301a`, `783631e99ed584fee284564c126b1275ca453edf`.
+- No runtime JOIN behavior was enabled. CI verification is pending for this continuation branch.
