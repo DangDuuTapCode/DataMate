@@ -298,6 +298,17 @@ class RulePlanner:
             return "seller_ranking", ("seller",), "seller_revenue"
         if ranking and any(term in q for term in ("nha cung cap", "ncc")):
             return "supplier_ranking", ("supplier",), "supplier_purchase_amount"
+        customer_group = RulePlanner._customer_group_filter(question)
+        group_revenue_cue = any(term in q for term in (
+            "doanh thu", "doanh so", "dthu", "revenue", "tien ban",
+        ))
+        group_share_cue = any(term in q for term in (
+            "chiem", "dong gop", "ti trong", "ty trong", "co cau",
+            "phan tram", "ti le", "ty le", "%",
+        ))
+        if customer_group and group_revenue_cue and group_share_cue:
+            return "customer_group_revenue_share", ("customer_group",), "customer_group_revenue_share"
+
         day_question = re.search(r"\bngay nao(?:f)?\b", q)
         if day_question and any(term in q for term in ("tien", "doanh thu", "doanh so", "dthu", "revenue", "ban duoc")) and ranking:
             return "best_sales_day", ("date",), "daily_revenue"
