@@ -90,3 +90,16 @@ This prevents a second, unreviewed candidate table from being selected after the
 ## Provenance verification
 
 Runtime recomputes SHA-256 from exact bytes of allowlisted files only. Rulebooks resolve to the input-root `rulebook.md`; data dictionaries and operator attestations resolve to fixed filenames inside the business directory. Path traversal, external URLs, unknown names, missing files, any symlink source, paths resolving outside the input root, and digest mismatches fail closed.
+
+
+## Execution consumes the validated relationship columns
+
+For a reviewed revenue `detail_to_order` shape, capability resolution now emits a `RevenueJoinContract` containing:
+- exact detail-line table name and source filename;
+- exact order table name and source filename;
+- canonical key set (currently the single key `order_id`);
+- physical key-column index on each table.
+
+The contract is normalized to line-to-order direction even if schema discovery encountered the order table first. The composite planner carries it unchanged into the component Executor. When present, the Executor selects only those two source-qualified tables and uses the approved column indices. It does not independently choose another order-like column.
+
+This is intentionally narrower than a general join planner. Composite keys, polymorphic document references, multi-hop paths, and arbitrary dimension joins are not executable through this contract yet.
