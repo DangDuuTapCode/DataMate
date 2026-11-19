@@ -111,6 +111,8 @@ def execute_fact_join_contract(tables, contract):
         or not isinstance(contract.join_type, str)
         or contract.join_type not in {"inner", "left"}
         or contract.aggregation_stage != "after_join"
+        or not isinstance(contract.fact_grain, str)
+        or not contract.fact_grain.strip()
         or not isinstance(contract.measure_field, str)
         or not contract.measure_field.strip()
         or not isinstance(contract.measure_column_index, int)
