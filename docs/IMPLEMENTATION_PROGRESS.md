@@ -610,3 +610,10 @@ Review package: work/submission-build/public-test-submission-2026-11-15. JSONL S
 - No joins or metric execution are performed.
 - Added synthetic integration tests for mapped fields, validated relationships, duplicate table names, and generic-label abstention.
 - Checkpoint: `tools/checkpoints/2026-11-19_SCHEMA_CATALOG.md`.
+
+
+### CI result — business schema catalog
+
+- GitHub Actions run `44548265235` executed 219 tests. All catalog integration tests passed; 217 tests passed overall.
+- The only two failures remain the pre-existing hygiene checks against tracked `CODEX PROGRESS` (size limit and secret-like regex). No checks were disabled.
+- Run: https://github.com/pl2n/DataMate/actions/runs/44548265235

@@ -569,3 +569,10 @@ The Public Submissions JSONL candidate is prepared and structurally verified, bu
 - Read `tools/checkpoints/2026-11-19_SCHEMA_CATALOG.md`.
 - `build_schema_catalog()` composes semantic column mappings and relationship evidence. It is metadata-only and does not join data.
 - Use both table name and source file to resolve duplicate table names.
+
+
+### CI result — schema catalog
+
+- Run `44548265235` executed 219 tests; all schema catalog tests passed and 217 tests passed overall.
+- Two pre-existing `CODEX PROGRESS` hygiene failures remain.
+- Run: https://github.com/pl2n/DataMate/actions/runs/44548265235

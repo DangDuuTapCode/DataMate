@@ -119,3 +119,10 @@ The first registry contains only:
 The composite planner now resolves its existing revenue/collected-amount pair through `BundleRegistry`. Unknown metrics, duplicate requirements, unsupported output types, or bundle definitions that do not support the shared period/entity context fail closed. This remains a fixed first-slice pair; it is not arbitrary multi-intent parsing.
 
 CI run `44547696247`: 216 tests, 214 passed; the only two failures are the pre-existing repository-hygiene checks against `CODEX PROGRESS`. See https://github.com/pl2n/DataMate/actions/runs/44547696247.
+
+
+## Schema catalog integration status
+
+The versioned `BusinessSchemaCatalog` now combines exact semantic column mappings with key/cardinality relationship evidence. It keeps table identity source-qualified and serializes all mapping and relationship evidence. This catalog is a metadata layer only; it does not perform joins or make metrics executable.
+
+CI run `44548265235`: 219 tests, 217 passed. The only two failures are pre-existing repository-hygiene checks on `CODEX PROGRESS`.

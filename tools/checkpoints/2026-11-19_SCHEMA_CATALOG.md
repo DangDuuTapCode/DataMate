@@ -28,3 +28,10 @@ Synthetic tests cover catalog assembly, field mappings, validated many-to-one re
 1. Run CI and inspect results.
 2. Define a versioned bundle metadata contract that can refer to catalog fields and validated relationships.
 3. Only then generalize composite requirement extraction and plan composition.
+
+
+## CI result
+
+GitHub Actions run `44548265235` executed 219 tests. All schema catalog integration tests passed; 217 tests passed overall. The only failures are the two pre-existing repository-hygiene assertions against `CODEX PROGRESS` (size limit and secret-like regex).
+
+Run: https://github.com/pl2n/DataMate/actions/runs/44548265235
