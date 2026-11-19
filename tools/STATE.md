@@ -11,7 +11,7 @@
 ## Implemented
 
 - Grouped Excel headers and retained header metadata.
-- Exact semantic mapping with ambiguity handling; relationship validation without automatic joins.
+- Exact semantic mapping with ambiguity handling; relationship validation without automatic joins. Key families include order/customer/product/payment receipt plus employee, supplier, purchase receipt, batch/lot, branch, and IMEI; generic row numbers/reference labels remain unmapped.
 - BusinessSchemaCatalog, bundle registry, requirement extraction/schema, composite rules, and shared-context guard.
 - BundleCapabilityResolver checks exact canonical fields, co-location, validated relationships, and explicit business-rule evidence.
 - Runtime constructs per-business catalogs/planners and records evidence/capability decisions.
@@ -54,3 +54,10 @@ Committed after archive inspection:
 - `f5c73cdef1de583c094507344e270966f3044129` handoff update.
 
 Next: audit public-test questions against the 14 input shapes, then build minimal synthetic fixtures for representative multi-source queries. Do not add the full archive to Git. The new code/test commits still need a verified Actions result. No local checkout or local test run is available.
+
+## Latest multi-source expansion
+
+- Exact aliases and relationship-key families expanded based on Contest.zip schemas.
+- Added synthetic tests for exact aliases and six many-to-one relationship families.
+- Commits: `8ff2c09`, `37f66c3`, `a784b4f`, `2d866ee`, `a64ba34`, `0465e9d`, `dccf1ba`, `45b3667`, `9d2ceab`.
+- CI for these changes is not yet verified. The last known baseline remains run `44565561293` (272 tests; 270 passed, two inherited hygiene failures).
