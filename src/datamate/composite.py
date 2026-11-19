@@ -42,16 +42,19 @@ class CompositePlanner:
 
     def __init__(
         self, rule_planner, bundle_registry=None, composite_rule_registry=None,
-        schema_catalog=None,
+        schema_catalog=None, rule_evidence=None,
     ):
         self.rule_planner = rule_planner
         self.requirement_extractor = RequirementExtractor(
             bundle_registry, composite_rule_registry
         )
         self.schema_catalog = schema_catalog
+        self.rule_evidence = rule_evidence
         self.capability_resolver = BundleCapabilityResolver()
+        self.last_capability_resolutions = []
 
     def plan(self, spec: QuerySpec | None) -> CompositeQueryPlan | None:
+        self.last_capability_resolutions = []
         if spec is None:
             return None
         if spec.time is None or spec.time.kind != "period":
@@ -106,7 +109,10 @@ class CompositePlanner:
             if bundle is None or not bundle.supports_period:
                 return None
             if self.schema_catalog is not None:
-                resolution = self.capability_resolver.resolve(bundle, self.schema_catalog)
+                resolution = self.capability_resolver.resolve(
+                    bundle, self.schema_catalog, self.rule_evidence
+                )
+                self.last_capability_resolutions.append(resolution.to_dict())
                 if not resolution.available:
                     return None
             if spec.entity is not None and not bundle.supports_entity:

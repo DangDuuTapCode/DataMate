@@ -118,6 +118,49 @@ class ApiTests(unittest.TestCase):
             trace = json.loads((logs / "trace.jsonl").read_text(encoding="utf-8"))
             self.assertNotIn("composite_query_plan", trace)
             self.assertEqual(trace["verification"]["reason_code"], "unsupported_intent")
+            self.assertEqual(trace["business_rule_evidence"]["status"], "missing")
+            self.assertTrue(trace["bundle_capability_resolutions"])
+            self.assertIn(
+                "business_rule_capabilities_unverified",
+                trace["bundle_capability_resolutions"][0]["reasons"],
+            )
+
+    def test_runner_rejects_invalid_business_rule_evidence_without_crashing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            _write_test_rulebook(root)
+            data = root / "data" / "biz"
+            data.mkdir(parents=True)
+            (data / "sales.csv").write_text(
+                "Tổng sau giảm giá,Ngày đặt,Trạng thái đơn hàng\n"
+                "100,2026-03-01,Hoàn thành\n",
+                encoding="utf-8",
+            )
+            (data / "payments.csv").write_text(
+                "Thanh toán / Giá trị,Thanh toán / Ngày,Thanh toán / Trạng thái\n"
+                "80,2026-03-01,Đã thanh toán\n",
+                encoding="utf-8",
+            )
+            (data / "business_rule_evidence.json").write_text("{", encoding="utf-8")
+            (root / "questions.jsonl").write_text(
+                json.dumps({
+                    "id": "q",
+                    "business_id": "biz",
+                    "question": "doanh thu và tiền thực thu tháng này",
+                    "as_of_date": "2026-03-02",
+                }) + chr(10),
+                encoding="utf-8",
+            )
+            output, logs = root / "result" / "submission.jsonl", root / "result" / "logs"
+            run(root, output, logs)
+
+            self.assertEqual(
+                output.read_text(encoding="utf-8"),
+                '{"id":"q","type":"abstain"}' + chr(10),
+            )
+            trace = json.loads((logs / "trace.jsonl").read_text(encoding="utf-8"))
+            self.assertEqual(trace["business_rule_evidence"]["status"], "invalid")
+            self.assertNotIn("composite_query_plan", trace)
 
     def test_runner_requires_the_split_rulebook(self):
         with tempfile.TemporaryDirectory() as directory:

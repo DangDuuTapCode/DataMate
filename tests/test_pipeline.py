@@ -26,6 +26,22 @@ class PipelineTests(unittest.TestCase):
     def test_time_week_is_monday_to_sunday(self):
         self.assertEqual(resolve("doanh thu tuần trước", "2026-03-04"), ("2026-02-23", "2026-03-01"))
 
+    def test_collected_amount_uses_grouped_payment_status_and_only_successful_events(self):
+        table = Table(
+            "payments",
+            ["Thanh toán / Giá trị", "Thanh toán / Ngày", "Thanh toán / Trạng thái"],
+            [
+                [40000, "2026-03-01", "Hoàn thành"],
+                [60000, "2026-03-02", "Đã hủy"],
+            ],
+            source="payments.xlsx",
+        )
+        question = "tiền thực thu tháng này"
+        plan = self.planner.plan(question, "2026-03-04")
+        candidate = Executor([table]).execute(plan, question)
+
+        self.assertEqual(candidate["answer"], 40000)
+
     def test_revenue_drops_cancelled_orders(self):
         self.assertEqual(self.answer("doanh thu tháng này")["answer"], 40000)
 

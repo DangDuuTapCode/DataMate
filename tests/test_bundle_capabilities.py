@@ -2,6 +2,7 @@ import unittest
 from dataclasses import replace
 
 from datamate.bundle_capabilities import BundleCapabilityResolver
+from datamate.rule_evidence import BusinessRuleEvidence
 from datamate.bundles import (
     BundleDefinition,
     BundleRegistry,
@@ -13,6 +14,55 @@ from datamate.requirements import CompositeRule, CompositeRuleRegistry
 from datamate.schema_catalog import build_schema_catalog
 from datamate.types import Table
 from datamate.understanding import RulePlanner
+
+
+
+def _rule_claim(capability_id, assertion, table_scope):
+    return {
+        "capability_id": capability_id,
+        "status": "verified",
+        "assertion": assertion,
+        "table_scope": [
+            {"table_name": table_name, "source": source}
+            for table_name, source in table_scope
+        ],
+        "provenance": {
+            "source_type": "rulebook",
+            "reference": "reviewed-rulebook.md#financial-policy",
+            "sha256": "a" * 64,
+            "reviewed_by": "synthetic-reviewer",
+            "reviewed_at": "2026-11-19T10:00:00+07:00",
+        },
+    }
+
+
+def _complete_rule_evidence():
+    sales_scope = [("sales", "sales.xlsx")]
+    payment_scope = [("payments", "payments.xlsx")]
+    return BusinessRuleEvidence.from_dict({
+        "schema_version": "1.0.0",
+        "business_id": "biz_synthetic",
+        "profiles": [
+            {
+                "profile_id": "revenue_rules",
+                "version": "1.0.0",
+                "evidence": [
+                    _rule_claim("revenue_executor_source_shape", "direct_line", sales_scope),
+                    _rule_claim("eligible_sales_amount", "line_amount_after_line_discount", sales_scope),
+                    _rule_claim("sale_period", "order_date", sales_scope),
+                    _rule_claim("order_status_semantics", "exclude_cancelled_returned_failed", sales_scope),
+                ],
+            },
+            {
+                "profile_id": "collection_rules",
+                "version": "1.0.0",
+                "evidence": [
+                    _rule_claim("payment_source_role", "payment_event_or_receipt", payment_scope),
+                    _rule_claim("settled_payment_status_policy", "successful_status_only", payment_scope),
+                ],
+            },
+        ],
+    }, expected_business_id="biz_synthetic")
 
 
 class BundleCapabilityResolverTests(unittest.TestCase):
@@ -122,6 +172,93 @@ class BundleCapabilityResolverTests(unittest.TestCase):
         self.assertEqual(len(result.missing_relationships), 1)
         self.assertEqual(result.reasons, ("missing_required_relationships",))
 
+    def test_collection_bundle_requires_reviewed_evidence_and_payment_status(self):
+        table = Table(
+            "payments",
+            ["Thanh toán / Giá trị", "Thanh toán / Ngày", "Thanh toán / Trạng thái"],
+            [[100, "2026-01-01", "completed"]],
+            "payments.xlsx",
+        )
+        catalog = build_schema_catalog([table], business_id="biz_synthetic")
+        bundle = default_bundle_registry().resolve("collected_amount")
+        evidence = _complete_rule_evidence()
+
+        result = self.resolver.resolve(bundle, catalog, evidence)
+
+        self.assertTrue(result.available)
+        self.assertEqual(result.rule_profile_version, "1.0.0")
+        self.assertEqual(result.unverified_capabilities, ())
+
+        without_status = Table(
+            "payments",
+            ["Thanh toán / Giá trị", "Thanh toán / Ngày"],
+            [[100, "2026-01-01"]],
+            "payments.xlsx",
+        )
+        blocked = self.resolver.resolve(
+            bundle,
+            build_schema_catalog([without_status], business_id="biz_synthetic"),
+            evidence,
+        )
+        self.assertFalse(blocked.available)
+        self.assertEqual(blocked.missing_fields, ("payment_status",))
+
+    def test_collection_evidence_must_scope_role_and_policy_to_same_table(self):
+        payments = Table(
+            "payments",
+            ["Thanh toán / Giá trị", "Thanh toán / Ngày", "Thanh toán / Trạng thái"],
+            [[100, "2026-01-01", "completed"]],
+            "payments.xlsx",
+        )
+        other = Table("payment_archive", ["Mã giao dịch"], [["P1"]], "archive.xlsx")
+        payload = _complete_rule_evidence().to_dict()
+        payload["profiles"][1]["evidence"][1]["table_scope"] = [
+            {"table_name": "payment_archive", "source": "archive.xlsx"}
+        ]
+        evidence = BusinessRuleEvidence.from_dict(payload)
+        bundle = default_bundle_registry().resolve("collected_amount")
+
+        result = self.resolver.resolve(
+            bundle, build_schema_catalog([payments, other], business_id="biz_synthetic"), evidence
+        )
+
+        self.assertFalse(result.available)
+        self.assertEqual(
+            result.unverified_capabilities,
+            ("payment_source_role", "settled_payment_status_policy"),
+        )
+
+    def test_detail_to_order_revenue_evidence_requires_validated_order_relationship(self):
+        details = Table(
+            "sales_details", ["Mã đơn hàng"], [["A1"], ["A1"]], "details.xlsx"
+        )
+        orders = Table("orders", ["Mã đơn hàng"], [["A1"]], "orders.xlsx")
+        payload = _complete_rule_evidence().to_dict()
+        line_scope = [{"table_name": "sales_details", "source": "details.xlsx"}]
+        order_scope = [{"table_name": "orders", "source": "orders.xlsx"}]
+        revenue = payload["profiles"][0]["evidence"]
+        revenue[0]["assertion"] = "detail_to_order"
+        revenue[0]["table_scope"] = line_scope + order_scope
+        revenue[1]["table_scope"] = line_scope
+        revenue[2]["table_scope"] = order_scope
+        revenue[3]["table_scope"] = order_scope
+        evidence = BusinessRuleEvidence.from_dict(payload)
+        bundle = default_bundle_registry().resolve("revenue")
+
+        valid = self.resolver.resolve(
+            bundle, build_schema_catalog([details, orders], business_id="biz_synthetic"), evidence
+        )
+        self.assertTrue(valid.available)
+
+        broken_orders = Table("orders", ["Mã đơn hàng"], [["A2"]], "orders.xlsx")
+        rejected = self.resolver.resolve(
+            bundle,
+            build_schema_catalog([details, broken_orders], business_id="biz_synthetic"),
+            evidence,
+        )
+        self.assertFalse(rejected.available)
+        self.assertEqual(rejected.reasons, ("rejected_required_relationships",))
+
     def test_default_financial_bundles_stay_unavailable_without_rulebook_evidence(self):
         catalog = build_schema_catalog([
             Table(
@@ -143,7 +280,7 @@ class BundleCapabilityResolverTests(unittest.TestCase):
         self.assertEqual(registry.resolve("revenue").required_fields, ())
         self.assertEqual(
             registry.resolve("collected_amount").required_fields,
-            ("payment_event_amount", "payment_date"),
+            ("payment_event_amount", "payment_date", "payment_status"),
         )
         revenue = self.resolver.resolve(registry.resolve("revenue"), catalog)
         collection = self.resolver.resolve(registry.resolve("collected_amount"), catalog)
@@ -194,6 +331,31 @@ class BundleCapabilityPlannerIntegrationTests(unittest.TestCase):
             self.rule_planner, bundle_registry, rules, schema_catalog=complete_catalog
         )
         self.assertIsNotNone(planner.plan(spec))
+
+    def test_default_composite_accepts_only_matching_reviewed_business_evidence(self):
+        sales = Table(
+            "sales",
+            ["Tổng sau giảm giá", "Ngày đặt", "Trạng thái đơn hàng"],
+            [[100, "2026-03-01", "completed"]],
+            "sales.xlsx",
+        )
+        payments = Table(
+            "payments",
+            ["Thanh toán / Giá trị", "Thanh toán / Ngày", "Thanh toán / Trạng thái"],
+            [[80, "2026-03-01", "completed"]],
+            "payments.xlsx",
+        )
+        catalog = build_schema_catalog([sales, payments], business_id="biz_synthetic")
+        evidence = _complete_rule_evidence()
+        planner = CompositePlanner(
+            self.rule_planner, schema_catalog=catalog, rule_evidence=evidence
+        )
+
+        self.assertIsNotNone(planner.plan(self.spec))
+        self.assertEqual(
+            [item["status"] for item in planner.last_capability_resolutions],
+            ["available", "available"],
+        )
 
     def test_default_composite_is_blocked_when_rule_capabilities_are_unverified(self):
         catalog = build_schema_catalog([

@@ -25,7 +25,7 @@ Unknown capability IDs, assertions, profiles, duplicate records, malformed prove
 
 | Profile | Capability | Accepted assertion |
 |---|---|---|
-| revenue_rules | revenue_executor_source_shape | direct_line / detail_to_order / direct_line_or_detail_to_order |
+| revenue_rules | revenue_executor_source_shape | direct_line / detail_to_order |
 | revenue_rules | eligible_sales_amount | line_amount_after_line_discount |
 | revenue_rules | sale_period | order_date / delivery_date / sales_date |
 | revenue_rules | order_status_semantics | exclude_cancelled_returned_failed |

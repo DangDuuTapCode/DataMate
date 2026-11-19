@@ -126,6 +126,37 @@ def _is_payment_table(table):
     return any(term in role for term in ("thanh toan", "phieu thu", "payment", "receipt"))
 
 
+def _payment_grouped_column(headers, leaf_aliases):
+    """Resolve a leaf header only inside an explicit payment group."""
+    candidates = []
+    allowed_groups = {"thanh toan", "lich su thanh toan", "payment"}
+    for index, header in enumerate(headers):
+        raw = str(header or "")
+        if " / " not in raw:
+            continue
+        group, leaf = raw.rsplit(" / ", 1)
+        if fold(group) in allowed_groups and fold(leaf) in leaf_aliases:
+            candidates.append(index)
+    return candidates[0] if len(candidates) == 1 else None
+
+
+def _payment_status_column(headers):
+    """Resolve only an explicit payment-status header, including grouped headers."""
+    exact = _exact_column(headers, ("trang thai thanh toan", "payment status"))
+    if exact is not None:
+        return exact
+    candidates = []
+    allowed_groups = {"thanh toan", "lich su thanh toan", "payment"}
+    for index, header in enumerate(headers):
+        raw = str(header or "")
+        if " / " not in raw:
+            continue
+        group, leaf = raw.rsplit(" / ", 1)
+        if fold(group) in allowed_groups and fold(leaf) == "trang thai":
+            candidates.append(index)
+    return candidates[0] if len(candidates) == 1 else None
+
+
 def _is_inventory_table(table):
     role = fold(f"{table.name} {table.source}")
     return any(term in role for term in ("the kho", "ton kho", "inventory", "stock ledger"))
@@ -712,9 +743,13 @@ class Executor:
             if not _is_payment_table(table):
                 continue
             date = _exact_column(table.headers, COLLECTION_DATE)
+            if date is None:
+                date = _payment_grouped_column(table.headers, {"ngay", "date"})
             value = _exact_column(table.headers, COLLECTED_AMOUNT)
+            if value is None:
+                value = _payment_grouped_column(table.headers, {"gia tri", "amount", "value"})
             if date is not None and value is not None:
-                candidates.append((table, date, value, _column(table.headers, STATUS)))
+                candidates.append((table, date, value, _payment_status_column(table.headers)))
         return candidates[0] if len(candidates) == 1 else None
 
     def _period(self, table, date_column, start, end, status_column=None, accepted_only=True):

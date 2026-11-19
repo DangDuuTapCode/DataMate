@@ -89,14 +89,13 @@ def default_bundle_registry():
             bundle_id="collection",
             metric_id="collected_amount",
             executor_intent="collected_amount",
-            # These are the two required columns selected from a payment-role
-            # table. Status is optional in the current executor and is not
-            # incorrectly declared as a universally required field.
+            # A safe collection bundle requires an explicit payment-status
+            # field so the executor can apply its successful-only policy.
             required_capabilities=(
                 "payment_source_role",
                 "settled_payment_status_policy",
             ),
-            required_fields=("payment_event_amount", "payment_date"),
+            required_fields=("payment_event_amount", "payment_date", "payment_status"),
             rule_profile="collection_rules",
         ),
     ))

@@ -9,6 +9,7 @@ from .ingest import read_business, read_questions
 from .metrics import Executor
 from .output import write_record
 from .query_schema import query_spec_payload
+from .rule_evidence import BusinessRuleEvidence, RuleEvidenceError
 from .schema_catalog import build_schema_catalog
 from .split_rules import RulebookError, SplitRules
 from .timeparse import SolarLunarCalendar
@@ -17,7 +18,7 @@ from .verify import verify_with_reason
 
 
 def run(data_root, output, log_directory=None, business_filter=None):
-    root, engines, composite_planners = Path(data_root), {}, {}
+    root, engines, composite_planners, evidence_states = Path(data_root), {}, {}, {}
     try:
         solar_lunar_calendar = SolarLunarCalendar.read(root / "calendar.csv")
     except (OSError, ValueError):
@@ -62,8 +63,25 @@ def run(data_root, output, log_directory=None, business_filter=None):
                     data_dir = root / "data" / question.business_id
                     tables = read_business(data_dir)
                     schema_catalog = build_schema_catalog(tables, business_id=question.business_id)
+                    evidence_path = data_dir / "business_rule_evidence.json"
+                    rule_evidence = None
+                    if evidence_path.exists():
+                        try:
+                            rule_evidence = BusinessRuleEvidence.read(
+                                evidence_path, expected_business_id=question.business_id
+                            )
+                            evidence_states[question.business_id] = {"status": "loaded"}
+                        except RuleEvidenceError as evidence_error:
+                            evidence_states[question.business_id] = {
+                                "status": "invalid",
+                                "error": str(evidence_error),
+                            }
+                    else:
+                        evidence_states[question.business_id] = {"status": "missing"}
                     composite_planner = CompositePlanner(
-                        planner, schema_catalog=schema_catalog
+                        planner,
+                        schema_catalog=schema_catalog,
+                        rule_evidence=rule_evidence,
                     )
                     engines[question.business_id] = Executor(tables, rules=split_rules)
                     composite_planners[question.business_id] = composite_planner
@@ -121,6 +139,11 @@ def run(data_root, output, log_directory=None, business_filter=None):
             }
             if spec is not None:
                 trace["query_spec"] = query_spec_payload(spec)
+            if question.business_id in evidence_states:
+                trace["business_rule_evidence"] = evidence_states[question.business_id]
+                trace["bundle_capability_resolutions"] = (
+                    composite_planners[question.business_id].last_capability_resolutions
+                )
             if composite_plan is not None:
                 trace["composite_query_plan"] = asdict(composite_plan)
                 trace["components"] = [

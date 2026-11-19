@@ -16,7 +16,6 @@ _PROFILE_CAPABILITIES = {
         "revenue_executor_source_shape": {
             "direct_line",
             "detail_to_order",
-            "direct_line_or_detail_to_order",
         },
         "eligible_sales_amount": {"line_amount_after_line_discount"},
         "sale_period": {"order_date", "delivery_date", "sales_date"},
