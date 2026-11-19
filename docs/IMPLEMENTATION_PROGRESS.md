@@ -106,3 +106,24 @@ Implemented:
 - Schema catalog version is now `1.1.0`.
 
 This is still relationship discovery only. No source table is mutated and no composite join is executed. Other composite/polymorphic relationships, such as stock-ledger references that require both document type and document number, remain unsupported.
+
+
+## Exact approved revenue join contract
+
+A reviewed `detail_to_order` source shape previously validated an `order_id` relationship in the schema catalog, but the Executor independently rediscovered key columns from headers. That left a gap between the columns validated as evidence and the columns actually used at execution.
+
+Implemented:
+- `RevenueJoinContract` captures exact line/order table identities, source filenames, canonical key set, and both physical key-column indices.
+- `BundleCapabilityResolver` creates this contract only when exactly one source-matched, validated `order_id` relationship exists with the required cardinality.
+- The resolver normalizes relationship direction, so catalog ordering does not change the logical line-to-order contract.
+- `CompositePlanner` carries the contract on the component; `main.py` passes it to the component Executor.
+- When a contract is present, the detail-to-order Executor selects only those exact source-qualified tables and uses the approved key-column indices rather than independently guessing the join key.
+- Without a contract, legacy single-metric behavior is unchanged; the evidence-gated composite path uses the stricter contract.
+
+Regression coverage:
+- Resolver emits exact source/table/index contract.
+- Reversing schema-catalog table order still yields the same line-to-order contract.
+- Executor joins using the approved physical columns even when another order-like column is present.
+- Duplicate detail rows are counted once only when the active rulebook explicitly authorizes it; otherwise joined revenue abstains.
+
+CI on commit `21469c4be7a3d93e5bd2befb879315f3c9c36afd`: 286 tests, 284 passed. The only two failures remain inherited repository-hygiene checks for the existing `CODEX PROGRESS` artifact (`test_no_large_files` and `test_no_secret_like_strings`). All feature tests passed.
