@@ -5,6 +5,7 @@ import time
 from pathlib import Path
 
 from .composite import CompositePlanner, verify_composite_with_reason
+from .schema_catalog import build_schema_catalog
 from .ingest import read_business, read_questions
 from .metrics import Executor
 from .output import write_record
@@ -29,7 +30,7 @@ def run(data_root, output, log_directory=None, business_filter=None):
     planner = RulePlanner(
         solar_lunar_calendar=solar_lunar_calendar, split_rules=split_rules
     )
-    composite_planner = CompositePlanner(planner)
+    composite_planners = {}
     selected_businesses = (
         {business_filter} if isinstance(business_filter, str)
         else set(business_filter or ())
@@ -60,10 +61,15 @@ def run(data_root, output, log_directory=None, business_filter=None):
                     raise rulebook_error
                 if question.business_id not in engines:
                     data_dir = root / "data" / question.business_id
-                    engines[question.business_id] = Executor(read_business(data_dir), rules=split_rules)
+                    tables = read_business(data_dir)
+                    engines[question.business_id] = Executor(tables, rules=split_rules)
+                    schema_catalog = build_schema_catalog(tables, business_id=question.business_id)
+                    composite_planners[question.business_id] = CompositePlanner(
+                        planner, schema_catalog=schema_catalog
+                    )
                 engine = engines[question.business_id]
                 spec = planner.interpret(question.question, question.as_of_date, question.business_id)
-                composite_plan = composite_planner.plan(spec)
+                composite_plan = composite_planners[question.business_id].plan(spec)
                 if composite_plan is not None:
                     for component in composite_plan.components:
                         component_result = engine.execute_with_reason(
