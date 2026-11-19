@@ -165,3 +165,10 @@ Next: audit public-test questions against the 14 input shapes, then build minima
 - Regression coverage includes a list-valued cardinality.
 - Latest commits: `101a5089d1bd71c45b17516f5753a2e01f06f151` (guard), `4e073e4f1a35a216179094ff0d63389f27829775` (test).
 - Latest branch head verified: `4e073e4f1a35a216179094ff0d63389f27829775`. No workflow run is currently associated with this commit; CI has not yet been verified.
+
+
+### Feature-branch CI trigger
+
+- Updated `.github/workflows/tests.yml` so pushes to `feature/**` branches run the Python test workflow; pull requests targeting `main` or `feature/**` are covered.
+- Commit: `e74d43413c3966d7d80e6fbe8f985fb5b6ac4de9`.
+- The GitHub connector did not surface a workflow run or commit status for this push. Do not claim CI passed; obtain a run from a subsequent PR/check before merge.
