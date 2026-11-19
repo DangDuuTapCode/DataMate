@@ -213,3 +213,10 @@ Next: audit public-test questions against the 14 input shapes, then build minima
 - Added tests for a two-hop detail → order → customer join, guest-row preservation, duplicate fact lines, duplicate target keys, reachable unmatched keys, malformed rows/contracts, schema-index mismatch, and missing/duplicate source identities.
 - GitHub Actions run `44587842656` on commit `6a0bc0b7ad4aef0cb510b234d05b5455a73eb8db`: **328 tests passed**.
 - The executor is not wired into `Executor.execute` or `RulePlanner`; it performs no date/status/group filters, aggregation, or ratio calculation.
+
+
+### Latest branch verification
+
+- Latest branch tip at this checkpoint: `e95608eb8b34281ac5327ecf67d58f16dbab5e38`.
+- GitHub Actions run `44588291394` on that exact commit completed successfully: **328 tests passed**.
+- PR #2 (`feature/query-specific-join-execution` → upstream `main`) remains open as a draft and has not been merged.
