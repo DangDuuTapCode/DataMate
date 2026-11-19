@@ -9,6 +9,7 @@ from dataclasses import dataclass
 
 from .join_contracts import FactJoinContract
 from .relationship_paths import RelationshipPathHop
+from .semantic import map_table_schema
 from .types import Table
 
 
@@ -107,6 +108,7 @@ def execute_fact_join_contract(tables, contract):
         or not _valid_identity(contract.target_table)
         or not isinstance(contract.path_hops, tuple)
         or not contract.path_hops
+        or not isinstance(contract.join_type, str)
         or contract.join_type not in {"inner", "left"}
         or contract.aggregation_stage != "after_join"
         or not isinstance(contract.measure_field, str)
@@ -129,11 +131,20 @@ def execute_fact_join_contract(tables, contract):
     if contract.fact_table not in table_map:
         return None
     fact = table_map[contract.fact_table]
-    if contract.measure_column_index >= len(fact.headers):
+    if (
+        contract.measure_column_index >= len(fact.headers)
+        or str(fact.headers[contract.measure_column_index]).strip()
+        != contract.measure_field.strip()
+    ):
         return None
 
+    schemas = {identity: map_table_schema(table) for identity, table in table_map.items()}
     hops = contract.path_hops
-    if hops[0].from_table != contract.fact_table or hops[-1].to_table != contract.target_table:
+    if (
+        not all(isinstance(hop, RelationshipPathHop) for hop in hops)
+        or hops[0].from_table != contract.fact_table
+        or hops[-1].to_table != contract.target_table
+    ):
         return None
 
     visited = {contract.fact_table}
@@ -145,6 +156,7 @@ def execute_fact_join_contract(tables, contract):
             or hop.from_table == hop.to_table
             or hop.fanout is not False
             or not isinstance(hop.requires_left_join, bool)
+            or not isinstance(hop.cardinality, str)
             or hop.cardinality not in {"many_to_one", "one_to_one"}
             or not isinstance(hop.canonical_keys, tuple)
             or not hop.canonical_keys
@@ -178,6 +190,16 @@ def execute_fact_join_contract(tables, contract):
             for value in hop.to_column_indices
         ):
             return None
+        for key, from_index, to_index in zip(
+            hop.canonical_keys,
+            hop.from_column_indices,
+            hop.to_column_indices,
+        ):
+            if (
+                schemas[hop.from_table].mapped_fields.get(key) != from_index
+                or schemas[hop.to_table].mapped_fields.get(key) != to_index
+            ):
+                return None
         if hop.requires_left_join and contract.join_type != "left":
             return None
         visited.add(hop.to_table)
@@ -186,7 +208,6 @@ def execute_fact_join_contract(tables, contract):
     # flattening colliding column names and makes multi-hop lookups explicit.
     aligned_rows = {contract.fact_table: list(fact.rows)}
     for hop in hops:
-        source_table = table_map[hop.from_table]
         target_table = table_map[hop.to_table]
         source_rows = aligned_rows.get(hop.from_table)
         if source_rows is None or len(source_rows) != len(fact.rows):
