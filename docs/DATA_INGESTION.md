@@ -99,3 +99,16 @@ This is a suggested organization, not a requirement to rename existing modules.
 - Validated relationships before joins.
 - Missing values distinct from numeric zero.
 - Regression fixtures for each supported source layout.
+
+
+## Initial semantic column mapping
+
+`src/datamate/semantic.py` provides a conservative, deterministic first pass from source headers to canonical concepts.
+
+- Only explicit exact aliases and a small allowlist of group-plus-leaf aliases are mapped.
+- Generic labels such as `Giá trị`, `Thành tiền`, `Ngày`, and `Trạng thái` remain unresolved without sufficient context.
+- If multiple source columns map to the same canonical concept, all conflicting mappings become `ambiguous`; none is selected.
+- Each mapping records source column index, original header, candidate field, status, confidence, and evidence.
+- This layer is metadata only. It does not change table values, join tables, or make a metric executable.
+
+The alias registry is intentionally small. Expand it only with source-backed examples and regression tests.

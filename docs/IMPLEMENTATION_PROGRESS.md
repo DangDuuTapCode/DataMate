@@ -543,3 +543,13 @@ Review package: work/submission-build/public-test-submission-2026-11-15. JSONL S
 - Synthetic tests cover grouped headers, original-header preservation, row provenance, profile output, and single-title false-positive avoidance.
 - GitHub Actions run `44545450222`: 199 tests ran; both new grouped-header tests passed. 197 tests passed; 2 pre-existing hygiene tests failed on tracked `CODEX PROGRESS` (size limit and secret-like regex). No hygiene check was weakened.
 - Checkpoint: `tools/checkpoints/2026-11-19_EXCEL_GROUPED_HEADERS.md`.
+
+
+## 2026-11-19 — initial semantic column mapping
+
+- Added `src/datamate/semantic.py` with exact alias mapping for a small set of canonical fields.
+- Grouped Excel headers can use group-plus-leaf evidence, e.g. `Thanh toán / Giá trị` maps to a payment-event amount, while standalone `Giá trị` remains unresolved.
+- Duplicate source columns targeting the same canonical field are marked ambiguous; no column is selected.
+- This is a metadata-only layer and does not change executor behavior or join data.
+- Added synthetic tests for exact mapping, contextual mapping, generic ambiguous labels, collisions, and unknown columns.
+- Checkpoint: `tools/checkpoints/2026-11-19_SEMANTIC_COLUMN_MAPPING.md`.

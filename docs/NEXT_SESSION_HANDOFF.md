@@ -514,3 +514,10 @@ The Public Submissions JSONL candidate is prepared and structurally verified, bu
 - Excel ingestion now recognizes only a narrow, explicit two-row merged-group header pattern; raw header rows and source row numbers are preserved and included in `profile()`.
 - CI run `44545450222`: 199 tests; new tests pass; 197 pass overall and 2 pre-existing hygiene failures remain for `CODEX PROGRESS`. Do not claim the full workflow is green.
 - Next: consider adding an explicit structural-analysis result object for ambiguous header candidates before broadening beyond this conservative pattern. Do not infer arbitrary multi-row headers.
+
+
+## Resume — 2026-11-19 — semantic column mapping
+
+- Read `tools/checkpoints/2026-11-19_SEMANTIC_COLUMN_MAPPING.md`.
+- New `semantic.py` maps only explicit exact aliases and a small group-plus-leaf allowlist. It is metadata-only; no joins or metric execution are enabled.
+- Generic labels and collisions fail closed. Extend aliases only with source-backed evidence and synthetic regressions.
