@@ -57,15 +57,25 @@ GitHub Actions run `44565385010` on branch head `6fde7f8211ec488f860255da7bb7e5f
 
 Run: https://github.com/pl2n/DataMate/actions/runs/44565385010
 
-## Active blocker and next step
+## Contest archive inspection and follow-up
 
-The actual mounted business input bundle is not available in the repository. The `data/` directory is gitignored except for `data/README.md`; the checked-in docs do not establish the exact real filenames or placement for a data dictionary or operator attestation.
+The supplied `Contest.zip` was inspected on 2026-11-19. It contains two valid DataMate input roots:
+- `Contest/train/`: 30 businesses, 3,000 questions, answer labels, calendar, and train rulebook.
+- `Contest/public_test/`: 14 businesses, 1,000 questions, calendar, and a separate public-test rulebook.
 
-Next:
-1. Obtain the actual business input directory listing or authoritative input contract.
-2. Confirm exact filenames and placement for data dictionary/operator attestation before expanding the provenance allowlist.
-3. Inspect the actual mounted `rulebook.md` and verify its collection policy clause.
-4. Add only evidence-backed filename/parser support and corresponding tests.
-5. Keep bundles unavailable until source roles, business rules, and table scopes are verified.
+Each root has the expected `rulebook.md`, `questions.jsonl`, `calendar.csv`, and `data/<business_id>/` layout. Every inspected business directory has a `README.md` describing source files, column meanings, grain, and shop-specific conventions. The archive does not contain separate `data_dictionary.*` or `operator_attestation.json` files in those business directories.
+
+A narrow follow-up was implemented:
+- `src/datamate/rule_evidence.py` now accepts only the exact business-local filename `README.md` under the existing `data_dictionary` provenance source type.
+- `tests/test_rule_evidence.py` adds a digest-verification regression test for that exact file and location.
+- The reader still requires a manually supplied evidence record, exact table scope, reviewer metadata, and a matching SHA-256. It does not create claims from README content.
+
+The train and public-test rulebooks differ. The public-test version adds cash-by-shift, weekday-average, extra ranking, and industry-specific conventions. The runtime must be run separately against each split root. Neither supplied rulebook contains the explicit successful-payment-only policy clause recognized by `SplitRules`; collection therefore remains unavailable for these inputs. Do not infer that policy from the existence of payment columns or a payment table.
+
+## Next engineering step
+
+The archive now supplies a concrete benchmark for the next feature milestone. Prioritize a coverage audit of the 14 public-test businesses and their 1,000 questions, especially cases requiring multiple tables, multiple file formats, and domain-specific relationships. Convert representative cases into small synthetic regression fixtures rather than committing the 192 MB archive or its full data. Expand capability contracts only where the rulebook and README provide explicit, testable evidence.
+
+Verification baseline before these changes: GitHub Actions run `44565561293` executed 272 tests (270 passed; two inherited `CODEX PROGRESS` repository-hygiene failures). The new README allowlist/test changes have not yet been verified by a new CI run. No local checkout or local test execution is available in this workflow.
 
 See `docs/NEXT_SESSION_HANDOFF.md` for the resume checklist and `tools/STATE.md` for the compact current state.
