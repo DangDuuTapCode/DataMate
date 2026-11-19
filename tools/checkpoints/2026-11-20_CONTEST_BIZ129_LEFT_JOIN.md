@@ -52,3 +52,12 @@ The rulebook says guest orders do not belong to any customer group, but they sti
 2. Review the new relationship status against every consumer; existing bundle capability resolution should continue to ignore `validated_left_join` because it accepts only ordinary `validated`.
 3. Design query execution for a three-table path with explicit LEFT JOIN, revenue eligibility/date filters, customer-group numerator, whole-shop denominator, and a separate payment-event grain.
 4. Only then wire a narrowly allowlisted query family; do not enable arbitrary joins.
+
+
+## CI follow-up
+
+- Initial run `44586101398` found two new fixture expectation issues and two hygiene failures.
+- Corrected the fixture cardinality and partial-overlap expectation.
+- Replaced the 2 MB historical `CODEX PROGRESS` transcript with a concise pointer because it exceeded the repository size limit and matched a sensitive-looking token pattern.
+- Follow-up Actions run `44586527843` on `4f7077120f19b29717f5be46f1c53fe9d80d01f4`: 318 tests passed.
+- Draft PR #2 is open and not merged.
