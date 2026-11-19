@@ -307,24 +307,6 @@ class BundleCapabilityResolverTests(unittest.TestCase):
 
         self.assertTrue(result.available)
 
-    def test_flexible_revenue_shape_accepts_one_direct_line_table(self):
-        sales = Table(
-            "sales", ["Mã đơn hàng"], [["A1"]], "sales.xlsx"
-        )
-        payload = _complete_rule_evidence().to_dict()
-        for claim in payload["profiles"][0]["evidence"]:
-            claim["table_scope"] = [{"table_name": "sales", "source": "sales.xlsx"}]
-        payload["profiles"][0]["evidence"][0]["assertion"] = "direct_line_or_detail_to_order"
-        evidence = BusinessRuleEvidence.from_dict(payload)
-
-        result = self.resolver.resolve(
-            default_bundle_registry().resolve("revenue"),
-            build_schema_catalog([sales], business_id="biz_synthetic"),
-            evidence,
-        )
-
-        self.assertTrue(result.available)
-
     def test_default_financial_bundles_stay_unavailable_without_rulebook_evidence(self):
         catalog = build_schema_catalog([
             Table(

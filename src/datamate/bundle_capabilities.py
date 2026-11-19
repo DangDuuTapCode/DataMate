@@ -185,11 +185,7 @@ class BundleCapabilityResolver:
             assertion = shape.assertion
             direct_shape = assertion == "direct_line" and len(shape_scope) == 1
             detail_shape = assertion == "detail_to_order" and len(shape_scope) == 2
-            flexible_shape = (
-                assertion == "direct_line_or_detail_to_order"
-                and len(shape_scope) in {1, 2}
-            )
-            if not (direct_shape or detail_shape or flexible_shape) or len(set(shape_names)) != len(shape_names):
+            if not (direct_shape or detail_shape) or len(set(shape_names)) != len(shape_names):
                 unverified_capabilities.append("revenue_executor_source_shape")
             elif len(shape_scope) == 2:
                 line_table, order_table = shape.table_scope
