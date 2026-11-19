@@ -67,3 +67,11 @@ CI for this correction is pending.
 Executor inspection confirmed that revenue supports two alternative source shapes (direct line-grain facts or detail-to-order), so no flat required-field tuple is declared for revenue yet. Collection requires payment-event amount and payment date; payment source role and settled-payment policy remain unverified. The resolver therefore keeps both default bundles unavailable under catalog-gated planning.
 
 Latest runtime CI run `44555242526`: 242 tests, 240 passed; the only failures are the two inherited repository-hygiene checks. The runtime-gating regression passed.
+
+## Runtime wiring verification
+
+Production main.run now constructs a BusinessSchemaCatalog per business and passes it to the corresponding CompositePlanner. The runner regression confirms that header mappings alone do not enable the default financial composite.
+
+Latest CI: run 44555242526, 242 tests executed, 240 passed. The only two failures were inherited CODEX PROGRESS hygiene checks. Feature tests passed.
+
+Run: https://github.com/pl2n/DataMate/actions/runs/44555242526

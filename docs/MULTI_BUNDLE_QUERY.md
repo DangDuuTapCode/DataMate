@@ -82,14 +82,13 @@ Component candidates, execution reasons, and evidence remain in the trace.
 
 ## Next stages
 
-1. Add a versioned composite query-spec schema.
-2. Generalize requirement extraction beyond the fixed financial pair.
-3. Add a bundle registry with declared inputs, rules, and supported metrics.
-4. Add relationship resolution and safe shared-data reuse.
-5. Add dependency-aware plan composition.
-6. Add derived metrics only after all inputs are verified.
-7. Add synthetic regression fixtures.
-8. Evaluate against permitted training data only; do not tune against protected public-test labels.
+1. Define a versioned business-rule evidence contract with source provenance and validation status.
+2. Represent alternative revenue source shapes without flattening direct-line and detail-to-order paths.
+3. Represent payment source-role requirements and the policy for optional/missing payment status.
+4. Bind rule profiles to verified business evidence before default bundles can become available.
+5. Add synthetic tests for each accepted and rejected evidence shape.
+
+Do not add automatic joins, arbitrary conjunction splitting, derived metrics, or partial composite answers until their evidence contracts are explicit.
 
 ## Regression requirements
 
@@ -202,3 +201,10 @@ docs/BUNDLE_CAPABILITY_RESOLUTION.md.
 
 GitHub Actions run 44554164419 executed 241 tests: 239 passed and the same two inherited CODEX PROGRESS hygiene checks failed. The new resolver and planner-gating tests passed; no feature-test failures were reported.
 The production entry point now builds and caches a BusinessSchemaCatalog per business and supplies it to CompositePlanner. Revenue intentionally has no flat field tuple until its alternative direct-line/detail-to-order source shapes are represented. Collection requires payment-event amount and payment date; payment-role and status policy remain unverified.
+
+
+## Production runtime capability gate
+
+The main pipeline builds one BusinessSchemaCatalog per business from the same ingested tables used by Executor and passes it to a per-business CompositePlanner. A runner regression confirms that mapped headers alone do not enable the default financial composite while source-role and business-rule capabilities remain unverified.
+
+CI run 44555242526: 242 tests, 240 passed; only the two inherited CODEX PROGRESS hygiene checks failed. Feature tests passed.

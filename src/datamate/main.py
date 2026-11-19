@@ -61,11 +61,12 @@ def run(data_root, output, log_directory=None, business_filter=None):
                 if question.business_id not in engines:
                     data_dir = root / "data" / question.business_id
                     tables = read_business(data_dir)
-                    engines[question.business_id] = Executor(tables, rules=split_rules)
                     schema_catalog = build_schema_catalog(tables, business_id=question.business_id)
-                    composite_planners[question.business_id] = CompositePlanner(
+                    composite_planner = CompositePlanner(
                         planner, schema_catalog=schema_catalog
                     )
+                    engines[question.business_id] = Executor(tables, rules=split_rules)
+                    composite_planners[question.business_id] = composite_planner
                 engine = engines[question.business_id]
                 spec = planner.interpret(question.question, question.as_of_date, question.business_id)
                 composite_plan = composite_planners[question.business_id].plan(spec)
