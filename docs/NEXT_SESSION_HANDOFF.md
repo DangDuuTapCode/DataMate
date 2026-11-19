@@ -382,3 +382,10 @@ CI is still unverified: GitHub queries returned no workflow runs/statuses for th
 - Actions run `44594130571` on `59a7444cb530801e59018149f653bcbdfd76b4e7`: **352 tests passed**.
 - Independent archive audit: 20.31% for October 2025 and 19.79% for June 2025; see `docs/CONTEST_BIZ129_JOIN_CASE.md`.
 - PR #2 is still a draft. Do not ask the user to pull it until the full feature is complete and the latest branch-tip CI is green.
+
+
+### Verified runtime-integrated branch tip
+
+- Branch tip: `0cd8fb90fe0c197752f84b847537763b09217e2c`.
+- Actions run `44594377793` on the exact branch tip: **352 tests passed**.
+- PR #2 remains open as a draft, mergeable, and unmerged. The customer-group revenue-share slice for biz_129 is ready for user review; do not merge without instruction.
