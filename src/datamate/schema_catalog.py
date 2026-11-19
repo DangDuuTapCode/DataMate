@@ -37,11 +37,16 @@ class BusinessSchemaCatalog:
         }
 
 
-def build_schema_catalog(tables, *, business_id=None):
+def build_schema_catalog(
+    tables, *, business_id=None, deduplicate_identical_order_lines=False
+):
     """Build deterministic schema metadata without changing or joining tables."""
     tables = tuple(tables)
     table_schemas = tuple(map_table_schema(table) for table in tables)
-    relationships = tuple(discover_relationships(tables))
+    relationships = tuple(discover_relationships(
+        tables,
+        deduplicate_identical_order_lines=deduplicate_identical_order_lines,
+    ))
     return BusinessSchemaCatalog(
         business_id=business_id,
         table_schemas=table_schemas,
