@@ -528,3 +528,10 @@ The Public Submissions JSONL candidate is prepared and structurally verified, bu
 - Run `44546168818` executed 203 tests. The new semantic tests passed; 201 passed overall.
 - Two existing hygiene checks still fail on `CODEX PROGRESS` (size and secret-like regex). No code/test failure was reported outside those checks.
 - Run: https://github.com/pl2n/DataMate/actions/runs/44546168818
+
+
+## Resume — 2026-11-19 — relationship validation
+
+- Read `tools/checkpoints/2026-11-19_RELATIONSHIP_VALIDATION.md`.
+- `relationships.py` compares only exact values under shared, unambiguous canonical key fields. It reports cardinality and evidence but never performs joins.
+- Preserve leading zeroes. Do not relax full child-key coverage or unique-parent requirements without explicit source evidence and regressions.

@@ -112,3 +112,17 @@ This is a suggested organization, not a requirement to rename existing modules.
 - This layer is metadata only. It does not change table values, join tables, or make a metric executable.
 
 The alias registry is intentionally small. Expand it only with source-backed examples and regression tests.
+
+
+## Initial relationship validation
+
+`src/datamate/relationships.py` proposes relationships only between columns that already have an unambiguous shared canonical key mapping.
+
+- Supported key concepts are `order_id`, `customer_id`, `product_id`, and `payment_transaction_id`.
+- Values are compared exactly as trimmed strings. Leading zeroes are preserved; no numeric coercion or fuzzy matching is applied.
+- Cardinality checks distinguish one-to-one, one-to-many, many-to-one, and many-to-many.
+- A child-to-parent relationship is `validated` only when every nonblank child key matches a unique parent key and the child key column has no blanks.
+- Partial one-to-one overlap is only a candidate. Unmatched keys, blank child keys, and many-to-many multiplication risks are not accepted.
+- This module reports evidence and does not execute joins. Business rules and query-specific join approval remain separate.
+
+A structurally validated key relationship is necessary but not sufficient to combine business metrics.

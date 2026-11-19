@@ -560,3 +560,13 @@ Review package: work/submission-build/public-test-submission-2026-11-15. JSONL S
 - GitHub Actions run `44546168818` executed 203 tests. The four new semantic mapping tests passed; 201 tests passed overall.
 - The only two failures remain the pre-existing hygiene checks on tracked `CODEX PROGRESS` (over 1 MB and matching a secret-like regex). No security checks were weakened.
 - Run: https://github.com/pl2n/DataMate/actions/runs/44546168818
+
+
+## 2026-11-19 — initial relationship validation
+
+- Added `src/datamate/relationships.py` to discover relationship candidates only through shared, unambiguous canonical key mappings.
+- Exact string key matching preserves leading zeroes and avoids implicit numeric conversion.
+- Cardinality checks validate complete child-to-unique-parent coverage; partial, blank, unmatched, and many-to-many cases remain non-executable.
+- The module is metadata-only and does not perform joins.
+- Added synthetic tests for many-to-one, unmatched keys, duplicate parents, partial overlap, blank keys, unmapped labels, and leading-zero preservation.
+- Checkpoint: `tools/checkpoints/2026-11-19_RELATIONSHIP_VALIDATION.md`.
