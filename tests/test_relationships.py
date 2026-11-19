@@ -206,7 +206,7 @@ class RelationshipDiscoveryTests(unittest.TestCase):
 
         [relationship] = discover_relationships([details, orders])
 
-        self.assertEqual(relationship.status, "rejected")
+        self.assertEqual(relationship.status, "candidate")
         self.assertEqual(relationship.from_unmatched_keys, 1)
         self.assertEqual(relationship.from_blank_keys, 1)
 
