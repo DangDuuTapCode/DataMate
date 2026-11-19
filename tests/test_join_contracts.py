@@ -82,6 +82,47 @@ class FactJoinContractTests(unittest.TestCase):
         self.assertEqual(payload["path_hops"][0]["from_column_indices"], [2])
         self.assertEqual(payload["path_hops"][1]["to_column_indices"], [1])
 
+    def test_blank_source_key_path_requires_left_join_contract(self):
+        relationship_with_blank = relationship(
+            self.orders, self.customers, "customer_id", "many_to_one"
+        )
+        relationship_with_blank = RelationshipCandidate(
+            **{
+                **relationship_with_blank.__dict__,
+                "status": "validated_left_join",
+                "from_blank_keys": 15,
+                "confidence": 0.95,
+            }
+        )
+        path = resolve_relationship_path(
+            [
+                relationship(self.fact, self.orders, "order_id", "many_to_one"),
+                relationship_with_blank,
+            ],
+            self.fact,
+            self.customers,
+            max_hops=2,
+        )
+
+        self.assertEqual(path.status, "left_join_required")
+        self.assertIsNone(self.build_from_path(path, join_type="inner"))
+        contract = self.build_from_path(path, join_type="left")
+        self.assertIsNotNone(contract)
+        self.assertEqual(contract.join_type, "left")
+        self.assertTrue(contract.path_hops[-1].requires_left_join)
+        self.assertTrue(contract.to_dict()["path_hops"][-1]["requires_left_join"])
+
+    def build_from_path(self, path, **overrides):
+        args = {
+            "fact_grain": "one row per sales order line",
+            "measure_field": "net_line_amount",
+            "measure_column_index": 7,
+        }
+        args.update(overrides)
+        return build_fact_join_contract(
+            path, self.fact, self.customers, **args
+        )
+
     def test_rejects_fanout_path(self):
         fanout = resolve_relationship_path(
             [relationship(self.fact, self.orders, "order_id", "one_to_many")],
