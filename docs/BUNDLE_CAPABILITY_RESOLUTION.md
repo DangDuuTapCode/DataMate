@@ -103,3 +103,18 @@ For a reviewed revenue `detail_to_order` shape, capability resolution now emits 
 The contract is normalized to line-to-order direction even if schema discovery encountered the order table first. The composite planner carries it unchanged into the component Executor. When present, the Executor selects only those two source-qualified tables and uses the approved column indices. It does not independently choose another order-like column.
 
 This is intentionally narrower than a general join planner. Composite keys, polymorphic document references, multi-hop paths, and arbitrary dimension joins are not executable through this contract yet.
+
+
+## Conservative multi-hop relationship path discovery
+
+`src/datamate/relationship_paths.py` adds a discovery-only graph resolver over the catalog's relationship candidates. It does not execute joins and is not yet wired into metric execution.
+
+Contract:
+- Nodes are exact `(table_name, source_filename)` identities.
+- Only `validated` relationships are traversable; candidate, ambiguous, and rejected edges are ignored.
+- Every hop retains canonical key names and the physical column indices on both sides, including composite-key indices.
+- Traversal direction is evaluated against cardinality. A many-to-one traversal and one-to-one traversal preserve the source row grain; a one-to-many traversal is marked as fanout risk.
+- A path is accepted only when exactly one validated simple path exists within the caller's hop limit and every hop preserves source grain.
+- Multiple paths, no path, invalid requests, path-limit overflow, and fanout risk are explicit non-available statuses. No heuristic path ranking occurs.
+
+This is a structural path-discovery primitive only. It does not authorize a business calculation, resolve polymorphic references, infer business semantics, or make arbitrary multi-hop joins executable. A later execution contract must still declare the query's fact grain, aggregation stage, and acceptable fanout behavior.
