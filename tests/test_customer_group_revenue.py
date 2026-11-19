@@ -71,6 +71,7 @@ class CustomerGroupRevenueShareTests(unittest.TestCase):
 | Đơn thuộc kỳ nào | theo ngày đặt, không theo ngày giao hay ngày thu tiền |
 | Doanh thu một đơn | tổng thành tiền các dòng hàng (đã trừ giảm giá trên từng dòng) |
 | Hai dòng của cùng một đơn giống nhau ở mọi ô | lỗi xuất file, tính một lần |
+| Bán chạy | theo doanh thu |
 """
         parsed = SplitRules.from_text(rule_text)
         self.assertTrue(parsed.revenue_supported)
