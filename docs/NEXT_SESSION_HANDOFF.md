@@ -647,3 +647,10 @@ The Public Submissions JSONL candidate is prepared and structurally verified, bu
 - No joins, executor changes, parser cues, or arbitrary natural-language splitting.
 - Tests: tests/test_bundle_capabilities.py. Checkpoint: tools/checkpoints/2026-11-19_BUNDLE_CAPABILITY_RESOLUTION.md. CI pending.
 - Next: inspect executor source-column discovery and existing rule profiles, then design a versioned rule-evidence contract. Do not infer business semantics from header names or sample values.
+
+### CI result — bundle capability resolution (2026-11-19)
+
+- Commit: 5397ceb61c18c224c35720f3629236fea32adf77.
+- GitHub Actions run 44554164419 executed 241 tests: 239 passed; only the two inherited CODEX PROGRESS hygiene checks failed.
+- The new resolver, co-location, relationship validation, and planner catalog-gating tests passed.
+- CI: https://github.com/pl2n/DataMate/actions/runs/44554164419

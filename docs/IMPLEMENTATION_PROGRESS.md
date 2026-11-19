@@ -705,3 +705,10 @@ Review package: work/submission-build/public-test-submission-2026-11-15. JSONL S
 - Design note: docs/BUNDLE_CAPABILITY_RESOLUTION.md.
 - Checkpoint: tools/checkpoints/2026-11-19_BUNDLE_CAPABILITY_RESOLUTION.md.
 - CI pending at checkpoint creation.
+
+### CI result — bundle capability resolution
+
+- GitHub Actions run 44554164419 executed 241 tests.
+- 239 tests passed; the only two failures were the known inherited repository-hygiene checks against CODEX PROGRESS (file-size limit and secret-like regex).
+- No import/runtime errors or feature-test failures were reported. The new bundle capability and planner integration tests passed.
+- Run: https://github.com/pl2n/DataMate/actions/runs/44554164419

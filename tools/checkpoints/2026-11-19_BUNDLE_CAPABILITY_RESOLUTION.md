@@ -36,3 +36,10 @@ GitHub Actions verification is pending at checkpoint creation. The known two ups
 ## Next step
 
 Review how the existing executor discovers source columns and how rule profiles are represented. Define a versioned business-rule evidence contract before allowing default revenue/collection bundles to become available. Do not infer settled-payment or eligible-sales semantics from headers or sample values alone.
+
+
+## CI result
+
+GitHub Actions run 44554164419 executed 241 tests. 239 passed; the only two failures were the known inherited CODEX PROGRESS repository-hygiene checks (size limit and secret-like regex). All feature tests for field mapping/co-location, relationship validation, and planner gating passed. No hygiene checks were weakened and no upstream file was modified.
+
+Run: https://github.com/pl2n/DataMate/actions/runs/44554164419

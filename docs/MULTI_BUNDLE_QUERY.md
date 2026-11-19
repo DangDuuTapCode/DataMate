@@ -194,3 +194,7 @@ status means settled.
 
 No join is executed and no existing metric calculation changes. See
 docs/BUNDLE_CAPABILITY_RESOLUTION.md.
+
+### Bundle capability resolution CI
+
+GitHub Actions run 44554164419 executed 241 tests: 239 passed and the same two inherited CODEX PROGRESS hygiene checks failed. The new resolver and planner-gating tests passed; no feature-test failures were reported.

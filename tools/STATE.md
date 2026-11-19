@@ -650,3 +650,9 @@ python qstats.py public_test/ 15
 - No joins, executor calculations, parser behavior, or upstream repository content changed.
 - Tests added in tests/test_bundle_capabilities.py. CI pending for this milestone.
 - Design note: docs/BUNDLE_CAPABILITY_RESOLUTION.md.
+
+### Bundle capability resolution CI result
+
+- Run 44554164419: 241 tests executed; 239 passed.
+- The only two failures are the pre-existing CODEX PROGRESS size and secret-like-regex hygiene checks. All feature tests, including bundle capability resolver and CompositePlanner catalog-gate tests, passed.
+- No hygiene checks were disabled and no upstream files were changed.
