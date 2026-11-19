@@ -228,3 +228,11 @@ Important limitation: this resolver is discovery-only and is not yet connected t
 - Replaced the oversized historical `CODEX PROGRESS` transcript with a short handoff pointer; the old file breached the repository size check and matched a sensitive-looking token pattern.
 - GitHub Actions run `44586527843`, commit `4f7077120f19b29717f5be46f1c53fe9d80d01f4`: **318 tests passed**.
 - Draft PR #2 is open and remains unmerged: https://github.com/DangDuuTapCode/DataMate/pull/2.
+
+
+### Multi-hop join execution primitive
+
+- Added a low-level executor for explicit `FactJoinContract` objects. It revalidates semantic key mappings and source identities, rejects duplicate target keys and reachable unmatched nonblank source keys, honors required LEFT JOINs, and preserves fact-row count/duplicates.
+- Added synthetic tests for two-hop sales-detail → order → customer joins, guest rows, malformed contracts, and data drift.
+- Actions run `44587842656`, commit `6a0bc0b7ad4aef0cb510b234d05b5455a73eb8db`: **328 tests passed**.
+- This primitive is not yet connected to the public query pipeline and performs no business filtering or aggregation.
