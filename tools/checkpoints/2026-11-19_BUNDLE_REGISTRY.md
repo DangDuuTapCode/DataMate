@@ -37,3 +37,10 @@ Synthetic tests cover default definitions, unknown/duplicate requirement resolut
 GitHub Actions run `44547696247` executed 216 tests. All bundle-registry and composite tests passed; 214 tests passed overall. The only failures are the two pre-existing repository-hygiene assertions against `CODEX PROGRESS` (size limit and secret-like regex). No hygiene checks were weakened.
 
 Run: https://github.com/pl2n/DataMate/actions/runs/44547696247
+
+
+## CI result
+
+Run `44547696247` executed 216 tests. All bundle-registry and composite tests passed; 214 tests passed overall. Two pre-existing repository-hygiene assertions against `CODEX PROGRESS` remain the only failures.
+
+Run: https://github.com/pl2n/DataMate/actions/runs/44547696247

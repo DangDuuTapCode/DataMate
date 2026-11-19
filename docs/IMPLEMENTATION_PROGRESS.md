@@ -593,3 +593,10 @@ Review package: work/submission-build/public-test-submission-2026-11-15. JSONL S
 - GitHub Actions run `44547696247` executed 216 tests. The registry tests and composite regressions passed; 214 tests passed overall.
 - The only two failures remain pre-existing hygiene assertions on tracked `CODEX PROGRESS` (size limit and secret-like regex). No hygiene check was bypassed.
 - Run: https://github.com/pl2n/DataMate/actions/runs/44547696247
+
+
+### CI result — bundle registry (latest constrained composite planner)
+
+- GitHub Actions run `44547696247` executed 216 tests. All bundle registry and composite tests passed; 214 tests passed overall.
+- Two existing repository-hygiene checks still fail against tracked `CODEX PROGRESS` (size limit and secret-like regex). No test was disabled.
+- Run: https://github.com/pl2n/DataMate/actions/runs/44547696247

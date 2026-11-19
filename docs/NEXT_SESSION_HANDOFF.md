@@ -556,3 +556,9 @@ The Public Submissions JSONL candidate is prepared and structurally verified, bu
 - Run `44547696247` executed 216 tests; all new bundle-registry and composite tests passed, 214 passed overall.
 - Two pre-existing hygiene checks still fail on `CODEX PROGRESS`. Preserve the checks and resolve the file policy separately.
 - Run: https://github.com/pl2n/DataMate/actions/runs/44547696247
+
+
+### CI result — bundle registry
+
+- Latest registry/composite test run `44547696247`: 216 tests; 214 passed, including all new tests.
+- Only the two pre-existing `CODEX PROGRESS` hygiene checks fail.
