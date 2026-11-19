@@ -218,7 +218,7 @@ def execute_customer_group_revenue_share(tables, rules, start, end, customer_gro
         Decimal("0.01"), rounding=ROUND_HALF_UP
     )
     return {
-        "type": "number",
+        "type": "percent",
         "answer": float(percentage),
         "evidence": [
             fact.source,
