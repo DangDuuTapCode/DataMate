@@ -236,3 +236,16 @@ Important limitation: this resolver is discovery-only and is not yet connected t
 - Added synthetic tests for two-hop sales-detail → order → customer joins, guest rows, malformed contracts, and data drift.
 - Actions run `44587842656`, commit `6a0bc0b7ad4aef0cb510b234d05b5455a73eb8db`: **328 tests passed**.
 - This primitive is not yet connected to the public query pipeline and performs no business filtering or aggregation.
+
+
+### Customer-group revenue share query family
+
+- Added a biz_129-only query family from the Contest README/rulebook: sales-line fact → order metadata → customer dimension.
+- The planner extracts the requested customer group and period, carries the filter into `QueryPlan`, and only enables this intent for business ID `biz_129`.
+- The query executor uses the explicit `FactJoinContract` and row-preserving LEFT JOIN; it applies order-date and status policies, exact duplicate-line deduplication, and computes group numerator / whole-shop denominator.
+- Guest orders remain in the denominator but have no group; this prevents the common incorrect inner-join denominator.
+- The result is emitted as a numeric percentage rounded to two decimal places and passed through the standard verifier.
+- Added full `main.run` integration coverage plus exact-question, rulebook, status, duplicate, unmatched-key, missing-field, and business-scope tests.
+- CI run `44594130571`, commit `59a7444cb530801e59018149f653bcbdfd76b4e7`: **352 tests passed**.
+- Independent archive audit baselines: October 2025 20.31%, June 2025 19.79%. No contest rows are committed.
+- Separate customer-group revenue-total questions remain unsupported for now; the planner abstains rather than discarding the requested group filter.
