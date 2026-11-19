@@ -616,3 +616,9 @@ The Public Submissions JSONL candidate is prepared and structurally verified, bu
 
 - Run `44550215128`: 230 tests, no code/test errors; 228 passed. Only the two existing `CODEX PROGRESS` hygiene checks fail.
 - Run: https://github.com/pl2n/DataMate/actions/runs/44550215128
+
+
+## Resume — 2026-11-19 — composite context guard
+
+- Read `tools/checkpoints/2026-11-19_COMPOSITE_CONTEXT_GUARD.md`.
+- Composite planner now fails closed if source QuerySpec contains filters, non-metric dimensions, sort, or top-k settings that component plans would otherwise drop.

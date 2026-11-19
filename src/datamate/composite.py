@@ -54,6 +54,12 @@ class CompositePlanner:
             return None
         if "entity_unresolved" in spec.ambiguity_flags:
             return None
+        if spec.filters:
+            return None
+        if any(dimension != "metric" for dimension in spec.dimensions):
+            return None
+        if spec.sort is not None or spec.top_k != 1:
+            return None
         if spec.unit and fold(spec.unit) not in {"vnd"}:
             return None
 

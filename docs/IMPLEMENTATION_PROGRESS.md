@@ -669,3 +669,11 @@ Review package: work/submission-build/public-test-submission-2026-11-15. JSONL S
 - GitHub Actions run `44550215128` executed 230 tests with no code/test errors. 228 passed.
 - The only two failures remain the pre-existing hygiene assertions against tracked `CODEX PROGRESS` (size limit and secret-like regex). No checks were disabled.
 - Run: https://github.com/pl2n/DataMate/actions/runs/44550215128
+
+
+## 2026-11-19 — composite shared-context safety gate
+
+- Composite planning now rejects any populated QuerySpec filters, non-metric dimensions, sorting, or top-k options instead of clearing them while creating component specs.
+- The existing `metric` dimension marker is allowed; other dimensions are not silently discarded.
+- Added synthetic tests for explicit filters, unsupported dimensions, and ranking options.
+- Checkpoint: `tools/checkpoints/2026-11-19_COMPOSITE_CONTEXT_GUARD.md`.

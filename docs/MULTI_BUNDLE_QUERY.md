@@ -158,3 +158,8 @@ The composite requirement payload is versioned at `1.0.0` and validated before c
 ## Composite rule registry status
 
 Composite intent-to-metric combinations are now data-driven through an explicit `CompositeRuleRegistry`. The default rule remains the existing revenue + collected-amount pair; a synthetic custom-rule test demonstrates plan composition for another allowlisted metric pair without adding natural-language splitting. CI run `44550215128`: 230 tests, no code/test errors, 228 passed; only the two existing `CODEX PROGRESS` hygiene checks remain failing.
+
+
+## Shared-context compatibility gate
+
+Before creating component plans, the composite planner now rejects populated filters, non-metric dimensions, sort options, and top-k settings. This prevents the previous component-spec construction from silently clearing a constraint that the user asked for. The parser's internal `metric` dimension marker remains allowed.

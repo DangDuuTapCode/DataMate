@@ -148,6 +148,24 @@ class CompositePlannerTests(unittest.TestCase):
         self.assertIn("entity_unresolved", spec.ambiguity_flags)
         self.assertIsNone(self.composite_planner.plan(spec))
 
+    def test_explicit_filters_are_not_dropped_from_component_plans(self):
+        from dataclasses import replace
+
+        spec = self.rule_planner.interpret(
+            "doanh thu và tiền thực thu tháng này", "2026-03-04", "biz_synthetic"
+        )
+        filtered = replace(spec, filters=(("payment_method", "cash"),))
+        self.assertIsNone(self.composite_planner.plan(filtered))
+
+    def test_non_metric_dimensions_and_ranking_options_fail_closed(self):
+        from dataclasses import replace
+
+        spec = self.rule_planner.interpret(
+            "doanh thu và tiền thực thu tháng này", "2026-03-04", "biz_synthetic"
+        )
+        self.assertIsNone(self.composite_planner.plan(replace(spec, dimensions=("product",))))
+        self.assertIsNone(self.composite_planner.plan(replace(spec, top_k=5)))
+
     def test_unsupported_breakdown_is_not_silently_dropped(self):
         spec = self.rule_planner.interpret(
             "doanh thu và tiền thực thu theo phương thức tháng này",
