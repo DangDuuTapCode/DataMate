@@ -87,6 +87,25 @@ Commits:
 - `dccf1bab63c1ac511294d0f7f10b896ee53cc1a4` — relationship capability documentation.
 - `45b3667a5f8db22ea9f9ca1cb66ea6294db70a7a` — implementation progress update.
 
+## Source-qualified relationship identity fix
+
+The archive includes multiple workbooks whose worksheet names repeat (often `Sheet1`). The prior `RelationshipCandidate` stored table names but not source filenames, and detail-to-order capability checks matched only names. This could conflate two distinct tables with the same sheet name.
+
+Fixed:
+- `RelationshipCandidate` now stores `from_source` and `to_source`, and serializes both.
+- Revenue detail-to-order capability validation matches exact `(table_name, source)` pairs.
+- Source-scope uniqueness is checked by full table identity, not table name alone.
+- Regression tests cover same-named sheets in different workbooks and exact source-scoped detail-to-order validation.
+
+Commits:
+- `c4278e84faace7a690fd5de92e0c62ff5df85823` — source identity in relationship evidence.
+- `5d2b62e6bc9ead2af82323989070dc3f23428efc` — exact source matching in capability resolver.
+- `5e67affa186a4b428c3dac2ed43c68d24bd84a9b` — scope uniqueness by full identity.
+- `abfc0dfc5b6adda4c2cfeaafd4ae75a4fe3194de` — repeated worksheet name regression.
+- `dfe61ceb3bb12b6ef3d4b2b80e36ae19a018ceba` — same-name detail-to-order scope regression.
+- `d16c67a7a26e7e4431a66524f4c105ccc8e2727f` — relationship identity documentation.
+- `6e3af74a27e0a477f4597b6e800c93f8d8ac20a5` — progress update.
+
 ## Next engineering step
 
 Use the 14 public-test businesses and 1,000 public-test questions as a coverage map. Prioritize representative multi-source cases and add small synthetic fixtures for them; do not commit the 192 MB archive or its full business data. Focus on source-role and relationship contracts, not a universal join. Extend only with explicit README/rulebook evidence. Keep collection unavailable until a supported settlement policy is present.
