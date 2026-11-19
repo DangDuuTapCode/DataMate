@@ -257,3 +257,25 @@ Next: check PR #1 mergeability and CI after any subsequent pushes, but do not me
 - The only two failures remain `test_no_large_files` and `test_no_secret_like_strings`, both reporting the pre-existing `CODEX PROGRESS` artifact.
 - Run: https://github.com/pl2n/DataMate/actions/runs/44581612778
 - Existing PR #1 remains open against upstream `main`, head updated with this branch. GitHub reports `mergeable=false`; no merge or PR mutation was performed.
+
+
+## Post-merge continuation — 2026-11-20
+
+PR #1 has now been merged by the repository owner:
+- PR: https://github.com/DangDuuTapCode/DataMate/pull/1
+- Merge commit: `99478a179919a7b5121b00072f90522c50117aba`
+- Upstream `main` compares identical to that merge commit.
+- Merged PR head: `15430b417d650e6145ed4e64cb637ebe2a00677c`.
+
+A new continuation branch was created on the fork from that merged PR head:
+- Repository: `pl2n/DataMate`
+- Branch: `feature/query-specific-join-execution`
+- Continue on this branch. Do not amend the merged branch and do not modify upstream directly.
+
+Latest continuation commits:
+- `5c04d9b8498133e28170108ed3ba7fe8ec58301a` — harden FactJoinContract structural validation.
+- `783631e99ed584fee284564c126b1275ca453edf` — add malformed/forged path regressions.
+
+The builder now requires candidate_count=1, typed immutable hops, exact nonblank source-qualified identities, unique canonical keys, valid physical index tuples, literal false fanout, and safe join-type input validation. This is still structural validation only; it does not authorize or execute a JOIN.
+
+No new Actions run is verified for this branch yet. Do not claim local tests or local git status. Before any runtime wiring, inspect a representative real query and its exact source README/rulebook evidence. Require reviewed fact grain, measure semantics, additive behavior, exact join path/key(s), and aggregation stage. If the archive/source evidence is unavailable, keep runtime fail-closed and continue with structural tests only.
