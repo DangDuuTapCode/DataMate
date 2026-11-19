@@ -307,3 +307,10 @@
 
 - Hardened malformed cardinality handling and added a list-valued cardinality regression.
 - Commits: `101a5089d1bd71c45b17516f5753a2e01f06f151`, `4e073e4f1a35a216179094ff0d63389f27829775`.
+
+
+### CI trigger coverage
+
+- Expanded the Python test workflow to cover all `feature/**` push branches and PRs targeting `main` or `feature/**`.
+- Commit: `e74d43413c3966d7d80e6fbe8f985fb5b6ac4de9`.
+- Workflow result not yet verified.
