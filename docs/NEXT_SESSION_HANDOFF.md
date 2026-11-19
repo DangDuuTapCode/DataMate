@@ -6,7 +6,7 @@
 - This is the user's fork. Do not modify upstream `DangDuuTapCode/DataMate` and do not create a PR unless explicitly requested.
 - Work is performed through GitHub APIs; there is no local checkout. Do not claim a local `git status` or local test execution.
 - Commit completed milestones frequently and update this handoff/checkpoint.
-- The branch ref was verified at `5bfeb494384584cfd9d32d04b4ecdb9e242fef2a` before the later composite-relationship milestone; fetch the current branch head before the next code change.
+- Implementation branch head verified at `21469c4be7a3d93e5bd2befb879315f3c9c36afd` before the documentation checkpoint commits below; fetch the current branch head before the next code change.
 - Latest implementation baseline: `a6eade98f01e55326ae53bf6423800868b6f77b3`; continuation commits since then are documentation/checkpoint-only.
 
 ## Completed implementation
@@ -140,6 +140,38 @@ Commits:
 - `4e17cd94e1f01ecb3e75ae1911916d0c8b8887cc` — relationship documentation.
 - `3741d341d3709df8f9193e8e9c8599952e03b4f9` — duplicate-line rule documentation.
 - `aa6e746425f1e77b05c7e1837e18202cb67b7477` — progress update.
+
+## Exact approved revenue join contract
+
+The prior detail-to-order resolver validated a source-qualified `order_id` relationship, but the Executor independently rediscovered key columns from headers. This meant the physical key used during execution was not explicitly carried from the evidence that had been validated.
+
+Fixed:
+- Added `RevenueJoinContract` with exact detail/order table identities, source filenames, canonical key set, and physical key-column indices.
+- `BundleCapabilityResolver` emits it only when exactly one source-matched validated `order_id` relationship with safe line-to-order cardinality exists.
+- The resolver normalizes edge direction; reversing the schema catalog table order still produces the same logical contract.
+- `CompositePlanner` carries the contract into `QueryComponent`; `main.py` passes it to the scoped component Executor.
+- Executor uses only the exact source-qualified tables and approved key-column indices when the contract is present.
+- Existing non-composite single-metric execution remains unchanged when no contract is supplied.
+- Exact duplicate joined line rows count once only if the active rulebook explicitly authorizes the policy. Without the clause, joined revenue abstains.
+
+Regression tests cover contract creation, reversed catalog order, exact physical key-index use, and rulebook-gated duplicate handling.
+
+Commits:
+- `c00cd0ecabbeff8b9064fb704b61f6af39dabcdd` — require explicit rulebook policy before deduplication.
+- `11cbcb02afdc496d74c03a96ba22f26a3248c7ac` — duplicate-policy regression tests.
+- `ea7f156db237a258dff4c12abd43665bac87b6ed` — declare the duplicate rule in the joined-revenue test fixture.
+- `9b20c0bc2871d1fa9b2deef91d643481936d707e` — exact approved join contract in capability resolution.
+- `5e05f2b2ef948a8518a2915fc2974200e03b56c9` — carry contract through composite planning.
+- `d926caebc0dbb6ab3cc8ece2717ec8843bd36277` — Executor accepts the contract.
+- `09cef4347e767acb6122c9d10c7005e262ebe179` — enforce exact table identities and key indices.
+- `004306dc46041dced471cbc970250ad90baca779` — runtime passes the contract.
+- `72e94d6f1614a9bf0aca7d5183d83f7e6191d0d5` — resolver contract test.
+- `3ae99663419ee0a3d7a6f51cad85edadfb28c490` — executor key-index test.
+- `f3a8bd4340c58d2e4776442d75091880ac3214ab` — indentation correction caught by CI.
+- `059b931f1b4d531814469def5e28f5f517c397ec` — reversed catalog-order test.
+- `21469c4be7a3d93e5bd2befb879315f3c9c36afd` — joined evidence-label expectation.
+
+Verification on `21469c4`: GitHub Actions run `44577298652`, 286 tests, 284 passed. All feature tests passed; the only failures are the two inherited `CODEX PROGRESS` repository-hygiene checks. No local checkout or local test run was used. Run: https://github.com/pl2n/DataMate/actions/runs/44577298652
 
 ## Next engineering step
 
