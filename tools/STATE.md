@@ -568,3 +568,10 @@ python qstats.py public_test/ 15
 - Tests cover grouped header mapping, source provenance, profile serialization, and rejecting a single merged report title as a grouped header.
 - CI `44545450222`: 199 tests ran; 197 passed and 2 existing repository-hygiene tests failed on `CODEX PROGRESS` (size and secret-like regex). No hygiene rule was bypassed.
 - See `tools/checkpoints/2026-11-19_EXCEL_GROUPED_HEADERS.md`.
+
+
+## 2026-11-19 — semantic mapping CI result
+
+- GitHub Actions run `44546168818`: 203 tests executed; 201 passed. The four semantic mapping tests passed.
+- Two pre-existing repository-hygiene failures remain on tracked `CODEX PROGRESS` (size > 1 MB and secret-like regex match). Do not bypass the checks.
+- Run: https://github.com/pl2n/DataMate/actions/runs/44546168818

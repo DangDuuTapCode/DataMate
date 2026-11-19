@@ -521,3 +521,10 @@ The Public Submissions JSONL candidate is prepared and structurally verified, bu
 - Read `tools/checkpoints/2026-11-19_SEMANTIC_COLUMN_MAPPING.md`.
 - New `semantic.py` maps only explicit exact aliases and a small group-plus-leaf allowlist. It is metadata-only; no joins or metric execution are enabled.
 - Generic labels and collisions fail closed. Extend aliases only with source-backed evidence and synthetic regressions.
+
+
+### CI result — semantic mapping
+
+- Run `44546168818` executed 203 tests. The new semantic tests passed; 201 passed overall.
+- Two existing hygiene checks still fail on `CODEX PROGRESS` (size and secret-like regex). No code/test failure was reported outside those checks.
+- Run: https://github.com/pl2n/DataMate/actions/runs/44546168818

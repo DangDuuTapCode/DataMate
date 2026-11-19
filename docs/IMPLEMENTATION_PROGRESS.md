@@ -553,3 +553,10 @@ Review package: work/submission-build/public-test-submission-2026-11-15. JSONL S
 - This is a metadata-only layer and does not change executor behavior or join data.
 - Added synthetic tests for exact mapping, contextual mapping, generic ambiguous labels, collisions, and unknown columns.
 - Checkpoint: `tools/checkpoints/2026-11-19_SEMANTIC_COLUMN_MAPPING.md`.
+
+
+### CI result — semantic mapping commit `5ae3742308a236152210f12cec726cdf75c85de8`
+
+- GitHub Actions run `44546168818` executed 203 tests. The four new semantic mapping tests passed; 201 tests passed overall.
+- The only two failures remain the pre-existing hygiene checks on tracked `CODEX PROGRESS` (over 1 MB and matching a secret-like regex). No security checks were weakened.
+- Run: https://github.com/pl2n/DataMate/actions/runs/44546168818
