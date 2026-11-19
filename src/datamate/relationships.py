@@ -13,6 +13,12 @@ _RELATIONSHIP_KEYS = {
     "customer_id",
     "product_id",
     "payment_transaction_id",
+    "employee_id",
+    "supplier_id",
+    "purchase_receipt_id",
+    "batch_id",
+    "branch_id",
+    "imei",
 }
 
 
