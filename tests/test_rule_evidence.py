@@ -92,7 +92,7 @@ class BusinessRuleEvidenceTests(unittest.TestCase):
 
         payload = _payload()
         payload["profiles"][0]["evidence"][0]["assertion"] = "status_means_paid"
-        self.assertIn("unsupported assertion", validate_business_rule_evidence_payload(payload))
+        self.assertIn("requires a supported assertion", validate_business_rule_evidence_payload(payload))
 
     def test_duplicate_profiles_and_capabilities_are_rejected(self):
         payload = _payload()
