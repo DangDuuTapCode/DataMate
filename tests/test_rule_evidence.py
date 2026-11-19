@@ -121,9 +121,9 @@ class BusinessRuleEvidenceTests(unittest.TestCase):
             rulebook = root / "rulebook.md"
             rulebook.write_bytes(b"reviewed rulebook bytes")
             payload = _payload()
-            payload["profiles"][0]["evidence"][0]["provenance"]["sha256"] = (
-                hashlib.sha256(rulebook.read_bytes()).hexdigest()
-            )
+            digest = hashlib.sha256(rulebook.read_bytes()).hexdigest()
+            for claim in payload["profiles"][0]["evidence"]:
+                claim["provenance"]["sha256"] = digest
             evidence = BusinessRuleEvidence.from_dict(payload)
             self.assertTrue(
                 verify_business_rule_evidence_provenance(evidence, root, business_dir)
