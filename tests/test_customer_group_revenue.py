@@ -59,6 +59,24 @@ class CustomerGroupRevenueShareTests(unittest.TestCase):
             group,
         )
 
+    def test_actual_rulebook_clauses_enable_required_revenue_policies(self):
+        rule_text = """
+| Đơn tính vào doanh thu | đơn không huỷ và không trả hàng. Đơn có trả hàng, kể cả chỉ trả một phần, bỏ cả đơn. Đơn đang giao vẫn tính |
+| Bán được bao nhiêu tiền, thu về bao nhiêu tiền | là doanh thu theo mục này, không phải tiền khách đã trả |
+| Đơn thuộc kỳ nào | theo ngày đặt, không theo ngày giao hay ngày thu tiền |
+| Doanh thu một đơn | tổng thành tiền các dòng hàng (đã trừ giảm giá trên từng dòng) |
+| Hai dòng của cùng một đơn giống nhau ở mọi ô | lỗi xuất file, tính một lần |
+"""
+        parsed = SplitRules.from_text(rule_text)
+        self.assertTrue(parsed.revenue_supported)
+        self.assertEqual(parsed.revenue_amount_basis, "line_amount_after_line_discount")
+        self.assertEqual(parsed.revenue_period_basis, "order_date")
+        self.assertTrue({"cancelled", "returned", "delivery_failed"}.issubset(
+            parsed.revenue_excluded_statuses
+        ))
+        self.assertIn("in_transit", parsed.revenue_included_statuses)
+        self.assertTrue(parsed.deduplicate_identical_order_lines)
+
     def test_question_planner_and_executor_run_the_allowlisted_query_family(self):
         question = (
             "Tỷ trọng doanh thu khách hàng thuộc nhóm thân thiết tháng 10/2025"
