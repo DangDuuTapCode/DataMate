@@ -29,6 +29,34 @@ class RelationshipDiscoveryTests(unittest.TestCase):
         self.assertEqual(relationship.to_duplicate_excess, 0)
         self.assertIn("all_left_keys_match", relationship.evidence)
 
+    def test_additional_contest_keys_validate_only_exact_cardinality_safe_links(self):
+        tables = [
+            Table("sales", ["Mã NV bán"], [["E1"], ["E1"], ["E2"]], "sales.xlsx"),
+            Table("staff", ["Mã nhân viên"], [["E1"], ["E2"]], "staff.xlsx"),
+            Table("purchases", ["Mã NCC"], [["S1"], ["S1"]], "purchases.xlsx"),
+            Table("suppliers", ["Mã nhà cung cấp"], [["S1"]], "suppliers.xlsx"),
+            Table("purchase_lines", ["Mã phiếu nhập"], [["R1"], ["R1"]], "purchase_lines.xlsx"),
+            Table("purchase_headers", ["Mã phiếu nhập"], [["R1"]], "purchase_headers.xlsx"),
+            Table("stock_moves", ["Mã lô"], [["L1"], ["L1"]], "stock_moves.xlsx"),
+            Table("lots", ["Mã lô"], [["L1"]], "lots.xlsx"),
+            Table("sales_by_branch", ["Mã chi nhánh"], [["B1"], ["B1"]], "sales_by_branch.xlsx"),
+            Table("branches", ["Mã chi nhánh"], [["B1"]], "branches.xlsx"),
+            Table("warranty_visits", ["IMEI"], [["I1"], ["I1"]], "warranty.xlsx"),
+            Table("devices", ["IMEI"], [["I1"]], "devices.xlsx"),
+        ]
+
+        relationships = discover_relationships(tables)
+
+        self.assertEqual(
+            {item.canonical_key for item in relationships},
+            {
+                "employee_id", "supplier_id", "purchase_receipt_id",
+                "batch_id", "branch_id", "imei",
+            },
+        )
+        self.assertTrue(all(item.status == "validated" for item in relationships))
+        self.assertTrue(all(item.cardinality == "many_to_one" for item in relationships))
+
     def test_unmatched_child_key_is_rejected(self):
         details = Table("details", ["Mã đơn"], [["A1"], ["A1"], ["A3"]], "details.csv")
         orders = Table("orders", ["Mã đơn"], [["A1"], ["A2"]], "orders.csv")
