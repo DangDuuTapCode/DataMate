@@ -345,3 +345,12 @@ CI is still unverified: GitHub queries returned no workflow runs/statuses for th
 - Replaced the oversized `CODEX PROGRESS` historical transcript with a short pointer to current handoff documents. The old tracked file exceeded 1 MB and matched one sensitive-looking token pattern; the replacement does not retain that text.
 - Follow-up GitHub Actions run `44586527843` on `4f7077120f19b29717f5be46f1c53fe9d80d01f4`: **318 tests passed, workflow conclusion success**.
 - Draft PR #2: https://github.com/DangDuuTapCode/DataMate/pull/2. Do not merge without the user's instruction.
+
+
+## Explicit join executor checkpoint
+
+- Added `src/datamate/join_executor.py` and `tests/test_join_executor.py`.
+- `execute_fact_join_contract` executes only a supplied explicit contract. It revalidates semantic key mappings and table identities, checks target uniqueness and reachable source matches, requires LEFT JOIN for blank source keys, and preserves fact row count and duplicate fact rows.
+- Added `docs/FACT_JOIN_EXECUTOR.md`.
+- GitHub Actions run `44587842656` on `6a0bc0b7ad4aef0cb510b234d05b5455a73eb8db`: **328 tests passed**.
+- Runtime integration remains intentionally absent. The executor does not apply the revenue date/status filters, customer-group predicate, numerator/denominator calculation, or payment aggregation.
