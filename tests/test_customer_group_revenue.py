@@ -71,7 +71,7 @@ class CustomerGroupRevenueShareTests(unittest.TestCase):
         self.assertEqual(spec.unit, "percent")
         self.assertTrue(spec.executable)
 
-        plan = planner.plan(question, "2025-11-01")
+        plan = planner.plan(question, "2025-11-01", "biz_129")
         self.assertEqual(plan.intent, "customer_group_revenue_share")
         self.assertEqual(plan.filters, (("customer_group", "thân thiết"),))
         candidate, reason = Executor(self.tables, rules=self.rules).execute_with_reason(
@@ -103,6 +103,27 @@ class CustomerGroupRevenueShareTests(unittest.TestCase):
             with self.subTest(question=question):
                 spec = planner.interpret(question, "2026-08-14", "biz_129")
                 self.assertFalse(spec.executable)
+
+    def test_other_businesses_cannot_enable_this_contest_specific_query_family(self):
+        planner = RulePlanner(split_rules=self.rules)
+        question = "Tỷ trọng doanh thu nhóm thân thiết tháng 10/2025"
+        spec = planner.interpret(question, "2025-11-01", "biz_other")
+        self.assertEqual(spec.intent, "customer_group_revenue_share")
+        self.assertFalse(spec.executable)
+        plan = planner.plan(question, "2025-11-01", "biz_other")
+        self.assertIsNone(plan)
+
+    def test_other_known_customer_groups_can_be_resolved_explicitly(self):
+        planner = RulePlanner(split_rules=self.rules)
+        for group in ("lẻ", "sỉ"):
+            with self.subTest(group=group):
+                spec = planner.interpret(
+                    f"Tỷ trọng doanh thu nhóm {group} tháng 10/2025",
+                    "2025-11-01",
+                    "biz_129",
+                )
+                self.assertEqual(spec.intent, "customer_group_revenue_share")
+                self.assertEqual(dict(spec.filters)["customer_group"], group)
 
     def test_unrecognized_customer_group_does_not_become_a_generic_category_share(self):
         planner = RulePlanner(split_rules=self.rules)
