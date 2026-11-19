@@ -2,6 +2,7 @@ import datetime as dt
 from decimal import Decimal, ROUND_HALF_UP
 from functools import lru_cache
 
+from .customer_group_revenue import execute_customer_group_revenue_share
 from .normalization import infer_decimal_separator, parse_date, parse_decimal
 from .normalise import fold, tokens
 from .rules import classify_order_status, classify_payment_status
@@ -965,6 +966,9 @@ class Executor:
 
     def execute(self, plan, question):
         start, end = dt.date.fromisoformat(plan.start), dt.date.fromisoformat(plan.end)
+        if plan.intent == "customer_group_revenue_share":
+            candidate, _ = self._customer_group_revenue_share(plan)
+            return candidate
         if plan.intent == "daily_revenue_threshold_count":
             fact = self._daily_revenue_fact(start, end)
             if not fact or plan.threshold is None:
@@ -1185,10 +1189,27 @@ class Executor:
             return {"type": "string", "answer": names[0], "evidence": [table.name]} if plan.top_k == 1 else {"type": "list", "answer": names, "evidence": [table.name]}
         return None
 
+    def _customer_group_revenue_share(self, plan):
+        try:
+            filters = dict(plan.filters)
+        except (TypeError, ValueError):
+            return None, "unresolved_filter"
+        return execute_customer_group_revenue_share(
+            self.tables,
+            self.rules,
+            plan.start,
+            plan.end,
+            filters.get("customer_group"),
+        )
+
     def execute_with_reason(self, plan, question, *, spec=None):
         """Run the allowlisted executor and return an internal abstention reason."""
         if plan is None:
             return None, "unsupported_intent"
+        if plan.intent == "customer_group_revenue_share":
+            if spec is not None and spec.unit != "percent":
+                return None, "invalid_unit"
+            return self._customer_group_revenue_share(plan)
         if plan.intent in {"revenue", "order_revenue_threshold_count"} and not self.rules.revenue_supported:
             return None, "rulebook_unavailable"
         if spec is not None and spec.unit and plan.intent in ("revenue", "collected_amount", "order_revenue_threshold_count") and fold(spec.unit) != "vnd":
