@@ -57,13 +57,36 @@ class TableSchema:
 # "Thành tiền", "Ngày", and "Trạng thái" intentionally remain unresolved.
 _EXACT_ALIASES = {
     "order_id": {
-        "ma don", "ma don hang", "order id", "order code", "invoice id",
+        "ma don", "ma don hang", "ma hoa don", "ma bill", "don so", "so don",
+        "order id", "order code", "invoice id", "invoice number",
     },
     "customer_id": {
-        "ma khach", "ma khach hang", "customer id", "customer code",
+        "ma kh", "ma kh mua", "ma khach", "ma khach hang", "ma khach mua",
+        "ma khach le si", "customer id", "customer code",
     },
     "product_id": {
-        "ma san pham", "ma hang", "product id", "product code", "sku",
+        "ma san pham", "ma hang", "ma hang hoa", "ma h hoa", "ma hang ban",
+        "ma mat hang", "ma hh", "ma vach", "ma barcode", "barcode",
+        "product id", "product code", "sku",
+    },
+    "employee_id": {
+        "ma nhan vien", "ma nv", "ma nv ban", "employee id", "staff id",
+    },
+    "supplier_id": {
+        "ma nha cung cap", "ma ncc", "supplier id", "vendor id",
+    },
+    "purchase_receipt_id": {
+        "ma phieu nhap", "ma phieu nhap hang", "ma nhap hang",
+        "purchase receipt id", "goods receipt id",
+    },
+    "batch_id": {
+        "ma lo", "so lo", "batch id", "lot id",
+    },
+    "branch_id": {
+        "ma chi nhanh", "branch id",
+    },
+    "imei": {
+        "imei", "so imei", "imei may",
     },
     "order_date": {
         "ngay dat", "ngay tao don", "order date", "created at",
