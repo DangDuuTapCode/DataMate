@@ -135,3 +135,12 @@ Next: audit public-test questions against the 14 input shapes, then build minima
 - Code commits: `bad2dcda57a71d8c78d7e49a2c84b969e3008071`, `2136219d904b5ce99671e3c3d285d5b60a638aae`, `f5b476972f779b5abe02bf14f8ca438ac143c90f`, `085284c1562af575d55bf12f80715de6b331e3b3`.
 - Documentation commit: `d87b325e158da97ab11f21380cb177e36d3ed680`.
 - CI verification pending. No local checkout or local test execution was used.
+
+
+## CI verification — fact join contract prototype
+
+- Latest checked Actions run: `44581612778`, head `77460ea68fcb1750b8a534e87727cb7e99d8e52f`.
+- 310 tests executed; 308 passed. All relationship-path and fact-join-contract feature tests passed.
+- The only two failures remain `test_no_large_files` and `test_no_secret_like_strings`, both reporting the pre-existing `CODEX PROGRESS` artifact.
+- Run: https://github.com/pl2n/DataMate/actions/runs/44581612778
+- Existing PR #1 remains open against upstream `main`, head updated with this branch. GitHub reports `mergeable=false`; no merge or PR mutation was performed.
