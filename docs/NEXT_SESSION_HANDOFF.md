@@ -1,172 +1,68 @@
 # Next-session handoff — 2026-11-19
 
-## Repository
+## Repository and working rules
 
-Continue on pl2n/DataMate, branch feature/multi-bundle-query. Do not modify upstream DangDuuTapCode/DataMate; do not create a PR unless requested.
+- Continue only on `pl2n/DataMate`, branch `feature/multi-bundle-query`.
+- This is the user's fork. Do not modify upstream `DangDuuTapCode/DataMate` and do not create a PR unless explicitly requested.
+- Work is performed through GitHub APIs; there is no local checkout. Do not claim a local `git status` or local test execution.
+- Commit completed milestones frequently and update this handoff/checkpoint.
+- Latest implementation baseline before the current documentation-only correction: `a6eade98f01e55326ae53bf6423800868b6f77b3`.
+- Current documentation correction commit: `bc01731c4e445841bbff72ab32b74bbcc18dfb6e`.
 
-Implementation commit: c06e7c42befd1500d743219ab1a3ec3883213ef8. Work was performed through GitHub APIs; no local checkout or literal local git status is available.
+## Completed implementation
 
-## Completed architecture
+- Excel grouped/multi-row header ingestion with raw header metadata.
+- Conservative semantic mappings, collision/ambiguity handling, and exact key relationship validation.
+- Versioned business schema catalog.
+- Declarative bundle registry, requirement extraction contract/schema, and composite rule registry.
+- Shared-context safety checks for composite query components.
+- Bundle capability resolution based on exact canonical fields, table co-location, validated relationship cardinality, and explicit business-rule evidence.
+- Per-business runtime schema catalog and composite planner wiring.
+- Versioned business-rule evidence contract with closed capability/assertion vocabulary, exact table scope, provenance metadata, and strict parsing.
+- SplitRules/executor conformance checks for revenue amount basis, period basis, order-status exclusions, and collection successful-status policy.
+- Payment status has its own conservative classifier; unknown statuses abstain.
+- Evidence-approved table scope is passed into component-specific Executors. Revenue source shape is enforced as either `direct_line` or `detail_to_order`.
+- Runtime recomputes SHA-256 from exact bytes of allowlisted local provenance files. Arbitrary paths, traversal, URLs, unknown filenames, missing files, symlinks, paths outside the input root, and digest mismatches fail closed.
 
-See docs/IMPLEMENTATION_PROGRESS.md, docs/MULTI_BUNDLE_QUERY.md, and dated checkpoints under tools/checkpoints/. Completed pieces include grouped-header ingestion, semantic mappings, relationship validation, business schema catalog, bundle registry, requirement extraction/schema, composite rule registry, shared-context guard, and bundle capability resolution.
+## Current capability boundaries
 
-## Capability-resolution contract
-
-Implementation:
-- src/datamate/bundle_capabilities.py
-- src/datamate/bundles.py
-- tests/test_bundle_capabilities.py
-- docs/BUNDLE_CAPABILITY_RESOLUTION.md
-
-The resolver checks exact canonical fields, same-table co-location, and explicitly declared validated relationship cardinality. It reports missing/ambiguous fields and unverified business-rule capabilities. It never executes joins or infers business semantics.
-
-Source-shape constraints:
-- Revenue supports either direct line facts or a detail-to-order path. Do not model this as one flat same-table field list until the schema contract can express alternatives and the required relationship path.
-- Collection currently requires payment-event amount and payment date. Its payment source role and settled-payment policy remain unverified.
-- Both default bundles stay unavailable under catalog-gated planning until source-role and business-rule evidence is modeled and validated.
-
-## Production runtime
-
-src/datamate/main.py builds a BusinessSchemaCatalog once per business from the same ingested tables used by Executor, then passes it to a per-business CompositePlanner. A runner regression proves that mapped headers alone do not enable the financial composite while business-rule capabilities remain unverified.
+- Default financial bundles must remain unavailable unless their structural and business-rule evidence is verified.
+- Revenue supports reviewed `direct_line` or `detail_to_order` source shapes. The latter requires a validated `order_id` relationship and ordered line-table then order-table scope.
+- Collection requires payment amount, payment date, and explicit payment status in one exact reviewed table. Source-role and successful-status-policy claims must refer to that same table.
+- Collection remains unavailable if the active rulebook does not explicitly support the successful-payment-only policy.
+- No automatic joins, fuzzy semantic inference, arbitrary natural-language conjunction splitting, or new metrics.
+- SHA-256 verification proves byte correspondence with an allowlisted local source; it does not authenticate the reviewer's identity or provide a cryptographic signature.
 
 ## Verification
 
-GitHub Actions run 44555242526 executed 242 tests: 240 passed. The only two failures are the inherited CODEX PROGRESS size and secret-like-regex hygiene checks. Feature tests passed.
+- GitHub Actions run `44564104588` on `a6eade98f01e55326ae53bf6423800868b6f77b3`: 272 tests; 270 passed. All feature tests passed. The only two failures are inherited `CODEX PROGRESS` repository-hygiene checks (large-file limit and a secret-like-pattern false positive). Do not weaken the checks or modify that inherited artifact.
+- Run: https://github.com/pl2n/DataMate/actions/runs/44564104588
+- The current documentation-only correction commit `bc01731c4e445841bbff72ab32b74bbcc18dfb6e` was pushed after that run; check its Actions result before further code changes.
+- No local checkout or local test execution is available in this workflow.
 
-Run: https://github.com/pl2n/DataMate/actions/runs/44555242526
+## Active next step — confirm real input contract
 
-## Active next step
+The repository's `data/` directory is for mounted competition input and is gitignored (except `data/README.md`). The actual runtime bundle is not available through the GitHub repository. No exact data-dictionary or operator-attestation filename/placement is documented by the checked-in input contract.
 
-Inspect src/datamate/split_rules.py, the actual mounted rulebook contract, and Executor source discovery. Design a versioned business-rule evidence contract for:
-- alternative revenue source shapes and the relationship path for detail-to-order;
-- payment table role and the policy when payment status is absent or present;
-- rule-profile version, source provenance, and validation status.
+Before expanding the provenance allowlist:
+1. Obtain the actual business input directory listing or the relevant input-contract files.
+2. Confirm exact filenames and placement for any data dictionary or operator attestation.
+3. Add only explicitly confirmed names to the allowlist and tests.
+4. Inspect the actual mounted `rulebook.md` to determine whether its collection policy clause matches the parser's supported rule.
 
-Do not infer business semantics from column names or sample values. Keep automatic joins, arbitrary natural-language splitting, and new metrics out of scope.
+Do not guess filenames, broaden to arbitrary paths, or enable bundles from synthetic tests alone. If the actual bundle cannot be provided, leave the allowlist unchanged and record the blocker.
 
+## Useful files
 
-## Business-rule evidence contract — latest milestone
-
-Implemented:
-- `schemas/business_rule_evidence.v1.schema.json`
 - `src/datamate/rule_evidence.py`
+- `src/datamate/bundle_capabilities.py`
+- `src/datamate/split_rules.py`
+- `src/datamate/metrics.py`
+- `src/datamate/main.py`
 - `tests/test_rule_evidence.py`
+- `tests/test_bundle_capabilities.py`
+- `tests/test_api.py`
 - `docs/BUSINESS_RULE_EVIDENCE.md`
-
-The v1 payload is scoped to one business and contains versioned `revenue_rules` / `collection_rules` profiles. Each capability assertion has a closed allowlisted value, explicit exact table scope, and provenance (source type/reference, SHA-256, reviewer, timezone-aware review timestamp). Unknown or duplicate claims, unsupported assertions, malformed provenance, and business-ID mismatches are rejected.
-
-Important boundaries:
-- This is a strict contract/reader only. It does not synthesize evidence from headers/sample values, change executor calculations, or enable default bundles.
-- Verified claims count only if all exact scoped table identities exist in the matching BusinessSchemaCatalog.
-- Collection's current executor only applies successful-status filtering when a payment status column exists. The next integration must require an unambiguous `payment_status` field for the collection bundle and keep it unavailable when status is absent.
-- Revenue source shape assertions need to match actual direct-line or detail-to-order executor paths; do not let an attestation silently authorize an unimplemented path.
-
-## Next step
-
-Wire the optional per-business evidence file (suggested path: `data/<business_id>/business_rule_evidence.json`) into `main.run`, `CompositePlanner`, and `BundleCapabilityResolver`. Missing/invalid/mismatched evidence must leave the bundle unavailable. Add tests for both valid and invalid runtime evidence. No automatic joins, fuzzy inference, or parser expansion.
-
-
-## Business-rule evidence contract verification
-
-Commit `f6d5115ea4099311ed3d01eeb0257abfa37818c4` adds the strict reader/schema/tests and docs. GitHub Actions run `44556933123` executed 250 tests; all new evidence-contract tests passed, with 248 total passing. Only the two inherited `CODEX PROGRESS` hygiene checks failed. Run: https://github.com/pl2n/DataMate/actions/runs/44556933123
-
-
-## Latest milestone — business-rule evidence runtime integration
-
-Current branch head before this documentation update: `02dc61c983de696ded042f021e2f64f2b886c8e6`.
-
-The v1 evidence contract is now wired into production:
-- Runtime reads optional `data/<business_id>/business_rule_evidence.json`.
-- Valid evidence is passed to `CompositePlanner` and `BundleCapabilityResolver`.
-- Missing/invalid evidence blocks composite planning. Trace records evidence status and per-bundle resolution reasons.
-- Collection requires canonical payment-event amount, payment date, and payment status in one table. Source-role and successful-status policy claims must share the same exact table scope.
-- Grouped payment headers are recognized by the executor. Explicit payment status is preferred; legacy generic-status fallback remains for single-metric execution.
-- Revenue detail-to-order evidence requires ordered line/order table scope and validated many-to-one `order_id` relationship.
-- SHA-256 provenance is recorded and format-checked, but this version does not recompute it from arbitrary external references. Treat the reviewer as responsible for digest/source correspondence.
-
-CI run `44558398515`: 256 tests, 254 passed; all feature tests passed. The only failures are the two inherited `CODEX PROGRESS` hygiene checks. Run: https://github.com/pl2n/DataMate/actions/runs/44558398515
-
-## Next step
-
-Validate evidence assertions against the actual split rulebook and supported executor profile. Then design safe source-digest verification using controlled, known source locations. Keep absent/invalid evidence fail-closed; do not infer semantics from headers or sample values.
-
-
-## Resume details
-
-- Latest runtime code commit: `02dc61c983de696ded042f021e2f64f2b886c8e6`.
-- Latest docs/schema commit: `96d63298a940a0e449c7303bbe668508d74c0637`.
-- Latest CI: run `44559194129`, 256 tests / 254 passed. Only the two inherited repository-hygiene checks failed; feature tests passed. Run: https://github.com/pl2n/DataMate/actions/runs/44559194129
-- Resume by cross-checking the six capability assertions with `SplitRules` and the exact `Executor` behavior, then implement controlled source-digest verification. Do not auto-generate evidence or weaken fail-closed behavior.
-
-## Latest scope-validation milestone
-
-Implementation commit: c7d251de506acd54093578639a7b1aac2711aed4.
-
-- Collection required fields are restricted to the exact single table shared by both reviewed collection claims.
-- Revenue detail-to-order accepts equivalent validated edge orientation from catalog table order: many-to-one line→order or one-to-many order→line. Evidence scope itself remains ordered line then order.
-- Direct-line revenue evidence must scope exactly one table.
-- Added a valid evidence-backed end-to-end runner test. It confirms the runtime loads the file, authorizes both bundles, executes both components, and returns the side-by-side table.
-- CI run 44560238399: 259 tests; 257 passed; only the two inherited CODEX PROGRESS hygiene checks failed. Feature tests passed.
-
-Next: validate evidence provenance/digests against controlled known sources. Do not retrieve arbitrary references or treat a syntactically valid hash as proof of source correspondence.
-
-
-## Latest continuation — rulebook/executor conformance
-
-Starting branch head: `ab834e246fdfe36d4b2025b32bbfeace0c36f5aa`.
-
-Implemented:
-- Payment status now has a dedicated classifier; collection no longer reuses order-status classification.
-- Explicit successful/paid states are included; pending, failed, cancelled, refunded/reversed are excluded; unknown statuses abstain.
-- SplitRules parses revenue amount basis, period basis, and an optional collection successful-status-only clause.
-- BundleCapabilityResolver cross-checks revenue evidence against active SplitRules. Collection policy evidence is accepted only when the active rulebook explicitly supports it.
-- CompositePlanner passes its RulePlanner's active SplitRules to capability resolution.
-- Synthetic tests cover payment states, unknown states, and evidence/rulebook mismatches.
-
-The runtime-mounted `data/rulebook.md` is not versioned in this repository. Do not assume it contains the collection clause; without it, collection stays unavailable.
-
-Next: review CI, then design controlled SHA-256 verification against allowlisted input-root files. No local checkout or local test execution is available in this workflow.
-
-
-## Latest CI result
-
-Run `44561508605` on `211941c8b8bdaafabd5f0c85477f1ce99bdf041b`: 264 tests; 262 passed. All feature tests passed. Only the two inherited `CODEX PROGRESS` repository-hygiene checks failed.
-
-Next: bind the exact evidence-approved source scope to Executor candidate selection, then implement controlled SHA-256 verification under the input root.
-
-
-## Latest continuation — evidence-scoped execution
-
-- Resolver now returns approved exact table scope and revenue source shape.
-- CompositePlanner carries scope into QueryComponent.
-- Runtime creates a separate Executor per component over only the approved table identities.
-- Executor honors `direct_line` vs `detail_to_order`; the latter bypasses direct-line candidate selection.
-- Regression coverage adds competing unreviewed sales/payment tables and verifies they cannot influence a valid evidence-backed composite.
-- CI before this milestone: run `44561508605`, 264 tests / 262 passed; only inherited hygiene failures.
-
-Next: inspect the new CI result, then implement safe digest verification for known files under the input root. Keep arbitrary evidence paths inaccessible.
-
-
-## Latest continuation — controlled digest verification
-
-- Runtime now recomputes every evidence claim SHA-256 from exact bytes.
-- Only allowlisted local references are resolved: root `rulebook.md`, business-scoped data_dictionary CSV/XLSX/MD, and business-scoped `operator_attestation.json`.
-- Path separators/traversal, external URLs, unknown filenames, missing files, any symlink source, paths resolving outside the input root, and digest mismatches fail closed.
-- Citation fragments are not interpreted as paths.
-- New tests cover valid digest, mismatch, traversal, external URL, and runner-level mismatch abstention.
-
-Next: inspect CI. Then add coverage for symlink escape and decide whether additional known source filename variants are needed; do not broaden the allowlist based on arbitrary user-provided references.
-
-
-## Latest digest-verification CI
-
-Run `44563411248` on `404bd655012660f26486fdb6ec7e08e5baa845e4`: 271 tests; 269 passed. All feature tests passed. Only the two inherited `CODEX PROGRESS` hygiene checks failed.
-
-Next: confirm actual mounted data dictionary and operator-attestation filenames. Expand the exact allowlist only if the input contract documents a concrete filename; never allow arbitrary paths.
-
-
-## Latest CI
-
-Run `44563864531` on `bcada84044c4d38bc144d8eaa27099bdd148feeb`: 272 tests; 270 passed. All feature tests passed; only two inherited repository-hygiene failures.
-
-Next: confirm whether the actual mounted input bundle contains one of the allowlisted data-dictionary or operator-attestation filenames. If not, ask for the intended exact filename and document it before changing the allowlist.
+- `docs/BUNDLE_CAPABILITY_RESOLUTION.md`
+- `docs/IMPLEMENTATION_PROGRESS.md`
+- `tools/STATE.md`
