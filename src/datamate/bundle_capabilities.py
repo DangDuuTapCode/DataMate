@@ -5,6 +5,26 @@ from .bundles import RequiredRelationship
 
 
 @dataclass(frozen=True)
+class RevenueJoinContract:
+    """Exact source-qualified key columns approved for detail-to-order revenue."""
+
+    line_table: tuple[str, str]
+    order_table: tuple[str, str]
+    line_key_column_index: int
+    order_key_column_index: int
+    canonical_keys: tuple[str, ...] = ("order_id",)
+
+    def to_dict(self):
+        return {
+            "line_table": {"table_name": self.line_table[0], "source": self.line_table[1]},
+            "order_table": {"table_name": self.order_table[0], "source": self.order_table[1]},
+            "line_key_column_index": self.line_key_column_index,
+            "order_key_column_index": self.order_key_column_index,
+            "canonical_keys": list(self.canonical_keys),
+        }
+
+
+@dataclass(frozen=True)
 class BundleCapabilityResolution:
     bundle_id: str
     status: str
@@ -19,6 +39,7 @@ class BundleCapabilityResolution:
     reasons: tuple[str, ...] = ()
     approved_table_scope: tuple[tuple[str, str], ...] = ()
     executor_source_shape: str | None = None
+    revenue_join_contract: RevenueJoinContract | None = None
 
     @property
     def available(self):
@@ -46,6 +67,10 @@ class BundleCapabilityResolution:
                 for name, source in self.approved_table_scope
             ],
             "executor_source_shape": self.executor_source_shape,
+            "revenue_join_contract": (
+                self.revenue_join_contract.to_dict()
+                if self.revenue_join_contract is not None else None
+            ),
         }
 
 
@@ -159,6 +184,7 @@ class BundleCapabilityResolver:
         scope_mismatch = False
         approved_table_scope = ()
         executor_source_shape = None
+        revenue_join_contract = None
         if bundle.rule_profile == "collection_rules":
             role = verified.get("payment_source_role")
             policy = verified.get("settled_payment_status_policy")
@@ -269,7 +295,36 @@ class BundleCapabilityResolver:
                     or (item.status == "validated" and item not in validated)
                 ]
                 if len(validated) == 1 and not invalid:
-                    pass
+                    relationship = validated[0]
+                    relationship_keys = tuple(
+                        relationship.canonical_keys or (relationship.canonical_key,)
+                    )
+                    from_identity = (relationship.from_table, relationship.from_source)
+                    to_identity = (relationship.to_table, relationship.to_source)
+                    from_indices = tuple(
+                        relationship.from_column_indices or (relationship.from_column_index,)
+                    )
+                    to_indices = tuple(
+                        relationship.to_column_indices or (relationship.to_column_index,)
+                    )
+                    if relationship_keys != ("order_id",) or len(from_indices) != 1 or len(to_indices) != 1:
+                        unverified_capabilities.append("revenue_executor_source_shape")
+                    elif from_identity == line_identity and to_identity == order_identity:
+                        revenue_join_contract = RevenueJoinContract(
+                            line_table=line_identity,
+                            order_table=order_identity,
+                            line_key_column_index=from_indices[0],
+                            order_key_column_index=to_indices[0],
+                        )
+                    elif from_identity == order_identity and to_identity == line_identity:
+                        revenue_join_contract = RevenueJoinContract(
+                            line_table=line_identity,
+                            order_table=order_identity,
+                            line_key_column_index=to_indices[0],
+                            order_key_column_index=from_indices[0],
+                        )
+                    else:
+                        unverified_capabilities.append("revenue_executor_source_shape")
                 elif invalid:
                     rejected_relationships.extend(invalid)
                 elif len(validated) > 1:
@@ -324,4 +379,5 @@ class BundleCapabilityResolver:
             reasons=tuple(dict.fromkeys(reasons)),
             approved_table_scope=approved_table_scope,
             executor_source_shape=executor_source_shape,
+            revenue_join_contract=revenue_join_contract,
         )
