@@ -87,3 +87,22 @@ See `docs/NEXT_SESSION_HANDOFF.md` for the resume checklist and `tools/STATE.md`
 The contest archive exposed identifier families absent from the original four-key relationship vocabulary. The semantic mapper and relationship discovery now include exact aliases for employee IDs, supplier IDs, purchase receipt IDs, lot/batch IDs, branch IDs, and IMEI, while extending order/customer/product/payment receipt aliases. Generic `STT` and `Mã tham chiếu` remain unmapped. Relationship discovery still compares exact string values, checks overlap/cardinality/blanks/unmatched keys, and never executes joins.
 
 Regression coverage was added for exact alias mapping, generic-label rejection, and six many-to-one relationship families. These new code/test commits have not yet been verified by GitHub Actions; no local checkout or local test run is available.
+
+
+## Composite order-line relationship evidence
+
+The public-test POS SQLite business (`dev_006`) exposed a real composite relationship:
+- `chi_tiet_don_lo` refers to a sale detail row through both `MaHoaDon` and `SoThuTu`.
+- `MaHoaDon` alone is not sufficient because many detail rows belong to the same order.
+- The rulebook explicitly says identical rows of the same order are export duplicates and count once.
+- The inspected database has 72,411 sale-detail rows, of which 1,350 exact duplicate row groups are removed for relationship profiling; the remaining 71,061 rows have unique `(MaHoaDon, SoThuTu)` pairs.
+- The lot-allocation table has 72,710 rows, including multiple rows for a line that draws from multiple lots; all its composite order-line keys match the deduplicated detail table.
+
+Implemented:
+- `order_line_number` exact aliases (`Số thứ tự`, `No.`); generic `STT` remains unmapped.
+- Composite `order_id + order_line_number` relationship candidates with component key names and all participating column indices.
+- `SplitRules` parses the explicit same-order exact-duplicate clause. The rule is passed from `main.py` into schema catalog construction.
+- Composite relationship profiling removes exact duplicate rows only when that explicit rule is present. Without the clause, duplicate composite keys remain ambiguous.
+- Schema catalog version is now `1.1.0`.
+
+This is still relationship discovery only. No source table is mutated and no composite join is executed. Other composite/polymorphic relationships, such as stock-ledger references that require both document type and document number, remain unsupported.
