@@ -31,3 +31,12 @@ CI pending. No local checkout or local test execution was used.
 ## Next
 
 Wait for CI and fix any failures. Then inspect one representative multi-source question and its exact source README/rulebook evidence before deciding whether any execution wiring is justified. Keep current composite runtime unchanged until that evidence exists.
+
+
+## CI verification — fact join contract prototype
+
+- Latest checked Actions run: `44581612778`, head `77460ea68fcb1750b8a534e87727cb7e99d8e52f`.
+- 310 tests executed; 308 passed. All relationship-path and fact-join-contract feature tests passed.
+- The only two failures remain `test_no_large_files` and `test_no_secret_like_strings`, both reporting the pre-existing `CODEX PROGRESS` artifact.
+- Run: https://github.com/pl2n/DataMate/actions/runs/44581612778
+- Existing PR #1 remains open against upstream `main`, head updated with this branch. GitHub reports `mergeable=false`; no merge or PR mutation was performed.
