@@ -1,0 +1,222 @@
+# DataMate — Multi-Bundle Query Processing
+
+## Goal
+
+Allow one natural-language question to contain multiple independently resolved requirements.
+
+```text
+Question
+  -> Requirement Extraction
+  -> Requirement Resolution
+  -> Bundle Resolution
+  -> Composite Plan
+  -> Component Execution
+  -> Component Verification
+  -> Composite Verification
+  -> Answer
+```
+
+## Terminology
+
+- **Requirement:** one operation needed to answer a question, with metric, time, entity, filters, dimensions, expected type, and resolution status.
+- **Facet:** one aspect of a requirement, such as metric, time, entity, filter, dimension, comparison, or aggregation.
+- **Bundle:** a logical query capability containing tables, semantic mappings, relationships, metric definitions, business rules, and provenance. It is not synonymous with a file or table.
+- **Composite plan:** multiple component plans plus shared context.
+
+## First vertical slice
+
+The first supported composite is “Doanh thu và tiền thực thu tháng này”.
+
+| Requirement | Metric | Bundle |
+|---|---|---|
+| R1 | `revenue` | `revenue` |
+| R2 | `collected_amount` | `collection` |
+
+Both components share the same resolved period and entity context. They retain separate metric-specific calculation rules.
+
+## Current implementation boundary
+
+`src/datamate/composite.py` contains:
+
+- `CompositePlanner`, which accepts the existing `financial_metric_comparison` intent.
+- Requirement, component, and composite-plan data structures.
+- Explicit-period and unresolved-entity checks.
+- Two ordinary `QuerySpec`/`QueryPlan` component pairs.
+- Side-by-side output only.
+
+The main pipeline routes this composite before the ordinary single-plan path. Other supported single intents retain the existing execution path.
+
+## Execution and verification
+
+Each component reuses `Executor.execute_with_reason`. Each candidate is passed through `verify_with_reason`. The composite verifier checks component count, expected numeric type, evidence, and final table shape.
+
+**All-or-nothing:** if one required component fails execution or verification, the complete answer abstains. The engine must not silently return only the successful component.
+
+## Output contract
+
+```json
+{
+  "id": "question-id",
+  "type": "table",
+  "answer": {
+    "columns": ["metric", "value"],
+    "rows": [
+      ["revenue", 15000000],
+      ["collected_amount", 12000000]
+    ]
+  }
+}
+```
+
+Component candidates, execution reasons, and evidence remain in the trace.
+
+## Deliberate non-goals
+
+- Arbitrary splitting on `and` or `và`.
+- Three or more metrics.
+- Arithmetic differences or ratios.
+- Cross-period comparisons.
+- Dynamic bundle discovery.
+- Partial answers when a required component fails.
+- Joins based only on similar column names.
+
+## Next stages
+
+1. Cross-check every accepted evidence assertion against the active split rulebook and the exact executor behavior.
+2. Verify recorded source digests using controlled, known source locations; never follow arbitrary paths from evidence payloads.
+3. Extend source-shape or metric support only with new versioned contracts, tests, and reviewed business-rule evidence.
+
+Do not add automatic joins, arbitrary conjunction splitting, derived metrics, or partial composite answers until their evidence contracts are explicit.
+
+## Regression requirements
+
+Test component ordering, shared context, unchanged single-metric behavior, implicit time abstention, unresolved entities, unsupported breakdowns, all-or-nothing failure, evidence preservation, table output schema, and the existing regression suite.
+
+
+## Relationship evidence before bundle composition
+
+The initial relationship validator lives in `src/datamate/relationships.py`. It requires shared, unambiguous canonical key mappings and exact key-value overlap. It reports cardinality and refuses partial child-key coverage, blank child keys, and many-to-many join risks. It does not execute joins.
+
+This is a prerequisite for future multi-bundle plans, not an authorization to join tables automatically. Metric-specific business rules and query-specific join approval remain mandatory.
+
+
+## Declarative bundle registry
+
+`src/datamate/bundles.py` now provides an explicit `BundleRegistry` mapping metric IDs to logical bundle IDs, existing executor intents, output types, required capability labels, and rule-profile labels.
+
+The first registry contains only:
+- `revenue` → `revenue` bundle → existing `revenue` executor.
+- `collected_amount` → `collection` bundle → existing `collected_amount` executor.
+
+`CompositePlanner` resolves the fixed first-slice pair through this registry. Unknown or duplicate requirements fail closed. This is a registry foundation, not yet general multi-intent extraction or dynamic bundle discovery.
+
+
+### Bundle registry implementation status
+
+The composite planner now resolves its existing revenue/collected-amount pair through `BundleRegistry`. Unknown metrics, duplicate requirements, unsupported output types, or bundle definitions that do not support the shared period/entity context fail closed. This remains a fixed first-slice pair; it is not arbitrary multi-intent parsing.
+
+CI run `44547696247`: 216 tests, 214 passed; the only two failures are the pre-existing repository-hygiene checks against `CODEX PROGRESS`. See https://github.com/pl2n/DataMate/actions/runs/44547696247.
+
+
+## Schema catalog integration status
+
+The versioned `BusinessSchemaCatalog` now combines exact semantic column mappings with key/cardinality relationship evidence. It keeps table identity source-qualified and serializes all mapping and relationship evidence. This catalog is a metadata layer only; it does not perform joins or make metrics executable.
+
+CI run `44548265235`: 219 tests, 217 passed. The only two failures are pre-existing repository-hygiene checks on `CODEX PROGRESS`.
+
+
+## Requirement extraction
+
+`src/datamate/requirements.py` separates requirement extraction from plan compilation. The initial allowlisted rule translates the already-recognized `financial_metric_comparison` QuerySpec into two independent requirements: `revenue` and `collected_amount`.
+
+The composite planner consumes these requirements, resolves each through `BundleRegistry`, and creates separate existing executor plans. Single intents and unknown/unresolved requirements do not enter the composite path. Arbitrary conjunction splitting remains explicitly unsupported.
+
+
+## Requirement extraction status
+
+The requirement model and extraction layer are now separate from composite plan compilation. The first rule remains limited to the parser's existing `financial_metric_comparison` intent. Follow-up CI run `44548881088` executed 222 tests with no code/test errors; 220 passed, while the two pre-existing `CODEX PROGRESS` hygiene assertions remain failing.
+
+
+## Versioned requirement payload
+
+The output of `RequirementExtractor` is serialized and validated against `schemas/requirement_extraction.v1.schema.json` before plan compilation. The contract enforces typed requirement fields, unique metric IDs and requirement IDs, and consistency between resolved/unresolved status and failure reason. Invalid payloads fail closed.
+
+
+## Versioned requirement contract status
+
+The composite requirement payload is versioned at `1.0.0` and validated before component planning. CI run `44549585604` executed 226 tests with no code/test errors; 224 passed. Only two pre-existing repository-hygiene checks against `CODEX PROGRESS` remain failing.
+
+
+## Explicit composite rule registry
+
+`RequirementExtractor` now resolves QuerySpec intents through `CompositeRuleRegistry`. Each rule declares the recognized intent, ordered metric IDs, and comparison type. The default registry contains only the current financial pair. This permits future reviewed combinations without embedding more metric pairs inside the planner, but does not itself add new parser cues or arbitrary text splitting.
+
+
+## Composite rule registry status
+
+Composite intent-to-metric combinations are now data-driven through an explicit `CompositeRuleRegistry`. The default rule remains the existing revenue + collected-amount pair; a synthetic custom-rule test demonstrates plan composition for another allowlisted metric pair without adding natural-language splitting. CI run `44550215128`: 230 tests, no code/test errors, 228 passed; only the two existing `CODEX PROGRESS` hygiene checks remain failing.
+
+
+## Shared-context compatibility gate
+
+Before creating component plans, the composite planner now rejects populated filters, non-metric dimensions, sort options, and top-k settings. This prevents the previous component-spec construction from silently clearing a constraint that the user asked for. The parser's internal `metric` dimension marker remains allowed.
+
+
+### Repository hygiene baseline clarified — 2026-11-19
+
+- The two recurring CI failures are inherited from upstream `DangDuuTapCode/DataMate` `main`; the fork contains the identical `CODEX PROGRESS` blob (SHA `1190ffbe02bd0081e84786f6fb4f09ee5d7f588f`).
+- The file is 2,058,368 bytes, causing the existing 1 MB hygiene limit to fail.
+- The configured secret-like regex has one match inside a Google search URL's `mstk` query parameter in that file; the surrounding context identifies it as a search URL parameter, not an API-key field. The other configured credential patterns have no matches.
+- No credential value is copied into this note. The file and hygiene tests were not changed because this is an inherited upstream artifact, not part of the feature work.
+
+## Bundle capability resolution
+
+Bundle definitions now declare exact canonical fields and optional required
+relationship shapes. BundleCapabilityResolver checks these against
+BusinessSchemaCatalog and reports missing/ambiguous fields, field co-location
+conflicts, missing/rejected relationships, and business-rule capabilities that
+remain unverified.
+
+Required fields must co-occur in at least one source table. The resolver does
+not assemble a bundle from unrelated columns spread across different tables;
+future multi-table bundles must declare and validate their relationship path
+explicitly.
+
+CompositePlanner can be given a schema catalog. When supplied, it refuses to
+compile if any component bundle is not available. The collection bundle declares three exact required columns: payment-event
+amount, payment date, and payment status. The status field is mandatory for
+composite capability so the executor can apply its successful-only policy. Revenue has no flat
+required-field list yet because its executor accepts alternative source shapes
+(direct line facts or a detail-to-order path); pretending those are one
+same-table field set would be inaccurate. Both default bundles remain unavailable unless the business supplies reviewed
+source-role and business-rule evidence. Structural header mapping alone does
+not prove that an amount is eligible revenue or that a payment status means
+settled.
+
+No join is executed and no existing metric calculation changes. See
+docs/BUNDLE_CAPABILITY_RESOLUTION.md.
+
+### Bundle capability resolution CI
+
+GitHub Actions run 44554164419 executed 241 tests: 239 passed and the same two inherited CODEX PROGRESS hygiene checks failed. The new resolver and planner-gating tests passed; no feature-test failures were reported.
+The production entry point now builds and caches a BusinessSchemaCatalog per business and supplies it to CompositePlanner. Revenue intentionally has no flat field tuple until its alternative direct-line/detail-to-order source shapes are represented. Collection requires payment-event amount, payment date, and payment status. Its payment-role and successful-only policy claims must be verified and scoped to the same table.
+
+
+## Production runtime capability gate
+
+The main pipeline builds one BusinessSchemaCatalog per business from the same ingested tables used by Executor and passes it to a per-business CompositePlanner. A runner regression confirms that mapped headers alone do not enable the default financial composite while source-role and business-rule capabilities remain unverified.
+
+CI run 44555242526: 242 tests, 240 passed; only the two inherited CODEX PROGRESS hygiene checks failed. Feature tests passed.
+
+
+## Business-rule evidence runtime
+
+A business may supply `data/<business_id>/business_rule_evidence.json`, validated against `schemas/business_rule_evidence.v1.schema.json`. The runtime loads it per business and passes it to `CompositePlanner` / `BundleCapabilityResolver`. Missing or invalid evidence blocks the composite and is recorded in the trace. Evidence must match the exact business and table identities.
+
+The resolver also requires a validated many-to-one `order_id` path for a revenue detail-to-order source shape. Collection requires the payment amount, date, and status fields together, with the source-role and settled-status claims scoped to the same payment table. Existing single-metric behavior remains unchanged.
+
+## Evidence-scope validation
+
+Collection fields are checked only within the exact payment table named by both reviewed claims. Revenue detail-to-order validates the relationship between the ordered line/order scope, allowing the catalog's edge orientation to reflect source-table iteration order. Direct-line claims must scope one table.
+
+The runner has an end-to-end regression proving that a valid evidence file enables the two-bundle side-by-side result; absent or invalid evidence remains fail-closed. Latest CI run 44560238399: 259 tests, 257 passed, with only the two inherited CODEX PROGRESS hygiene failures.

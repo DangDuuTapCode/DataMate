@@ -1,4 +1,5 @@
 import unittest
+import hashlib
 import json
 import tempfile
 from pathlib import Path
@@ -17,6 +18,7 @@ def _write_test_rulebook(root):
         "| Bán chạy | theo số lượng |\n"
         "| Bằng nhau | theo mã tăng dần; không có mã thì theo tên |\n"
         "| Tỉ lệ đơn hủy trong kỳ | phần trăm đơn hủy trong mọi đơn đặt trong kỳ, mọi trạng thái |\n"
+        "| Trạng thái thanh toán được tính là tiền thực thu | chỉ giao dịch thanh toán thành công |\n"
         "| Tết năm Y, dịp Tết, mùa Tết | Từ ngày 23 tháng Chạp năm âm Y-1 đến hết mùng 10 tháng Giêng năm âm Y. Khi so sánh với trước Tết, lấy cùng số ngày ngay trước ngày bắt đầu. |\n",
         encoding="utf-8",
     )
@@ -29,6 +31,55 @@ def _write_test_calendar(root):
         "2026-02-26,4,10,1,2026,false,\n"
         "2026-05-31,7,15,4,2026,false,\n",
         encoding="utf-8",
+    )
+
+
+def _write_complete_business_rule_evidence(data_dir):
+    rulebook_digest = hashlib.sha256(
+        (data_dir.parent.parent / "rulebook.md").read_bytes()
+    ).hexdigest()
+
+    def claim(capability_id, assertion, table_name, source):
+        return {
+            "capability_id": capability_id,
+            "status": "verified",
+            "assertion": assertion,
+            "table_scope": [{"table_name": table_name, "source": source}],
+            "provenance": {
+                "source_type": "rulebook",
+                "reference": "rulebook.md#reviewed-financial-policy",
+                "sha256": rulebook_digest,
+                "reviewed_by": "synthetic-reviewer",
+                "reviewed_at": "2026-11-19T10:00:00+07:00",
+            },
+        }
+
+    payload = {
+        "schema_version": "1.0.0",
+        "business_id": "biz",
+        "profiles": [
+            {
+                "profile_id": "revenue_rules",
+                "version": "1.0.0",
+                "evidence": [
+                    claim("revenue_executor_source_shape", "direct_line", "sales", "sales.csv"),
+                    claim("eligible_sales_amount", "line_amount_after_line_discount", "sales", "sales.csv"),
+                    claim("sale_period", "order_date", "sales", "sales.csv"),
+                    claim("order_status_semantics", "exclude_cancelled_returned_failed", "sales", "sales.csv"),
+                ],
+            },
+            {
+                "profile_id": "collection_rules",
+                "version": "1.0.0",
+                "evidence": [
+                    claim("payment_source_role", "payment_event_or_receipt", "payments", "payments.csv"),
+                    claim("settled_payment_status_policy", "successful_status_only", "payments", "payments.csv"),
+                ],
+            },
+        ],
+    }
+    (data_dir / "business_rule_evidence.json").write_text(
+        json.dumps(payload), encoding="utf-8"
     )
 
 
@@ -78,6 +129,193 @@ class ApiTests(unittest.TestCase):
             self.assertEqual(output.read_text(encoding="utf-8"), '{"id":"q","type":"abstain"}\n')
             trace = json.loads((logs / "trace.jsonl").read_text(encoding="utf-8"))
             self.assertEqual(trace["verification"], {"status": "abstained", "reason_code": "missing_time_range"})
+
+    def test_runner_gates_composite_queries_on_business_schema_capabilities(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            _write_test_rulebook(root)
+            data = root / "data" / "biz"
+            data.mkdir(parents=True)
+            (data / "sales.csv").write_text(
+                chr(10).join([
+                    "Tổng sau giảm giá,Ngày đặt,Trạng thái đơn hàng",
+                    "100,2026-03-01,Hoàn thành",
+                ]) + chr(10),
+                encoding="utf-8",
+            )
+            (data / "payments.csv").write_text(
+                chr(10).join([
+                    "Thanh toán / Giá trị,Thanh toán / Ngày,Thanh toán / Trạng thái",
+                    "80,2026-03-01,Đã thanh toán",
+                ]) + chr(10),
+                encoding="utf-8",
+            )
+            (root / "questions.jsonl").write_text(
+                json.dumps({
+                    "id": "q",
+                    "business_id": "biz",
+                    "question": "doanh thu và tiền thực thu tháng này",
+                    "as_of_date": "2026-03-02",
+                }) + chr(10),
+                encoding="utf-8",
+            )
+            output, logs = root / "result" / "submission.jsonl", root / "result" / "logs"
+            run(root, output, logs)
+
+            self.assertEqual(
+                output.read_text(encoding="utf-8"),
+                '{"id":"q","type":"abstain"}' + chr(10),
+            )
+            trace = json.loads((logs / "trace.jsonl").read_text(encoding="utf-8"))
+            self.assertNotIn("composite_query_plan", trace)
+            self.assertEqual(trace["verification"]["reason_code"], "unsupported_intent")
+            self.assertEqual(trace["business_rule_evidence"]["status"], "missing")
+            self.assertTrue(trace["bundle_capability_resolutions"])
+            self.assertIn(
+                "business_rule_capabilities_unverified",
+                trace["bundle_capability_resolutions"][0]["reasons"],
+            )
+
+    def test_runner_executes_composite_with_valid_scoped_business_evidence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            _write_test_rulebook(root)
+            data = root / "data" / "biz"
+            data.mkdir(parents=True)
+            (data / "sales.csv").write_text(
+                "Ngày đặt,Tên sản phẩm,Thành tiền,Trạng thái\n"
+                "2026-03-01,Trà,42,Hoàn thành\n",
+                encoding="utf-8",
+            )
+            (data / "other_sales.csv").write_text(
+                "Ngày đặt,Tên sản phẩm,Thành tiền,Trạng thái\n"
+                "2026-03-01,Cà phê,900,Hoàn thành\n",
+                encoding="utf-8",
+            )
+            (data / "payments.csv").write_text(
+                "Thanh toán / Giá trị,Thanh toán / Ngày,Thanh toán / Trạng thái\n"
+                "30,2026-03-01,Thành công\n",
+                encoding="utf-8",
+            )
+            (data / "payment_archive.csv").write_text(
+                "Thanh toán / Giá trị,Thanh toán / Ngày,Thanh toán / Trạng thái\n"
+                "700,2026-03-01,Thành công\n",
+                encoding="utf-8",
+            )
+            _write_complete_business_rule_evidence(data)
+            (root / "questions.jsonl").write_text(
+                json.dumps({
+                    "id": "q",
+                    "business_id": "biz",
+                    "question": "doanh thu và tiền thực thu tháng này",
+                    "as_of_date": "2026-03-02",
+                }) + "\n",
+                encoding="utf-8",
+            )
+            output, logs = root / "result" / "submission.jsonl", root / "result" / "logs"
+            run(root, output, logs)
+
+            record = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(record["type"], "table")
+            self.assertEqual(
+                record["answer"]["rows"],
+                [["revenue", 42], ["collected_amount", 30]],
+            )
+            trace = json.loads((logs / "trace.jsonl").read_text(encoding="utf-8"))
+            self.assertEqual(trace["business_rule_evidence"]["status"], "loaded")
+            self.assertEqual(
+                [item["status"] for item in trace["bundle_capability_resolutions"]],
+                ["available", "available"],
+            )
+            components = trace["composite_query_plan"]["components"]
+            self.assertEqual(
+                components[0]["table_scope"],
+                [["sales", "sales.csv"]],
+            )
+            self.assertEqual(components[0]["executor_source_shape"], "direct_line")
+            self.assertEqual(
+                components[1]["table_scope"],
+                [["payments", "payments.csv"]],
+            )
+
+    def test_runner_rejects_business_rule_evidence_digest_mismatch(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            _write_test_rulebook(root)
+            data = root / "data" / "biz"
+            data.mkdir(parents=True)
+            (data / "sales.csv").write_text(
+                "Ngày đặt,Tên sản phẩm,Thành tiền,Trạng thái\n"
+                "2026-03-01,Trà,42,Hoàn thành\n",
+                encoding="utf-8",
+            )
+            (data / "payments.csv").write_text(
+                "Thanh toán / Giá trị,Thanh toán / Ngày,Thanh toán / Trạng thái\n"
+                "30,2026-03-01,Thành công\n",
+                encoding="utf-8",
+            )
+            _write_complete_business_rule_evidence(data)
+            evidence_path = data / "business_rule_evidence.json"
+            payload = json.loads(evidence_path.read_text(encoding="utf-8"))
+            payload["profiles"][0]["evidence"][0]["provenance"]["sha256"] = "b" * 64
+            evidence_path.write_text(json.dumps(payload), encoding="utf-8")
+            (root / "questions.jsonl").write_text(
+                json.dumps({
+                    "id": "q",
+                    "business_id": "biz",
+                    "question": "doanh thu và tiền thực thu tháng này",
+                    "as_of_date": "2026-03-02",
+                }) + "\n",
+                encoding="utf-8",
+            )
+            output, logs = root / "result" / "submission.jsonl", root / "result" / "logs"
+            run(root, output, logs)
+
+            self.assertEqual(
+                output.read_text(encoding="utf-8"),
+                '{"id":"q","type":"abstain"}' + "\n",
+            )
+            trace = json.loads((logs / "trace.jsonl").read_text(encoding="utf-8"))
+            self.assertEqual(trace["business_rule_evidence"]["status"], "invalid")
+            self.assertIn("SHA-256 mismatch", trace["business_rule_evidence"]["error"])
+            self.assertNotIn("composite_query_plan", trace)
+
+    def test_runner_rejects_invalid_business_rule_evidence_without_crashing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            _write_test_rulebook(root)
+            data = root / "data" / "biz"
+            data.mkdir(parents=True)
+            (data / "sales.csv").write_text(
+                "Tổng sau giảm giá,Ngày đặt,Trạng thái đơn hàng\n"
+                "100,2026-03-01,Hoàn thành\n",
+                encoding="utf-8",
+            )
+            (data / "payments.csv").write_text(
+                "Thanh toán / Giá trị,Thanh toán / Ngày,Thanh toán / Trạng thái\n"
+                "80,2026-03-01,Đã thanh toán\n",
+                encoding="utf-8",
+            )
+            (data / "business_rule_evidence.json").write_text("{", encoding="utf-8")
+            (root / "questions.jsonl").write_text(
+                json.dumps({
+                    "id": "q",
+                    "business_id": "biz",
+                    "question": "doanh thu và tiền thực thu tháng này",
+                    "as_of_date": "2026-03-02",
+                }) + chr(10),
+                encoding="utf-8",
+            )
+            output, logs = root / "result" / "submission.jsonl", root / "result" / "logs"
+            run(root, output, logs)
+
+            self.assertEqual(
+                output.read_text(encoding="utf-8"),
+                '{"id":"q","type":"abstain"}' + chr(10),
+            )
+            trace = json.loads((logs / "trace.jsonl").read_text(encoding="utf-8"))
+            self.assertEqual(trace["business_rule_evidence"]["status"], "invalid")
+            self.assertNotIn("composite_query_plan", trace)
 
     def test_runner_requires_the_split_rulebook(self):
         with tempfile.TemporaryDirectory() as directory:

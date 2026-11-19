@@ -2,6 +2,7 @@
 import csv
 import json
 import posixpath
+import re
 import sqlite3
 import zipfile
 from pathlib import Path
@@ -117,16 +118,131 @@ def _csv(path):
                                  code="malformed_csv", stats=stats) from error
     else:
         raise IngestionError(path, "could not decode CSV with supported encodings", code="unsupported_encoding")
-    return [Table(path.stem, headers, rows, path.name, row_locations=locations, ingestion_stats=stats)]
+    return [Table(
+        path.stem, headers, rows, path.name, row_locations=locations,
+        ingestion_stats=stats, header_rows=(tuple(headers),), header_row_numbers=(1,),
+    )]
+
+
+def _column_number(name):
+    number = 0
+    for character in name:
+        number = number * 26 + ord(character.upper()) - 64
+    return number
+
+
+def _xlsx_merge_ranges(stream):
+    """Read merge references without retaining worksheet row payloads."""
+    ranges = []
+    stack = []
+    for event, element in ET.iterparse(stream, events=("start", "end")):
+        if event == "start":
+            stack.append(element)
+            continue
+        if element.tag.endswith("}mergeCell"):
+            reference = element.attrib.get("ref")
+            if reference:
+                ranges.append(reference)
+        if element.tag.endswith("}row"):
+            if len(stack) > 1:
+                stack[-2].remove(element)
+            element.clear()
+        if stack:
+            stack.pop()
+    return ranges
+
+
+def _multirow_header(preamble, merge_ranges):
+    """Return a conservative two-row grouped header, or None when uncertain.
+
+    Only horizontal merged groups on one row are considered. At least two
+    distinct groups must be present; a single merged report title is not a
+    grouped header and is deliberately ignored.
+    """
+    for index in range(len(preamble) - 1):
+        group_row_number, group_values = preamble[index]
+        leaf_row_number, leaf_values = preamble[index + 1]
+        if leaf_row_number != group_row_number + 1:
+            continue
+        if not leaf_values or not all(
+            isinstance(value, str) and value.strip()
+            for value in leaf_values.values()
+        ):
+            continue
+
+        columns = sorted(leaf_values, key=_column_number)
+        groups = []
+        for reference in merge_ranges:
+            match = re.fullmatch(r"([A-Z]+)(\d+):([A-Z]+)(\d+)", reference.upper())
+            if not match:
+                continue
+            first_col, first_row, last_col, last_row = match.groups()
+            if int(first_row) != group_row_number or int(last_row) != group_row_number:
+                continue
+            first_index, last_index = _column_number(first_col), _column_number(last_col)
+            if last_index <= first_index:
+                continue
+            group_label = group_values.get(first_col, "")
+            if not isinstance(group_label, str) or not group_label.strip():
+                continue
+            covered = [
+                column for column in columns
+                if first_index <= _column_number(column) <= last_index
+            ]
+            if len(covered) < 2 or len(covered) != last_index - first_index + 1:
+                continue
+            groups.append((first_col, first_index, last_index, group_label.strip()))
+
+        if len({group[3] for group in groups}) < 2:
+            continue
+
+        group_starts = {group[0] for group in groups}
+        nonempty_group_cells = {
+            column for column, value in group_values.items()
+            if str(value).strip()
+        }
+        if not nonempty_group_cells.issubset(group_starts):
+            continue
+
+        expanded_groups = {}
+        for _, first_index, last_index, label in groups:
+            for column in columns:
+                column_index = _column_number(column)
+                if first_index <= column_index <= last_index:
+                    expanded_groups[column] = label
+
+        headers = [
+            f"{expanded_groups[column]} / {leaf_values[column].strip()}"
+            if column in expanded_groups
+            else leaf_values[column].strip()
+            for column in columns
+        ]
+        normalized = [header.casefold() for header in headers]
+        if len(set(normalized)) != len(normalized):
+            continue
+
+        raw_header_rows = (
+            tuple(str(group_values.get(column, "")) for column in columns),
+            tuple(str(leaf_values.get(column, "")) for column in columns),
+        )
+        return {
+            "start_index": index,
+            "end_index": index + 1,
+            "row_numbers": (group_row_number, leaf_row_number),
+            "columns": columns,
+            "headers": headers,
+            "raw_rows": raw_header_rows,
+        }
+    return None
 
 
 def _xlsx(path):
     """Read XLSX sheets one XML row at a time while retaining raw cell values.
 
     Leading report titles, filter rows, and blank rows are skipped by selecting
-    the widest complete text row among the first 32 worksheet rows as the
-    header. Incomplete schemas still fail closed; grouped labels are not
-    concatenated or guessed.
+    a conservative two-row merged-header pattern when explicit grouped ranges
+    are present, otherwise the widest complete text row among the first 32 rows.
+    Ambiguous grouped layouts are not reconstructed.
     """
     try:
         with zipfile.ZipFile(path) as archive:
@@ -158,6 +274,8 @@ def _xlsx(path):
                 table_name = f"{path.stem}:{sheet_name}"
                 rows, locations = [], []
                 stats = IngestionStats()
+                with archive.open(member) as merge_stream:
+                    merge_ranges = _xlsx_merge_ranges(merge_stream)
                 with archive.open(member) as stream:
                     row_iterator = iter(_xlsx_rows(stream, shared))
                     preamble_all = []
@@ -175,44 +293,65 @@ def _xlsx(path):
                         yield Table(table_name, [], [], path.name, issues=["empty_sheet"],
                                     date_system=date_system, ingestion_stats=stats)
                         continue
-                    candidates = [
-                        index for index, (_, values) in enumerate(preamble)
-                        if values and all(isinstance(value, str) and value.strip() for value in values.values())
-                    ]
-                    if not candidates:
-                        potential = [
-                            index for index, (_, values) in enumerate(preamble)
-                            if values and all(isinstance(value, str) for value in values.values())
-                        ]
-                        if potential:
-                            widest = max(len(preamble[index][1]) for index in potential)
-                            index = next(index for index in potential if len(preamble[index][1]) == widest)
-                            row_number, values = preamble[index]
-                            columns = tuple(sorted(values, key=lambda key: (len(key), key)))
-                            _validate_headers(
-                                path,
-                                [str(values.get(column, "")).strip() for column in columns],
-                                source=f"worksheet {sheet_name!r} at row {row_number}",
-                            )
-                        raise IngestionError(
-                            path,
-                            f"worksheet {sheet_name!r} has no complete text header in its first 32 rows",
-                            code="missing_header",
-                            stats=stats,
-                        )
-                    width = max(len(preamble[index][1]) for index in candidates)
-                    header_index = next(index for index in candidates if len(preamble[index][1]) == width)
-                    header_row, header_values = preamble[header_index]
-                    columns = tuple(sorted(header_values, key=lambda key: (len(key), key)))
-                    headers = [str(header_values.get(column, "")).strip() for column in columns]
-                    _validate_headers(path, headers, source=f"worksheet {sheet_name!r} at row {header_row}")
-                    header_key = tuple(header.casefold() for header in headers)
-                    stats.header_rows = 1
-                    header_physical_index = next(
-                        index for index, (number, _) in enumerate(preamble_all) if number == header_row
-                    )
 
-                    for _, values in preamble_all[:header_physical_index]:
+                    multi_header = _multirow_header(preamble, merge_ranges)
+                    if multi_header is not None:
+                        header_start_index = next(
+                            index for index, (number, _) in enumerate(preamble_all)
+                            if number == multi_header["row_numbers"][0]
+                        )
+                        header_end_index = next(
+                            index for index, (number, _) in enumerate(preamble_all)
+                            if number == multi_header["row_numbers"][1]
+                        )
+                        columns = multi_header["columns"]
+                        headers = multi_header["headers"]
+                        raw_header_rows = multi_header["raw_rows"]
+                        header_row_numbers = multi_header["row_numbers"]
+                    else:
+                        candidates = [
+                            index for index, (_, values) in enumerate(preamble)
+                            if values and all(isinstance(value, str) and value.strip() for value in values.values())
+                        ]
+                        if not candidates:
+                            potential = [
+                                index for index, (_, values) in enumerate(preamble)
+                                if values and all(isinstance(value, str) for value in values.values())
+                            ]
+                            if potential:
+                                widest = max(len(preamble[index][1]) for index in potential)
+                                index = next(index for index in potential if len(preamble[index][1]) == widest)
+                                row_number, values = preamble[index]
+                                columns = tuple(sorted(values, key=_column_number))
+                                _validate_headers(
+                                    path,
+                                    [str(values.get(column, "")).strip() for column in columns],
+                                    source=f"worksheet {sheet_name!r} at row {row_number}",
+                                )
+                            raise IngestionError(
+                                path,
+                                f"worksheet {sheet_name!r} has no complete text header in its first 32 rows",
+                                code="missing_header",
+                                stats=stats,
+                            )
+                        width = max(len(preamble[index][1]) for index in candidates)
+                        header_index = next(index for index in candidates if len(preamble[index][1]) == width)
+                        header_row, header_values = preamble[header_index]
+                        columns = tuple(sorted(header_values, key=_column_number))
+                        headers = [str(header_values.get(column, "")).strip() for column in columns]
+                        _validate_headers(path, headers, source=f"worksheet {sheet_name!r} at row {header_row}")
+                        raw_header_rows = (tuple(headers),)
+                        header_row_numbers = (header_row,)
+                        header_start_index = next(
+                            index for index, (number, _) in enumerate(preamble_all) if number == header_row
+                        )
+                        header_end_index = header_start_index
+
+                    _validate_headers(path, headers, source=f"worksheet {sheet_name!r} at rows {header_row_numbers}")
+                    header_key = tuple(header.casefold() for header in headers)
+                    stats.header_rows = len(header_row_numbers)
+
+                    for _, values in preamble_all[:header_start_index]:
                         stats.source_records += 1
                         stats.skipped_rows += 1
                         stats.preamble_rows_skipped += 1
@@ -245,13 +384,17 @@ def _xlsx(path):
                         locations.append(SourceLocation(path.name, table_name, row_number))
                         stats.accepted_rows += 1
 
-                    for row_number, values in preamble_all[header_physical_index + 1:]:
+                    for row_number, values in preamble_all[header_end_index + 1:]:
                         retain_row(row_number, values)
                     for row_number, values in row_iterator:
                         retain_row(row_number, values)
                 if headers:
-                    yield Table(table_name, headers, rows, path.name, row_locations=locations,
-                                date_system=date_system, ingestion_stats=stats)
+                    yield Table(
+                        table_name, headers, rows, path.name,
+                        row_locations=locations, date_system=date_system,
+                        ingestion_stats=stats, header_rows=raw_header_rows,
+                        header_row_numbers=header_row_numbers,
+                    )
     except (ET.ParseError, OSError, zipfile.BadZipFile, KeyError, ValueError) as error:
         if isinstance(error, IngestionError):
             raise
@@ -319,7 +462,15 @@ def read_questions(path):
 
 
 def profile(tables):
-    return [{"name": t.name, "source": t.source, "rows": len(t.rows), "columns": t.headers,
-             "date_system": t.date_system, "issues": list(t.issues),
-             "ingestion_stats": vars(t.ingestion_stats),
-             "reconciled": t.ingestion_stats.reconciled} for t in tables]
+    return [{
+        "name": table.name,
+        "source": table.source,
+        "rows": len(table.rows),
+        "columns": table.headers,
+        "header_rows": [list(row) for row in table.header_rows],
+        "header_row_numbers": list(table.header_row_numbers),
+        "date_system": table.date_system,
+        "issues": list(table.issues),
+        "ingestion_stats": vars(table.ingestion_stats),
+        "reconciled": table.ingestion_stats.reconciled,
+    } for table in tables]

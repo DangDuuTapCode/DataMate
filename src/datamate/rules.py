@@ -51,3 +51,46 @@ def valid_revenue_status(value):
 
 def cancelled_status(value):
     return classify_order_status(value) == "cancelled"
+
+
+
+def classify_payment_status(value):
+    """Classify explicit payment outcomes independently from order outcomes.
+
+    Unknown labels return None so collection execution can abstain rather than
+    treating an unfamiliar payment state as settled.
+    """
+    status = fold(value)
+    if not status:
+        return None
+
+    padded = f" {status} "
+    if any(term in status for term in (
+        "hoan tien", "da hoan tien", "refund", "refunded", "chargeback",
+        "reversed", "reversal", "thu hoi",
+    )):
+        return "refunded"
+    if (
+        " cancel " in padded or status.startswith("cancel")
+        or " huy " in padded or status.startswith("huy")
+        or "void" in status
+    ):
+        return "cancelled"
+    if any(term in status for term in (
+        "that bai", "failed", "declined", "tu choi", "khong thanh cong", "payment error",
+    )):
+        return "failed"
+    if any(term in status for term in (
+        "cho thanh toan", "chua thanh toan", "dang xu ly", "pending",
+        "processing", "awaiting payment", "authorized", "authorization",
+    )):
+        return "pending"
+    if status in {
+        "paid", "settled", "captured", "success", "successful", "succeeded",
+        "completed", "complete", "thanh cong",
+    } or any(term in status for term in (
+        "da thanh toan", "thanh toan thanh cong", "hoan thanh",
+        "da thu", "da nhan tien", "payment received", "payment successful",
+    )):
+        return "successful"
+    return None

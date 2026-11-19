@@ -51,6 +51,8 @@ class Table:
     date_system: str | None = None
     issues: list[str] = field(default_factory=list)
     ingestion_stats: IngestionStats = field(default_factory=IngestionStats)
+    header_rows: tuple[tuple[str, ...], ...] = field(default_factory=tuple)
+    header_row_numbers: tuple[int, ...] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True)

@@ -1,7 +1,9 @@
 import unittest
 import datetime as dt
+from dataclasses import replace
 
 from datamate.metrics import Executor
+from datamate.bundle_capabilities import RevenueJoinContract
 from datamate.rules import classify_order_status
 from datamate.split_rules import SplitRules
 from datamate.timeparse import resolve
@@ -25,6 +27,154 @@ class PipelineTests(unittest.TestCase):
 
     def test_time_week_is_monday_to_sunday(self):
         self.assertEqual(resolve("doanh thu tuần trước", "2026-03-04"), ("2026-02-23", "2026-03-01"))
+
+    def test_collected_amount_uses_grouped_payment_status_and_only_successful_events(self):
+        table = Table(
+            "payments",
+            ["Thanh toán / Giá trị", "Thanh toán / Ngày", "Thanh toán / Trạng thái"],
+            [
+                [40000, "2026-03-01", "Hoàn thành"],
+                [10000, "2026-03-01", "Đã thanh toán"],
+                [20000, "2026-03-02", "Chờ thanh toán"],
+                [30000, "2026-03-02", "Thanh toán thất bại"],
+                [40000, "2026-03-02", "Đã hoàn tiền"],
+                [60000, "2026-03-02", "Đã hủy"],
+            ],
+            source="payments.xlsx",
+        )
+        question = "tiền thực thu tháng này"
+        plan = self.planner.plan(question, "2026-03-04")
+        candidate = Executor([table]).execute(plan, question)
+
+        self.assertEqual(candidate["answer"], 50000)
+
+    def test_collected_amount_abstains_on_unknown_payment_status(self):
+        table = Table(
+            "payments",
+            ["Ngày thu", "Giá trị", "Trạng thái thanh toán"],
+            [["2026-03-01", 40000, "Đã thanh toán"], ["2026-03-02", 10000, "Đang đối soát"]],
+            source="payments.xlsx",
+        )
+        question = "tiền thực thu tháng này"
+        plan = self.planner.plan(question, "2026-03-04")
+        self.assertIsNone(Executor([table]).execute(plan, question))
+
+    def test_revenue_source_shape_forces_detail_to_order_path(self):
+        details = Table(
+            "chi_tiet_don_hang",
+            ["Mã đơn hàng", "Mã hàng", "Tên hàng", "Thành tiền"],
+            [["A", "SP-1", "Trà", 42000]],
+            source="chi_tiet_don_hang.csv",
+        )
+        orders = Table(
+            "don_hang",
+            ["Mã đơn hàng", "Ngày đặt", "Trạng thái đơn hàng", "Tên sản phẩm", "Thành tiền"],
+            [["A", "2026-03-01", "Hoàn thành", "Tổng hóa đơn", 999000]],
+            source="don_hang.csv",
+        )
+        question = "doanh thu tháng này"
+        plan = self.planner.plan(question, "2026-03-04")
+
+        forced = Executor(
+            [details, orders],
+            revenue_source_shape="detail_to_order",
+        ).execute(plan, question)
+        automatic = Executor([details, orders]).execute(plan, question)
+
+        self.assertEqual(forced["answer"], 42000)
+        self.assertEqual(automatic["answer"], 999000)
+
+    def test_detail_to_order_duplicate_line_abstains_without_rulebook_policy(self):
+        details = Table(
+            "chi_tiet_don_hang",
+            ["Mã đơn hàng", "Mã hàng", "Tên hàng", "Thành tiền"],
+            [
+                ["A", "SP-1", "Trà", 42000],
+                ["A", "SP-1", "Trà", 42000],
+            ],
+            source="chi_tiet_don_hang.csv",
+        )
+        orders = Table(
+            "don_hang",
+            ["Mã đơn hàng", "Ngày đặt", "Trạng thái đơn hàng"],
+            [["A", "2026-03-01", "Hoàn thành"]],
+            source="don_hang.csv",
+        )
+        question = "doanh thu tháng này"
+        plan = self.planner.plan(question, "2026-03-04")
+        rules = replace(
+            SplitRules.test_defaults(),
+            deduplicate_identical_order_lines=False,
+        )
+
+        candidate = Executor(
+            [details, orders], rules=rules, revenue_source_shape="detail_to_order"
+        ).execute(plan, question)
+
+        self.assertIsNone(candidate)
+
+    def test_detail_to_order_duplicate_line_counts_once_with_rulebook_policy(self):
+        details = Table(
+            "chi_tiet_don_hang",
+            ["Mã đơn hàng", "Mã hàng", "Tên hàng", "Thành tiền"],
+            [
+                ["A", "SP-1", "Trà", 42000],
+                ["A", "SP-1", "Trà", 42000],
+            ],
+            source="chi_tiet_don_hang.csv",
+        )
+        orders = Table(
+            "don_hang",
+            ["Mã đơn hàng", "Ngày đặt", "Trạng thái đơn hàng"],
+            [["A", "2026-03-01", "Hoàn thành"]],
+            source="don_hang.csv",
+        )
+        question = "doanh thu tháng này"
+        plan = self.planner.plan(question, "2026-03-04")
+        rules = replace(
+            SplitRules.test_defaults(),
+            deduplicate_identical_order_lines=True,
+        )
+
+        candidate = Executor(
+            [details, orders], rules=rules, revenue_source_shape="detail_to_order"
+        ).execute(plan, question)
+
+        self.assertIsNotNone(candidate)
+        self.assertEqual(candidate["answer"], 42000)
+
+    def test_detail_to_order_executor_uses_approved_key_column_indices(self):
+        details = Table(
+            "details",
+            ["Mã đơn hàng", "Mã giao dịch", "Mã hàng", "Tên hàng", "Thành tiền"],
+            [["WRONG-LINE-KEY", "A", "SP-1", "Trà", 42000]],
+            source="details.xlsx",
+        )
+        orders = Table(
+            "orders",
+            ["Mã đơn hàng", "Mã giao dịch", "Ngày đặt", "Trạng thái đơn hàng"],
+            [["WRONG-ORDER-KEY", "A", "2026-03-01", "Hoàn thành"]],
+            source="orders.xlsx",
+        )
+        contract = RevenueJoinContract(
+            line_table=("details", "details.xlsx"),
+            order_table=("orders", "orders.xlsx"),
+            line_key_column_index=1,
+            order_key_column_index=1,
+        )
+        question = "doanh thu tháng này"
+        plan = self.planner.plan(question, "2026-03-04")
+
+        candidate = Executor(
+            [details, orders],
+            rules=SplitRules.test_defaults(),
+            revenue_source_shape="detail_to_order",
+            revenue_join_contract=contract,
+        ).execute(plan, question)
+
+        self.assertIsNotNone(candidate)
+        self.assertEqual(candidate["answer"], 42000)
+        self.assertEqual(candidate["evidence"], ["details+orders"])
 
     def test_revenue_drops_cancelled_orders(self):
         self.assertEqual(self.answer("doanh thu tháng này")["answer"], 40000)
@@ -224,6 +374,7 @@ class PipelineTests(unittest.TestCase):
             ["F", "2026-02-06", "completed"],
         ])
         rules = SplitRules.from_text("""| Đơn tính vào doanh thu | đơn không huỷ và không trả hàng. Đơn đang giao vẫn tính |
+| Hai dòng của cùng một đơn giống nhau ở mọi ô | lỗi xuất file, tính một lần |
 | Đơn thuộc kỳ nào | theo ngày đặt |
 | Doanh thu một đơn | thành tiền các dòng đã trừ giảm giá trên từng dòng |
 | Bán chạy | theo số lượng |
@@ -392,6 +543,7 @@ class PipelineTests(unittest.TestCase):
 | Bán chạy | theo **số lượng** quy về đơn vị cơ bản |
 | Bằng nhau | theo **mã tăng dần**; không có mã thì theo tên |
 | Tỉ lệ đơn hủy trong kỳ | phần trăm đơn hủy trong mọi đơn đặt trong kỳ, mọi trạng thái |
+| Trạng thái thanh toán được tính là tiền thực thu | chỉ giao dịch thanh toán thành công |
 """)
         self.assertTrue(rules.revenue_supported)
         self.assertEqual(rules.revenue_excluded_statuses, frozenset({"cancelled", "returned", "delivery_failed"}))
@@ -399,6 +551,19 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(rules.ranking_default, "quantity")
         self.assertEqual(rules.tie_breaker, "code_or_name")
         self.assertEqual(rules.cancellation_numerator_statuses, frozenset({"cancelled"}))
+        self.assertEqual(rules.revenue_amount_basis, "line_amount_after_line_discount")
+        self.assertEqual(rules.revenue_period_basis, "order_date")
+        self.assertEqual(rules.collection_status_policy, "successful_status_only")
+
+    def test_split_rulebook_without_collection_clause_does_not_authorize_payment_policy(self):
+        rules = SplitRules.from_text("""| Đơn tính vào doanh thu | đơn không huỷ, không trả hàng |
+| Đơn thuộc kỳ nào | theo ngày đặt |
+| Doanh thu một đơn | thành tiền các dòng hàng đã trừ giảm giá |
+| Bán chạy | theo số lượng |
+| Bằng nhau | theo mã tăng dần; không có mã thì theo tên |
+| Tỉ lệ đơn hủy trong kỳ | đơn hủy |
+""")
+        self.assertIsNone(rules.collection_status_policy)
 
     def test_revenue_does_not_fall_back_to_order_total(self):
         table = Table("orders", ["Mã đơn", "Ngày đặt", "Tổng đơn", "Phải thu"], [

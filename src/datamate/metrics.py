@@ -4,7 +4,7 @@ from functools import lru_cache
 
 from .normalization import infer_decimal_separator, parse_date, parse_decimal
 from .normalise import fold, tokens
-from .rules import classify_order_status
+from .rules import classify_order_status, classify_payment_status
 from .split_rules import SplitRules
 from .types import Table
 
@@ -126,6 +126,37 @@ def _is_payment_table(table):
     return any(term in role for term in ("thanh toan", "phieu thu", "payment", "receipt"))
 
 
+def _payment_grouped_column(headers, leaf_aliases):
+    """Resolve a leaf header only inside an explicit payment group."""
+    candidates = []
+    allowed_groups = {"thanh toan", "lich su thanh toan", "payment"}
+    for index, header in enumerate(headers):
+        raw = str(header or "")
+        if " / " not in raw:
+            continue
+        group, leaf = raw.rsplit(" / ", 1)
+        if fold(group) in allowed_groups and fold(leaf) in leaf_aliases:
+            candidates.append(index)
+    return candidates[0] if len(candidates) == 1 else None
+
+
+def _payment_status_column(headers):
+    """Resolve only an explicit payment-status header, including grouped headers."""
+    exact = _exact_column(headers, ("trang thai thanh toan", "payment status"))
+    if exact is not None:
+        return exact
+    candidates = []
+    allowed_groups = {"thanh toan", "lich su thanh toan", "payment"}
+    for index, header in enumerate(headers):
+        raw = str(header or "")
+        if " / " not in raw:
+            continue
+        group, leaf = raw.rsplit(" / ", 1)
+        if fold(group) in allowed_groups and fold(leaf) == "trang thai":
+            candidates.append(index)
+    return candidates[0] if len(candidates) == 1 else None
+
+
 def _is_inventory_table(table):
     role = fold(f"{table.name} {table.source}")
     return any(term in role for term in ("the kho", "ton kho", "inventory", "stock ledger"))
@@ -239,17 +270,28 @@ def _money(value):
 
 class Executor:
     """Allowlist executor. Incomplete or ambiguous evidence returns None."""
-    def __init__(self, tables, rules=None):
+    def __init__(
+        self, tables, rules=None, *, revenue_source_shape=None,
+        revenue_join_contract=None,
+    ):
         self.tables = tables
         self.rules = rules or SplitRules.test_defaults()
+        self.revenue_source_shape = revenue_source_shape
+        self.revenue_join_contract = revenue_join_contract
         self._order_metadata_cache = {}
         self._table_date_range_cache = {}
 
     def _revenue_fact(self, start=None, end=None):
-        candidates = self._revenue_candidates()
-        if candidates:
-            return self._select_period_revenue_candidate(candidates, start, end)
-        joined = self._daily_revenue_fact(start, end)
+        if self.revenue_source_shape == "direct_line":
+            candidates = self._revenue_candidates()
+            return candidates[0] if len(candidates) == 1 else None
+        if self.revenue_source_shape == "detail_to_order":
+            joined = self._daily_revenue_fact(start, end, allow_direct=False)
+        else:
+            candidates = self._revenue_candidates()
+            if candidates:
+                return self._select_period_revenue_candidate(candidates, start, end)
+            joined = self._daily_revenue_fact(start, end)
         if joined is None:
             return None
         table, date_col, value_col, status_col, _ = joined
@@ -353,11 +395,11 @@ class Executor:
                 pass
         return str(value).strip().casefold()
 
-    def _daily_revenue_fact(self, start=None, end=None):
+    def _daily_revenue_fact(self, start=None, end=None, *, allow_direct=True):
         """Find direct line facts or one complete, one-to-many invoice join."""
         if not self.rules.revenue_supported:
             return None
-        direct = self._revenue_candidates()
+        direct = self._revenue_candidates() if allow_direct else []
         if direct:
             selected = self._select_period_revenue_candidate(direct, start, end)
             if selected is None:
@@ -365,8 +407,16 @@ class Executor:
             table, date_col, value_col, _, status_col, _ = selected
             return table, date_col, value_col, status_col, [table.name]
 
+        join_contract = self.revenue_join_contract
+        if join_contract is not None and tuple(join_contract.canonical_keys) != ("order_id",):
+            return None
+
         line_candidates = []
         for table in self.tables:
+            if join_contract is not None and (
+                table.name, table.source
+            ) != tuple(join_contract.line_table):
+                continue
             if (
                 _is_payment_table(table) or _is_inventory_table(table)
                 or _is_purchase_table(table) or _is_delivery_table(table)
@@ -374,9 +424,15 @@ class Executor:
             ):
                 continue
             value_col = _revenue_amount_column(table)
-            line_key_col = _column(table.headers, ORDER)
+            line_key_col = (
+                join_contract.line_key_column_index
+                if join_contract is not None else _column(table.headers, ORDER)
+            )
             has_item_identity = _product_column(table.headers) is not None or _product_key_column(table.headers) is not None
-            if value_col is not None and line_key_col is not None and has_item_identity:
+            if (
+                value_col is not None and line_key_col is not None
+                and 0 <= line_key_col < len(table.headers) and has_item_identity
+            ):
                 line_candidates.append((table, value_col, line_key_col))
         if len(line_candidates) != 1:
             return None
@@ -387,9 +443,18 @@ class Executor:
             for header in self.rules.revenue_date_headers
         )
         for table in self.tables:
+            if join_contract is not None and (
+                table.name, table.source
+            ) != tuple(join_contract.order_table):
+                continue
             if not _is_order_table(table):
                 continue
-            order_key_col = _column(table.headers, ORDER)
+            order_key_col = (
+                join_contract.order_key_column_index
+                if join_contract is not None else _column(table.headers, ORDER)
+            )
+            if order_key_col is None or not 0 <= order_key_col < len(table.headers):
+                continue
             date_choices = self.rules.revenue_date_headers
             if order_date_rule:
                 # "Ngày bán" is accepted as the order date only in a table
@@ -424,6 +489,11 @@ class Executor:
                 return None
             row_key = tuple((type(value).__name__, repr(value)) for value in row)
             if row_key in seen_line_rows:
+                # An exact duplicate sale line is an export error only when
+                # the active rulebook explicitly authorizes counting it once.
+                # Without that policy, do not silently change the metric.
+                if not self.rules.deduplicate_identical_order_lines:
+                    return None
                 continue
             seen_line_rows.add(row_key)
             order_date, order_status, order_id = order_rows[key]
@@ -712,9 +782,19 @@ class Executor:
             if not _is_payment_table(table):
                 continue
             date = _exact_column(table.headers, COLLECTION_DATE)
+            if date is None:
+                date = _payment_grouped_column(table.headers, {"ngay", "date"})
             value = _exact_column(table.headers, COLLECTED_AMOUNT)
+            if value is None:
+                value = _payment_grouped_column(table.headers, {"gia tri", "amount", "value"})
             if date is not None and value is not None:
-                candidates.append((table, date, value, _column(table.headers, STATUS)))
+                status = _payment_status_column(table.headers)
+                if status is None:
+                    # Preserve legacy single-metric behavior. The composite
+                    # capability gate separately requires an exact canonical
+                    # payment_status mapping before a bundle can be planned.
+                    status = _column(table.headers, STATUS)
+                candidates.append((table, date, value, status))
         return candidates[0] if len(candidates) == 1 else None
 
     def _period(self, table, date_column, start, end, status_column=None, accepted_only=True):
@@ -981,10 +1061,12 @@ class Executor:
                 settled = []
                 nonsettled = {"cancelled", "returned", "delivery_failed", "pending", "in_transit"}
                 for row in rows:
-                    status_class = classify_order_status(row[status_col])
+                    status_class = classify_payment_status(row[status_col])
                     if status_class == "successful":
                         settled.append(row)
-                    elif status_class in nonsettled:
+                    elif status_class in nonsettled or status_class in {
+                        "failed", "refunded", "reversed",
+                    }:
                         continue
                     else:
                         return None

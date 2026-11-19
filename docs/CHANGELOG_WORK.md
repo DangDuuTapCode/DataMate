@@ -239,3 +239,56 @@
 - Full suite: 127 run, 124 passed, 3 Git-only skips, exit 0. biz_127/biz_129 real-data smoke selected `don_hang` and `thanh_toan` respectively without printing answer amounts.
 - Frozen v8 train replay had the same prediction hash as v7 and unchanged quality: 47 correct, 37 wrong, 2,916 abstain; PA 0.33%, coverage 2.80%, answered accuracy 55.95%, runtime errors 0, p95 35 ms. In-sample only; no score improvement is claimed.
 - Checkpoint and hashes: `tools/checkpoints/2026-11-16T1103+07-00_REVENUE_COLLECTION_CONTRACT_COMPLETE.md`.
+
+
+## 2026-11-19 — Composite financial query vertical slice
+
+- Added `CompositePlanner`, requirement/component/composite-plan models, and all-or-nothing composite verification.
+- Routed the recognized revenue + collected-amount question through two independent existing metric executions.
+- Added synthetic tests for shared period context, unsupported cases, successful table output, and component failure abstention.
+- Added ingestion and multi-bundle architecture documentation plus a GitHub Actions test workflow. CI verification pending.
+
+
+### CI follow-up — 2026-11-19
+
+- The feature-branch workflow ran 197 tests. The newly added composite tests and functional tests passed; two repository-hygiene checks failed on the pre-existing `CODEX PROGRESS` file (size limit and secret-like pattern match).
+- No attempt was made to weaken the hygiene checks or remove the pre-existing file. See the checkpoint for details.
+
+
+## 2026-11-20 — relationship path candidate-bound hardening
+
+- Fixed an off-by-one condition in `resolve_relationship_path`: reaching exactly `max_candidates` is no longer treated as overflow. The resolver now observes one additional path before reporting that the configured bound was exceeded.
+- Invalid limits (non-positive, boolean, or non-integer) and malformed/blank table identities now fail closed as `invalid_request` instead of raising comparison/type errors or creating weak graph nodes.
+- Added six synthetic regressions: exact candidate limit, candidate-limit overflow, reverse-direction fanout, hop-limit enforcement, invalid limits, and cycle handling.
+- This remains discovery-only; no JOIN execution or metric enablement was added.
+- Commits: `4212165cece5a9167095984865aca98ae6362890` (resolver fix), `fe799c55ac9757a64007fbe03ef0a9028e6ff1f2` (tests).
+- CI pending for this commit range. No local checkout or local test execution was used.
+
+
+## Follow-up verification — 2026-11-20
+
+- The first added edge-case run exposed two incorrect test fixtures (cardinality direction and an assertion that expected a longer path despite a direct edge). The fixtures were corrected in commit `2522abbafdccb6bb930d3f79f9f0f13af8302d4f`; no production-code change was needed for those fixture failures.
+- GitHub Actions run `44580683573` on `2522abb` executed 299 tests. 297 passed, including all relationship-path tests. The only two failures are the inherited repository-hygiene checks for the pre-existing `CODEX PROGRESS` artifact.
+- Run: https://github.com/pl2n/DataMate/actions/runs/44580683573
+- The existing upstream PR #1 is open from `pl2n/DataMate:feature/multi-bundle-query` into `DangDuuTapCode/DataMate:main`. It was not created or modified in this work item. GitHub currently reports `mergeable=false`; this should be rechecked before any merge decision.
+
+
+## Fact join contract structural prototype (2026-11-20)
+
+- Added `src/datamate/join_contracts.py` with `FactJoinContract` and a fail-closed builder over a unique validated relationship path.
+- Contract records exact source-qualified fact/target tables, declared fact grain, measure field and physical measure index, aggregation stage, join type, and exact path hops/key indices.
+- Builder rejects fanout, unknown cardinality, ambiguous paths, endpoint mismatch, disconnected/repeated nodes, malformed composite key indices, invalid measure index, missing grain/measure declarations, unsupported join types, and pre-join aggregation.
+- Added synthetic tests in `tests/test_join_contracts.py` and documentation in `docs/FACT_JOIN_CONTRACT.md`.
+- This is a structural prototype only. It is not wired into planner/Executor and does not execute joins or enable a new metric. Grain/measure meaning still requires reviewed query-specific evidence.
+- Code commits: `bad2dcda57a71d8c78d7e49a2c84b969e3008071`, `2136219d904b5ce99671e3c3d285d5b60a638aae`, `f5b476972f779b5abe02bf14f8ca438ac143c90f`, `085284c1562af575d55bf12f80715de6b331e3b3`.
+- Documentation commit: `d87b325e158da97ab11f21380cb177e36d3ed680`.
+- CI verification pending. No local checkout or local test execution was used.
+
+
+## CI verification — fact join contract prototype
+
+- Latest checked Actions run: `44581612778`, head `77460ea68fcb1750b8a534e87727cb7e99d8e52f`.
+- 310 tests executed; 308 passed. All relationship-path and fact-join-contract feature tests passed.
+- The only two failures remain `test_no_large_files` and `test_no_secret_like_strings`, both reporting the pre-existing `CODEX PROGRESS` artifact.
+- Run: https://github.com/pl2n/DataMate/actions/runs/44581612778
+- Existing PR #1 remains open against upstream `main`, head updated with this branch. GitHub reports `mergeable=false`; no merge or PR mutation was performed.

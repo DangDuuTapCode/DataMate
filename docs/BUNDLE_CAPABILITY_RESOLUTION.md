@@ -1,0 +1,120 @@
+# Bundle capability resolution
+
+## Purpose
+
+The BundleRegistry describes allowlisted metric bundles. BundleCapabilityResolver checks structural requirements against BusinessSchemaCatalog and reviewed business-rule claims against BusinessRuleEvidence. It never performs joins or infers business meaning from column names or sample values.
+
+## Structural requirements
+
+A resolution is available only when:
+- every required canonical field has an unambiguous exact semantic mapping;
+- all required fields are co-located in at least one source table;
+- every declared relationship has validated status and the required cardinality;
+- no required relationship is rejected or ambiguous.
+
+The result distinguishes missing/ambiguous fields, field-group conflicts, missing/rejected relationships, unverified/rejected business capabilities, and the rule-profile version.
+
+## Supported relationship-key families
+
+The semantic catalog and relationship discovery currently recognize these exact identifier families:
+- order/invoice IDs: `order_id`;
+- customer IDs: `customer_id`;
+- product/item IDs and barcodes: `product_id`;
+- payment receipt/transaction IDs: `payment_transaction_id`;
+- employee/staff IDs: `employee_id`;
+- supplier/vendor IDs: `supplier_id`;
+- purchase receipt IDs: `purchase_receipt_id`;
+- lot/batch IDs: `batch_id`;
+- branch IDs: `branch_id`;
+- device IMEIs: `imei`;
+- order-line sequence: `order_line_number`, used only as part of the composite `order_id + order_line_number` key and never as a standalone join key.
+
+The schema catalog is now version `1.1.0`; relationship records expose `canonical_keys` and all participating column indices for composite links. The active rulebook may explicitly authorize exact duplicate order-line rows to be counted once. When that clause is present, relationship profiling deduplicates byte/value-identical rows before assessing the composite key; without the clause, duplicate keys remain ambiguous. This affects relationship evidence only and does not mutate source tables.
+
+The alias list is deliberately exact. Generic labels such as `STT`, `Mã tham chiếu`, `Mã`, and generic amount/date/status headers are not treated as keys. Identifier values are compared as exact strings; leading zeroes are preserved. Relationship evidence stores both table names and source filenames, so repeated worksheet names such as `Sheet1` remain distinct. Capability checks use the full `(table_name, source)` identity. Relationship results still require overlap and safe cardinality evidence. A detected or validated relationship is not an instruction to execute a join.
+
+## Business-rule evidence
+
+The v1 contract is defined in `schemas/business_rule_evidence.v1.schema.json` and read by `src/datamate/rule_evidence.py`. A business supplies an optional file at:
+
+`data/<business_id>/business_rule_evidence.json`
+
+Every verified claim is scoped to exact `table_name` and `source` identities and carries source type/reference, SHA-256, reviewer, and timezone-aware review timestamp. The runtime rejects unknown/malformed claims, wrong business IDs, and scope mismatches. SHA-256 is recorded and format-checked, but this version does not reopen arbitrary references to recompute the digest.
+
+## Revenue source alternatives
+
+Revenue supports:
+- `direct_line`: evidence scope must identify exactly one table.
+- `detail_to_order`: evidence scope must list the line table first and order table second. The schema catalog must contain a validated many-to-one `order_id` relationship from the first table to the second.
+
+Revenue amount, period, and status claims must be scoped within the declared source-shape tables. The executor remains the final guard for actual source columns and data quality.
+
+## Collection requirements
+
+The composite collection bundle requires three exact canonical fields co-located in one payment table:
+- `payment_event_amount`
+- `payment_date`
+- `payment_status`
+
+The `payment_source_role` and `settled_payment_status_policy` claims must both be verified and scoped to the same single table. The accepted policy is `successful_status_only`.
+
+The executor recognizes grouped payment amount/date/status headers and prefers the explicit payment-status column. A legacy generic-status fallback is retained for ordinary single-metric queries, but it cannot satisfy the composite capability gate.
+
+## Runtime behavior
+
+`main.run` loads evidence per business and passes it to CompositePlanner and BundleCapabilityResolver. Missing or invalid evidence blocks composite planning and is recorded in the trace as `missing` or `invalid`; capability-resolution details explain the block. The ordinary single-metric path remains available.
+
+No default evidence file is generated. A bundle becomes available only when structural requirements and all required reviewed claims pass. No automatic join is authorized by a validated relationship.
+
+## Verification
+
+GitHub Actions run `44558398515` executed 256 tests; 254 passed. All feature tests passed. The only two failures are inherited repository-hygiene checks against the upstream `CODEX PROGRESS` artifact.
+
+Run: https://github.com/pl2n/DataMate/actions/runs/44558398515
+
+
+## Active rulebook compatibility
+
+A verified evidence payload is necessary but not sufficient. The resolver cross-checks revenue amount, period, and order-status assertions against the active `SplitRules`. It also requires the collection successful-status-only assertion to match an explicit supported clause in the active rulebook. Missing collection policy leaves that bundle unavailable.
+
+The collection executor uses a dedicated payment-status classifier, separate from `classify_order_status`. Unknown payment labels cause abstention; recognized pending, failed, cancelled, refunded, or reversed states are excluded.
+
+
+## Execution scope binding
+
+The resolver returns the exact approved table identities and, for revenue, the reviewed source shape. CompositePlanner carries these into each QueryComponent. At runtime, main creates a component-specific Executor over only those exact tables. Revenue's direct-line and detail-to-order assertions are also enforced by the Executor; a detail-to-order claim disables the direct-candidate shortcut and uses the existing validated detail/order path.
+
+This prevents a second, unreviewed candidate table from being selected after the capability gate has approved a different table. Missing scope identities fail closed.
+
+
+## Provenance verification
+
+Runtime recomputes SHA-256 from exact bytes of allowlisted files only. Rulebooks resolve to the input-root `rulebook.md`; data dictionaries and operator attestations resolve to fixed filenames inside the business directory. Path traversal, external URLs, unknown names, missing files, any symlink source, paths resolving outside the input root, and digest mismatches fail closed.
+
+
+## Execution consumes the validated relationship columns
+
+For a reviewed revenue `detail_to_order` shape, capability resolution now emits a `RevenueJoinContract` containing:
+- exact detail-line table name and source filename;
+- exact order table name and source filename;
+- canonical key set (currently the single key `order_id`);
+- physical key-column index on each table.
+
+The contract is normalized to line-to-order direction even if schema discovery encountered the order table first. The composite planner carries it unchanged into the component Executor. When present, the Executor selects only those two source-qualified tables and uses the approved column indices. It does not independently choose another order-like column.
+
+This is intentionally narrower than a general join planner. Composite keys, polymorphic document references, multi-hop paths, and arbitrary dimension joins are not executable through this contract yet.
+
+
+## Conservative multi-hop relationship path discovery
+
+`src/datamate/relationship_paths.py` adds a discovery-only graph resolver over the catalog's relationship candidates. It does not execute joins and is not yet wired into metric execution.
+
+Contract:
+- Nodes are exact `(table_name, source_filename)` identities.
+- Only `validated` relationships are traversable; candidate, ambiguous, and rejected edges are ignored.
+- Every hop retains canonical key names and the physical column indices on both sides, including composite-key indices.
+- Traversal direction is evaluated against cardinality. A many-to-one traversal and one-to-one traversal preserve the source row grain; a one-to-many traversal is marked as fanout risk.
+- A path is accepted only when exactly one validated simple path exists within the caller's hop limit and every hop preserves source grain.
+- Multiple paths, no path, invalid requests, path-limit overflow, and fanout risk are explicit non-available statuses. No heuristic path ranking occurs.
+
+This is a structural path-discovery primitive only. It does not authorize a business calculation, resolve polymorphic references, infer business semantics, or make arbitrary multi-hop joins executable. A later execution contract must still declare the query's fact grain, aggregation stage, and acceptable fanout behavior.

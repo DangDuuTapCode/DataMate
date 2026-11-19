@@ -8,7 +8,7 @@ import zipfile
 from pathlib import Path
 from unittest.mock import patch
 
-from datamate.ingest import IngestionError, read_business
+from datamate.ingest import IngestionError, profile, read_business
 from datamate.types import SourceLocation
 
 
@@ -52,7 +52,16 @@ def _write_xlsx(path, sheets, *, date_1904=False, absolute_targets=False):
                     for column_number, value in enumerate(values, start=1)
                 )
                 rows.append(f'<row r="{row_number}">{cells}</row>')
-            sheet_xml = f'<worksheet xmlns="{MAIN_NS}"><sheetData>{"".join(rows)}</sheetData></worksheet>'
+            merge_cells = sheet.get("merges", [])
+            merge_xml = (
+                f'<mergeCells count="{len(merge_cells)}">'
+                + "".join(f'<mergeCell ref="{reference}"/>' for reference in merge_cells)
+                + '</mergeCells>'
+            ) if merge_cells else ""
+            sheet_xml = (
+                f'<worksheet xmlns="{MAIN_NS}"><sheetData>{"".join(rows)}</sheetData>'
+                f'{merge_xml}</worksheet>'
+            )
             archive.writestr(f"xl/worksheets/sheet{index}.xml", sheet_xml)
         date_properties = '<workbookPr date1904="1"/>' if date_1904 else ""
         workbook = (
@@ -77,6 +86,9 @@ class CsvIngestionTests(unittest.TestCase):
             self.assertEqual(table.headers, ["order_id", "amount"])
             self.assertEqual(table.rows, [["A", "12.50"], ["B", "3.00"]])
             self.assertEqual(table.source, "sales.csv")
+            self.assertEqual(table.header_rows, (("order_id", "amount"),))
+            self.assertEqual(table.header_row_numbers, (1,))
+            self.assertEqual(profile([table])[0]["header_row_numbers"], [1])
             self.assertEqual(table.row_locations, [
                 SourceLocation("sales.csv", "sales", 2),
                 SourceLocation("sales.csv", "sales", 3),
@@ -212,6 +224,50 @@ class XlsxIngestionTests(unittest.TestCase):
             self.assertEqual(stats.blank_rows_skipped, 2)
             self.assertEqual(stats.repeated_header_rows_skipped, 1)
             self.assertTrue(stats.reconciled)
+
+    def test_two_row_grouped_header_uses_merged_group_labels_and_preserves_raw_rows(self):
+        with tempfile.TemporaryDirectory() as directory:
+            _write_xlsx(Path(directory, "grouped.xlsx"), [{
+                "name": "Data",
+                "rows": [
+                    ["Thông tin đơn hàng", None, "Thanh toán", None],
+                    ["Mã đơn", "Ngày đặt", "Giá trị", "Trạng thái"],
+                    ["A1", "2026-03-01", 100000, "completed"],
+                ],
+                "merges": ["A1:B1", "C1:D1"],
+            }])
+            [table] = read_business(directory)
+            self.assertEqual(table.headers, [
+                "Thông tin đơn hàng / Mã đơn",
+                "Thông tin đơn hàng / Ngày đặt",
+                "Thanh toán / Giá trị",
+                "Thanh toán / Trạng thái",
+            ])
+            self.assertEqual(table.header_rows, (
+                ("Thông tin đơn hàng", "", "Thanh toán", ""),
+                ("Mã đơn", "Ngày đặt", "Giá trị", "Trạng thái"),
+            ))
+            self.assertEqual(table.header_row_numbers, (1, 2))
+            self.assertEqual(profile([table])[0]["header_rows"], [
+                ["Thông tin đơn hàng", "", "Thanh toán", ""],
+                ["Mã đơn", "Ngày đặt", "Giá trị", "Trạng thái"],
+            ])
+            self.assertEqual(table.rows, [["A1", "2026-03-01", 100000, "completed"]])
+            self.assertEqual(table.row_locations, [SourceLocation("grouped.xlsx", "grouped:Data", 3)])
+            self.assertEqual(table.ingestion_stats.header_rows, 2)
+            self.assertTrue(table.ingestion_stats.reconciled)
+
+    def test_single_merged_title_is_not_misread_as_a_grouped_header(self):
+        with tempfile.TemporaryDirectory() as directory:
+            _write_xlsx(Path(directory, "title.xlsx"), [{
+                "name": "Data",
+                "rows": [["Sales report", None], ["Date", "Amount"], ["2026-03-01", 42]],
+                "merges": ["A1:B1"],
+            }])
+            [table] = read_business(directory)
+            self.assertEqual(table.headers, ["Date", "Amount"])
+            self.assertEqual(table.header_row_numbers, (2,))
+            self.assertEqual(table.rows, [["2026-03-01", 42]])
 
     def test_malformed_xlsx_has_actionable_error(self):
         with tempfile.TemporaryDirectory() as directory:
