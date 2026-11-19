@@ -226,3 +226,13 @@ Next engineering step: design a query-specific execution contract on top of the 
 - CI pending for this commit range. No local checkout or local test execution was used.
 
 Next: wait for CI on the current branch head. If feature tests pass, design (but do not yet wire) a query-specific join/execution contract that binds a declared fact grain, aggregation stage, exact path, and fanout policy. The contest archive is not currently available through the file library in this session; do not claim a fresh public-test coverage audit or infer additional semantics without the source files.
+
+
+## Follow-up verification — 2026-11-20
+
+- The first added edge-case run exposed two incorrect test fixtures (cardinality direction and an assertion that expected a longer path despite a direct edge). The fixtures were corrected in commit `2522abbafdccb6bb930d3f79f9f0f13af8302d4f`; no production-code change was needed for those fixture failures.
+- GitHub Actions run `44580683573` on `2522abb` executed 299 tests. 297 passed, including all relationship-path tests. The only two failures are the inherited repository-hygiene checks for the pre-existing `CODEX PROGRESS` artifact.
+- Run: https://github.com/pl2n/DataMate/actions/runs/44580683573
+- The existing upstream PR #1 is open from `pl2n/DataMate:feature/multi-bundle-query` into `DangDuuTapCode/DataMate:main`. It was not created or modified in this work item. GitHub currently reports `mergeable=false`; this should be rechecked before any merge decision.
+
+Next: check PR #1 mergeability and CI after any subsequent pushes, but do not merge without the user's explicit direction. Keep multi-hop execution disabled until a query-specific grain/aggregation contract is designed and validated.
