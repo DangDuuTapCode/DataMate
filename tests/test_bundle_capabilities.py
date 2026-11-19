@@ -1,6 +1,8 @@
 import unittest
 from dataclasses import replace
 
+from datamate.split_rules import SplitRules
+
 from datamate.bundle_capabilities import BundleCapabilityResolver
 from datamate.rule_evidence import BusinessRuleEvidence
 from datamate.bundles import (
@@ -34,6 +36,13 @@ def _rule_claim(capability_id, assertion, table_scope):
             "reviewed_at": "2026-11-19T10:00:00+07:00",
         },
     }
+
+
+def _reviewed_split_rules():
+    return replace(
+        SplitRules.test_defaults(),
+        collection_status_policy="successful_status_only",
+    )
 
 
 def _complete_rule_evidence():
@@ -409,7 +418,7 @@ class BundleCapabilityResolverTests(unittest.TestCase):
 
 class BundleCapabilityPlannerIntegrationTests(unittest.TestCase):
     def setUp(self):
-        self.rule_planner = RulePlanner()
+        self.rule_planner = RulePlanner(split_rules=_reviewed_split_rules())
         self.spec = self.rule_planner.interpret(
             "doanh thu và tiền thực thu tháng này", "2026-03-04", "biz_synthetic"
         )

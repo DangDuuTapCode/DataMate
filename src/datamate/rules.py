@@ -87,7 +87,7 @@ def classify_payment_status(value):
         return "pending"
     if status in {
         "paid", "settled", "captured", "success", "successful", "succeeded",
-        "completed", "complete",
+        "completed", "complete", "thanh cong",
     } or any(term in status for term in (
         "da thanh toan", "thanh toan thanh cong", "hoan thanh",
         "da thu", "da nhan tien", "payment received", "payment successful",
