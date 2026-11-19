@@ -139,7 +139,7 @@ class SplitRules:
         whole = fold(text)
         deduplicate_identical_order_lines = (
             "hai dong cua cung mot don giong nhau o moi o" in whole
-            and "loi xuat file, tinh mot lan" in whole
+            and "loi xuat file tinh mot lan" in whole
         )
         if "theo ma tang dan" in whole or "by code ascending" in whole:
             tie_breaker = "code"
