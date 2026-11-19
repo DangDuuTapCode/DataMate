@@ -36,7 +36,7 @@ class SemanticMappingTests(unittest.TestCase):
             [
                 "Mã hóa đơn", "Mã KH mua", "Mã hàng hóa", "Mã NV bán",
                 "Mã NCC", "Mã phiếu nhập", "Mã lô", "Mã chi nhánh", "IMEI",
-                "STT", "Mã tham chiếu",
+                "Mã thanh toán", "STT", "Mã tham chiếu",
             ],
             [],
             "business.xlsx",
@@ -54,9 +54,10 @@ class SemanticMappingTests(unittest.TestCase):
             "batch_id": 6,
             "branch_id": 7,
             "imei": 8,
+            "payment_transaction_id": 9,
         })
-        self.assertEqual(schema.mappings[9].status, "unmapped")
         self.assertEqual(schema.mappings[10].status, "unmapped")
+        self.assertEqual(schema.mappings[11].status, "unmapped")
 
     def test_generic_amount_and_total_labels_are_not_guessed(self):
         table = Table(
