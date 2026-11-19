@@ -185,8 +185,9 @@ future multi-table bundles must declare and validate their relationship path
 explicitly.
 
 CompositePlanner can be given a schema catalog. When supplied, it refuses to
-compile if any component bundle is not available. The collection bundle declares the two exact required columns used by its
-current executor: payment-event amount and payment date. Revenue has no flat
+compile if any component bundle is not available. The collection bundle declares three exact required columns: payment-event
+amount, payment date, and payment status. The status field is mandatory for
+composite capability so the executor can apply its successful-only policy. Revenue has no flat
 required-field list yet because its executor accepts alternative source shapes
 (direct line facts or a detail-to-order path); pretending those are one
 same-table field set would be inaccurate. Both default bundles remain
@@ -208,3 +209,10 @@ The production entry point now builds and caches a BusinessSchemaCatalog per bus
 The main pipeline builds one BusinessSchemaCatalog per business from the same ingested tables used by Executor and passes it to a per-business CompositePlanner. A runner regression confirms that mapped headers alone do not enable the default financial composite while source-role and business-rule capabilities remain unverified.
 
 CI run 44555242526: 242 tests, 240 passed; only the two inherited CODEX PROGRESS hygiene checks failed. Feature tests passed.
+
+
+## Business-rule evidence runtime
+
+A business may supply `data/<business_id>/business_rule_evidence.json`, validated against `schemas/business_rule_evidence.v1.schema.json`. The runtime loads it per business and passes it to `CompositePlanner` / `BundleCapabilityResolver`. Missing or invalid evidence blocks the composite and is recorded in the trace. Evidence must match the exact business and table identities.
+
+The resolver also requires a validated many-to-one `order_id` path for a revenue detail-to-order source shape. Collection requires the payment amount, date, and status fields together, with the source-role and settled-status claims scoped to the same payment table. Existing single-metric behavior remains unchanged.

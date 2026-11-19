@@ -34,8 +34,17 @@ Unknown capability IDs, assertions, profiles, duplicate records, malformed prove
 
 These are a closed vocabulary, not automatic proof. A reviewer must confirm the assertion against an authoritative rulebook or data dictionary and record the source digest. A verified claim counts only when every scoped table exists in the matching business schema catalog with the exact table name and source.
 
-## Runtime boundary
+## Runtime integration
 
-This milestone introduces the versioned contract and strict reader. It does not automatically mark either default bundle available, alter executor calculations, infer missing policies, or enable new query intents. The subsequent integration step must pass validated evidence into `BundleCapabilityResolver` and preserve the fail-closed default when evidence is absent or scoped to a different table/business.
+The runtime reads an optional per-business file at `data/<business_id>/business_rule_evidence.json`. It passes a valid contract into `CompositePlanner` and then to `BundleCapabilityResolver`. Missing, malformed, wrong-business, rejected, or incorrectly scoped evidence leaves the corresponding bundle unavailable. The trace records evidence status and capability-resolution reasons.
 
-Collection status deserves particular care: the existing executor filters rows to statuses classified as successful only when a payment-status column exists. A safe bundle gate must therefore require an unambiguous `payment_status` field as well as reviewed policy evidence; it must not accept a status-less payment table as proof of settled collections.
+Additional safeguards:
+- Collection requires `payment_event_amount`, `payment_date`, and `payment_status` as unambiguous canonical fields co-located in one table.
+- The payment-source and settled-status claims must refer to the same exact table identity.
+- The executor recognizes grouped payment headers and selects the explicit payment-status column. Its legacy fallback remains for ordinary single-metric queries; the composite gate will not authorize that fallback without a canonical status mapping.
+- Revenue `detail_to_order` evidence requires an ordered scope of line table then order table and a validated many-to-one `order_id` relationship. A direct-line claim must scope exactly one table.
+- Revenue amount/date/status claims must be scoped within the declared source-shape tables.
+
+The SHA-256 value is recorded and format-checked; this version does not reopen arbitrary external references to recompute the digest. The reviewer is responsible for ensuring it matches the cited source. No default evidence file is generated and no business rule is inferred.
+
+The ordinary single-metric execution path is unchanged. Composite planning remains fail-closed when evidence is missing or invalid.

@@ -54,7 +54,15 @@
               "properties": {
                 "capability_id": {
                   "type": "string",
-                  "minLength": 1
+                  "minLength": 1,
+                  "enum": [
+                    "revenue_executor_source_shape",
+                    "eligible_sales_amount",
+                    "sale_period",
+                    "order_status_semantics",
+                    "payment_source_role",
+                    "settled_payment_status_policy"
+                  ]
                 },
                 "status": {
                   "type": "string",
@@ -68,6 +76,18 @@
                   "type": [
                     "string",
                     "null"
+                  ],
+                  "enum": [
+                    "direct_line",
+                    "detail_to_order",
+                    "line_amount_after_line_discount",
+                    "order_date",
+                    "delivery_date",
+                    "sales_date",
+                    "exclude_cancelled_returned_failed",
+                    "payment_event_or_receipt",
+                    "successful_status_only",
+                    null
                   ]
                 },
                 "table_scope": {

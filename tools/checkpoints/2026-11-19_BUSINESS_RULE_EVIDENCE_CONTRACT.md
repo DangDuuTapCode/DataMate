@@ -43,3 +43,17 @@ Load `data/<business_id>/business_rule_evidence.json` per business, pass validat
 Run `44556933123` on commit `f6d5115ea4099311ed3d01eeb0257abfa37818c4` executed 250 tests. All 8 new evidence-contract tests passed; 248 tests passed overall. Only the two inherited `CODEX PROGRESS` hygiene checks failed.
 
 Run: https://github.com/pl2n/DataMate/actions/runs/44556933123
+
+
+## Runtime integration result
+
+- `main.run` loads `data/<business_id>/business_rule_evidence.json` per business.
+- Valid evidence flows into CompositePlanner and BundleCapabilityResolver.
+- Missing/invalid evidence is traced and blocks composite planning without disabling ordinary single-metric queries.
+- Collection now requires canonical payment-event amount, payment date, and payment status in the same table; the two policy claims must share that exact table scope.
+- Grouped payment headers are handled by the executor. Explicit payment status is preferred, with legacy generic status retained only as a single-metric fallback.
+- Revenue detail-to-order assertions require a validated many-to-one `order_id` relationship from the first scoped table (line facts) to the second (orders).
+
+CI run `44558398515`: 256 tests, 254 passed; all feature tests passed. The only failures are inherited `CODEX PROGRESS` hygiene checks.
+
+Next: validate evidence assertions against actual split rules and design safe source-digest verification.

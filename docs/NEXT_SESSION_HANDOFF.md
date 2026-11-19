@@ -69,3 +69,23 @@ Wire the optional per-business evidence file (suggested path: `data/<business_id
 ## Business-rule evidence contract verification
 
 Commit `f6d5115ea4099311ed3d01eeb0257abfa37818c4` adds the strict reader/schema/tests and docs. GitHub Actions run `44556933123` executed 250 tests; all new evidence-contract tests passed, with 248 total passing. Only the two inherited `CODEX PROGRESS` hygiene checks failed. Run: https://github.com/pl2n/DataMate/actions/runs/44556933123
+
+
+## Latest milestone — business-rule evidence runtime integration
+
+Current branch head before this documentation update: `02dc61c983de696ded042f021e2f64f2b886c8e6`.
+
+The v1 evidence contract is now wired into production:
+- Runtime reads optional `data/<business_id>/business_rule_evidence.json`.
+- Valid evidence is passed to `CompositePlanner` and `BundleCapabilityResolver`.
+- Missing/invalid evidence blocks composite planning. Trace records evidence status and per-bundle resolution reasons.
+- Collection requires canonical payment-event amount, payment date, and payment status in one table. Source-role and successful-status policy claims must share the same exact table scope.
+- Grouped payment headers are recognized by the executor. Explicit payment status is preferred; legacy generic-status fallback remains for single-metric execution.
+- Revenue detail-to-order evidence requires ordered line/order table scope and validated many-to-one `order_id` relationship.
+- SHA-256 provenance is recorded and format-checked, but this version does not recompute it from arbitrary external references. Treat the reviewer as responsible for digest/source correspondence.
+
+CI run `44558398515`: 256 tests, 254 passed; all feature tests passed. The only failures are the two inherited `CODEX PROGRESS` hygiene checks. Run: https://github.com/pl2n/DataMate/actions/runs/44558398515
+
+## Next step
+
+Validate evidence assertions against the actual split rulebook and supported executor profile. Then design safe source-digest verification using controlled, known source locations. Keep absent/invalid evidence fail-closed; do not infer semantics from headers or sample values.

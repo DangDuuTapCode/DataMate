@@ -49,3 +49,8 @@ The pipeline entry point builds a BusinessSchemaCatalog once per business and
 passes it to that business's CompositePlanner. Thus catalog-gated capability
 resolution is active in production planning, not merely exposed as an optional
 test-only API.
+
+
+## Runtime evidence
+
+The runtime loads `data/<business_id>/business_rule_evidence.json` per business. Missing or invalid evidence blocks composite planning and is recorded in trace; ordinary single-metric execution remains available. Collection requires canonical payment amount, date, and status fields in one table. Revenue detail-to-order evidence requires a validated many-to-one `order_id` relationship.

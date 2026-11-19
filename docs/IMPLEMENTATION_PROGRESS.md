@@ -61,3 +61,20 @@ Integrate validated evidence with `BundleCapabilityResolver` and per-business ru
 - GitHub Actions run `44556933123`: 250 tests executed; all 8 new business-rule evidence tests passed. 248 tests passed overall; the only two failures are the inherited `CODEX PROGRESS` repository-hygiene checks.
 - Run: https://github.com/pl2n/DataMate/actions/runs/44556933123
 - Follow-up docs guide: `docs/BUSINESS_RULE_EVIDENCE.md`.
+
+
+## Business-rule evidence runtime integration — 2026-11-19
+
+- Added per-business loading from `data/<business_id>/business_rule_evidence.json`.
+- Passed validated evidence through `main.run` → `CompositePlanner` → `BundleCapabilityResolver`.
+- Trace records evidence status (`loaded`, `missing`, `invalid`) and capability-resolution reasons.
+- Collection composite requires canonical `payment_event_amount`, `payment_date`, and `payment_status` in one table. Role and settled-status claims must scope the same table.
+- Payment executor recognizes grouped payment amount/date/status headers and prefers the explicit payment-status column. Legacy generic-status fallback remains for ordinary single-metric queries.
+- Revenue detail-to-order evidence requires exact ordered line/order scope and a validated many-to-one `order_id` relationship.
+- CI run `44558398515`: 256 tests, 254 passed; only the two inherited `CODEX PROGRESS` hygiene checks failed. All feature tests passed.
+
+Run: https://github.com/pl2n/DataMate/actions/runs/44558398515
+
+## Next step
+
+Validate evidence assertions against the active split rulebook and executor profile, and design safe source-digest verification using controlled, known source locations. Do not enable capabilities on a claim whose policy contradicts runtime behavior.

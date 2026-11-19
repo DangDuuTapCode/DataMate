@@ -25,3 +25,13 @@
 - Branch head: `f6d5115ea4099311ed3d01eeb0257abfa37818c4` (business-rule evidence contract and test expectation correction).
 - CI run `44556933123`: 250 tests; 248 passed, including all new evidence-contract tests. Only the two inherited `CODEX PROGRESS` hygiene checks failed.
 - Run: https://github.com/pl2n/DataMate/actions/runs/44556933123
+
+
+## Latest business-rule evidence runtime state
+
+- Runtime loads `data/<business_id>/business_rule_evidence.json` and passes valid evidence into composite capability resolution.
+- Missing/invalid evidence is recorded in trace and blocks composite planning.
+- Collection composite requires payment-event amount, payment date, and payment status; status and source-role claims must be scoped to the same exact table.
+- Revenue detail-to-order evidence requires a validated many-to-one `order_id` relationship.
+- CI run `44558398515`: 256 tests, 254 passed; two inherited hygiene failures only. Feature tests passed.
+- Next: cross-check claims against the actual split rulebook/executor profile and design safe digest verification.
