@@ -23,13 +23,22 @@ combined to satisfy a single bundle's same-table field requirement.
 
 ## Important boundary
 
-A schema catalog proves structural observations, not business meaning. For
-example, a mapped payment_status column does not prove which values count as
-settled, and order_total_after_discount does not by itself establish all
-revenue eligibility/exclusion rules. Existing default financial bundles
-therefore retain their business-rule capability labels. Until a separately
-reviewed rulebook/evidence source can validate those labels, the resolver
-reports the bundle as unavailable even when all structural fields are present.
+A schema catalog proves structural observations, not business meaning. A
+mapped payment_status column does not prove which values count as settled.
+The collection executor currently requires a payment-role table, payment-event
+amount, and payment date; status is optional in its current source discovery,
+so the business policy for absent/present status remains unverified.
+
+Revenue has deliberately not been assigned a flat required-field list. Its
+executor supports either a direct line-grain source (date, line amount, and
+product identity) or a detail-to-order path (line amount and line identity
+linked to a dated/statused order table). A flat same-table tuple would misstate
+that contract. A future schema contract must represent these alternatives and
+their validated relationship path before revenue can be marked available.
+
+Existing default financial bundles therefore retain unverified source-role
+and business-rule capability labels. Until a separately reviewed evidence
+source validates them, the resolver reports the bundle as unavailable.
 
 The current revenue and collection calculations remain unchanged. No automatic
 joins are introduced. A bundle with no unverified rule capabilities can be

@@ -186,11 +186,14 @@ future multi-table bundles must declare and validate their relationship path
 explicitly.
 
 CompositePlanner can be given a schema catalog. When supplied, it refuses to
-compile if any component bundle is not available. The default revenue and
-collection bundles deliberately remain unavailable through this gate until
-their business-rule evidence is separately validated. Structural header
-mapping does not prove that an amount is eligible revenue or that a payment
-status means settled.
+compile if any component bundle is not available. The collection bundle declares the two exact required columns used by its
+current executor: payment-event amount and payment date. Revenue has no flat
+required-field list yet because its executor accepts alternative source shapes
+(direct line facts or a detail-to-order path); pretending those are one
+same-table field set would be inaccurate. Both default bundles remain
+unavailable through the gate until source-role and business-rule evidence is
+modeled and validated. Structural header mapping does not prove that an amount
+is eligible revenue or that a payment status means settled.
 
 No join is executed and no existing metric calculation changes. See
 docs/BUNDLE_CAPABILITY_RESOLUTION.md.

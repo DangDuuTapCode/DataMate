@@ -74,20 +74,29 @@ def default_bundle_registry():
             bundle_id="revenue",
             metric_id="revenue",
             executor_intent="revenue",
+            # The executor supports multiple source shapes (direct line facts
+            # or a detail-to-order path). Do not pretend one flat field list
+            # captures those alternatives until the source-shape contract exists.
             required_capabilities=(
+                "revenue_executor_source_shape",
                 "eligible_sales_amount",
                 "sale_period",
                 "order_status_semantics",
             ),
-            required_fields=("order_total_after_discount", "order_date", "order_status"),
             rule_profile="revenue_rules",
         ),
         BundleDefinition(
             bundle_id="collection",
             metric_id="collected_amount",
             executor_intent="collected_amount",
-            required_capabilities=("settled_payment_status",),
-            required_fields=("payment_event_amount", "payment_date", "payment_status"),
+            # These are the two required columns selected from a payment-role
+            # table. Status is optional in the current executor and is not
+            # incorrectly declared as a universally required field.
+            required_capabilities=(
+                "payment_source_role",
+                "settled_payment_status_policy",
+            ),
+            required_fields=("payment_event_amount", "payment_date"),
             rule_profile="collection_rules",
         ),
     ))

@@ -140,6 +140,11 @@ class BundleCapabilityResolverTests(unittest.TestCase):
         ])
         registry = default_bundle_registry()
 
+        self.assertEqual(registry.resolve("revenue").required_fields, ())
+        self.assertEqual(
+            registry.resolve("collected_amount").required_fields,
+            ("payment_event_amount", "payment_date"),
+        )
         revenue = self.resolver.resolve(registry.resolve("revenue"), catalog)
         collection = self.resolver.resolve(registry.resolve("collected_amount"), catalog)
 
@@ -147,9 +152,12 @@ class BundleCapabilityResolverTests(unittest.TestCase):
         self.assertFalse(collection.available)
         self.assertEqual(
             revenue.unverified_capabilities,
-            ("eligible_sales_amount", "sale_period", "order_status_semantics"),
+            ("revenue_executor_source_shape", "eligible_sales_amount", "sale_period", "order_status_semantics"),
         )
-        self.assertIn("settled_payment_status", collection.unverified_capabilities)
+        self.assertEqual(
+            collection.unverified_capabilities,
+            ("payment_source_role", "settled_payment_status_policy"),
+        )
         self.assertEqual(revenue.missing_fields, ())
         self.assertEqual(collection.missing_fields, ())
 

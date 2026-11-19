@@ -699,7 +699,7 @@ Review package: work/submission-build/public-test-submission-2026-11-15. JSONL S
 - Added BundleCapabilityResolver to check mapped fields, ambiguous mappings, missing/rejected relationships, and unverified business-rule capability labels against BusinessSchemaCatalog.
 - Required fields must co-occur in at least one source table; unrelated tables cannot collectively satisfy one bundle's field set.
 - CompositePlanner accepts an optional schema catalog and fails closed when any required bundle capability is unavailable.
-- Default revenue and collection bundles now declare their structural fields. They remain unavailable under catalog-gated planning until the separate business-rule evidence (eligible sales, sale-period meaning, order-status semantics, settled-payment semantics) is verified; column presence alone is not treated as proof.
+- Collection declares its exact required fields (payment-event amount and payment date). Revenue deliberately has no flat required-field list yet: the executor supports alternative direct-line and detail-to-order source shapes, which a simple same-table field tuple cannot represent accurately. Both default bundles remain unavailable under catalog-gated planning until source-role/business-rule evidence is modeled and verified.
 - No automatic joins or changes to existing metric calculations.
 - Added synthetic tests for available/missing/ambiguous/co-location field checks, validated/missing/rejected relationships, planner gating, and unverified default rule capabilities.
 - Design note: docs/BUNDLE_CAPABILITY_RESOLUTION.md.

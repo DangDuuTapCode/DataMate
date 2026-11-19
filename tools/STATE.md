@@ -646,7 +646,7 @@ python qstats.py public_test/ 15
 - Optional BusinessSchemaCatalog gating is now available in CompositePlanner.
 - Resolver distinguishes missing fields, ambiguous fields, required-field co-location conflicts, missing relationships, rejected relationships, and unverified business-rule capabilities.
 - Required fields must co-occur in at least one source table; unrelated tables cannot collectively satisfy one bundle.
-- Default revenue/collection bundles are structurally declared but remain unavailable under catalog-gated planning until a reviewed rulebook validates the required business semantics. This is intentional; header presence alone is insufficient.
+- Collection declares payment-event amount and payment date as its exact required fields. Revenue has no flat required-field list yet because its executor accepts alternative direct-line and detail-to-order source shapes. Both default bundles remain unavailable under catalog-gated planning until source-role and business-rule evidence is modeled and validated; header presence alone is insufficient.
 - No joins, executor calculations, parser behavior, or upstream repository content changed.
 - Tests added in tests/test_bundle_capabilities.py. CI pending for this milestone.
 - Design note: docs/BUNDLE_CAPABILITY_RESOLUTION.md.

@@ -7,8 +7,9 @@ Connected declarative bundle requirements to the business schema catalog without
 ## Changes
 
 - BundleDefinition now declares required canonical fields and optional RequiredRelationship specifications.
-- Default revenue bundle declares order_total_after_discount, order_date, and order_status.
-- Default collection bundle declares payment_event_amount, payment_date, and payment_status.
+- Collection declares payment_event_amount and payment_date as its required fields.
+- Revenue has no flat required-field list yet: the executor accepts alternative direct-line and detail-to-order source shapes, which cannot be represented accurately by one same-table field tuple.
+- Both default bundles retain unverified source-role/business-rule capabilities and remain unavailable under catalog-gated planning.
 - BundleCapabilityResolver checks exact mapped fields and validated relationship status/cardinality.
 - Required fields must co-occur in at least one source table. A bundle cannot be satisfied by combining unrelated fields across tables.
 - Resolution reports missing_fields, ambiguous_fields, field_group_conflicts, missing_relationships, rejected_relationships, unverified_capabilities, and reason codes.

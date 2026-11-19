@@ -643,7 +643,7 @@ The Public Submissions JSONL candidate is prepared and structurally verified, bu
 - Implemented BundleDefinition required canonical fields and RequiredRelationship declarations; added BundleCapabilityResolver and optional CompositePlanner schema-catalog gate.
 - Resolver reports missing/ambiguous fields, same-table field-group conflicts, missing/rejected relationships, and unverified business-rule capabilities.
 - Required fields must co-occur in one table. The resolver does not combine unrelated table columns to satisfy a bundle.
-- Default revenue/collection bundles intentionally remain unavailable under catalog-gated planning until eligible-sales, sale-period, order-status, and settled-payment semantics have separate rulebook evidence. Header presence alone is not enough.
+- Collection declares payment-event amount and payment date as its required fields. Revenue intentionally has no flat required-field list yet because the executor supports alternative direct-line and detail-to-order source shapes. Both remain unavailable under catalog-gated planning until source-role and business-rule evidence is modeled and validated.
 - No joins, executor changes, parser cues, or arbitrary natural-language splitting.
 - Tests: tests/test_bundle_capabilities.py. Checkpoint: tools/checkpoints/2026-11-19_BUNDLE_CAPABILITY_RESOLUTION.md. CI pending.
 - Next: inspect executor source-column discovery and existing rule profiles, then design a versioned rule-evidence contract. Do not infer business semantics from header names or sample values.
