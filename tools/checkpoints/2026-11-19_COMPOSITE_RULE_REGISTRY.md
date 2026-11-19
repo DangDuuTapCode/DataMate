@@ -29,3 +29,10 @@ Synthetic tests cover duplicate/invalid rule definitions, custom allowlisted met
 1. Run CI and inspect all failures.
 2. Keep the default registry limited until new metric combinations have source and business-rule evidence.
 3. Add explicit parser rules separately for any new combination.
+
+
+## CI result
+
+GitHub Actions run `44550215128` executed 230 tests with no code/test errors; 228 tests passed. The only two failures are the pre-existing repository-hygiene assertions against tracked `CODEX PROGRESS` (size limit and secret-like regex). No hygiene checks were disabled.
+
+Run: https://github.com/pl2n/DataMate/actions/runs/44550215128

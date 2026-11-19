@@ -662,3 +662,10 @@ Review package: work/submission-build/public-test-submission-2026-11-15. JSONL S
 - `CompositePlanner` now compiles any explicitly registered intent; unregistered intents still fail closed. No arbitrary conjunction parsing was added.
 - Added tests for registry uniqueness, invalid rule definitions, custom allowlisted metric composition, and unknown-intent abstention.
 - Checkpoint: `tools/checkpoints/2026-11-19_COMPOSITE_RULE_REGISTRY.md`.
+
+
+### CI result — composite rule registry
+
+- GitHub Actions run `44550215128` executed 230 tests with no code/test errors. 228 passed.
+- The only two failures remain the pre-existing hygiene assertions against tracked `CODEX PROGRESS` (size limit and secret-like regex). No checks were disabled.
+- Run: https://github.com/pl2n/DataMate/actions/runs/44550215128

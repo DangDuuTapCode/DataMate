@@ -616,3 +616,10 @@ python qstats.py public_test/ 15
 - GitHub Actions run `44549585604`: 226 tests executed; no code/test errors; 224 passed.
 - Two pre-existing repository-hygiene failures remain on tracked `CODEX PROGRESS` (size and secret-like regex). No bypass was made.
 - Run: https://github.com/pl2n/DataMate/actions/runs/44549585604
+
+
+## 2026-11-19 — composite rule registry CI result
+
+- GitHub Actions run `44550215128`: 230 tests executed; no code/test errors; 228 passed.
+- Two pre-existing repository-hygiene failures remain on tracked `CODEX PROGRESS`. No bypass was made.
+- Run: https://github.com/pl2n/DataMate/actions/runs/44550215128

@@ -153,3 +153,8 @@ The composite requirement payload is versioned at `1.0.0` and validated before c
 ## Explicit composite rule registry
 
 `RequirementExtractor` now resolves QuerySpec intents through `CompositeRuleRegistry`. Each rule declares the recognized intent, ordered metric IDs, and comparison type. The default registry contains only the current financial pair. This permits future reviewed combinations without embedding more metric pairs inside the planner, but does not itself add new parser cues or arbitrary text splitting.
+
+
+## Composite rule registry status
+
+Composite intent-to-metric combinations are now data-driven through an explicit `CompositeRuleRegistry`. The default rule remains the existing revenue + collected-amount pair; a synthetic custom-rule test demonstrates plan composition for another allowlisted metric pair without adding natural-language splitting. CI run `44550215128`: 230 tests, no code/test errors, 228 passed; only the two existing `CODEX PROGRESS` hygiene checks remain failing.
