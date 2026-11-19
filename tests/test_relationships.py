@@ -30,7 +30,7 @@ class RelationshipDiscoveryTests(unittest.TestCase):
         self.assertIn("all_left_keys_match", relationship.evidence)
 
     def test_unmatched_child_key_is_rejected(self):
-        details = Table("details", ["Mã đơn"], [["A1"], ["A3"]], "details.csv")
+        details = Table("details", ["Mã đơn"], [["A1"], ["A1"], ["A3"]], "details.csv")
         orders = Table("orders", ["Mã đơn"], [["A1"], ["A2"]], "orders.csv")
 
         [relationship] = discover_relationships([details, orders])
