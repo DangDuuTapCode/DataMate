@@ -6,8 +6,8 @@
 - This is the user's fork. Do not modify upstream `DangDuuTapCode/DataMate` and do not create a PR unless explicitly requested.
 - Work is performed through GitHub APIs; there is no local checkout. Do not claim a local `git status` or local test execution.
 - Commit completed milestones frequently and update this handoff/checkpoint.
-- Latest implementation baseline before the current documentation-only correction: `a6eade98f01e55326ae53bf6423800868b6f77b3`.
-- Current documentation correction commit: `bc01731c4e445841bbff72ab32b74bbcc18dfb6e`.
+- Current branch head: `c1b3b4cea609d52d29620ee41a798d260e99dfe6`.
+- Latest implementation baseline: `a6eade98f01e55326ae53bf6423800868b6f77b3`; continuation commits since then are documentation/checkpoint-only.
 
 ## Completed implementation
 
@@ -23,6 +23,7 @@
 - Payment status has its own conservative classifier; unknown statuses abstain.
 - Evidence-approved table scope is passed into component-specific Executors. Revenue source shape is enforced as either `direct_line` or `detail_to_order`.
 - Runtime recomputes SHA-256 from exact bytes of allowlisted local provenance files. Arbitrary paths, traversal, URLs, unknown filenames, missing files, symlinks, paths outside the input root, and digest mismatches fail closed.
+- Documentation has been synchronized; see `docs/BUSINESS_RULE_EVIDENCE.md`, `docs/IMPLEMENTATION_PROGRESS.md`, `tools/STATE.md`, and `tools/checkpoints/2026-11-19_CONTINUATION_REVIEW.md`.
 
 ## Current capability boundaries
 
@@ -35,9 +36,10 @@
 
 ## Verification
 
-- GitHub Actions run `44564104588` on `a6eade98f01e55326ae53bf6423800868b6f77b3`: 272 tests; 270 passed. All feature tests passed. The only two failures are inherited `CODEX PROGRESS` repository-hygiene checks (large-file limit and a secret-like-pattern false positive). Do not weaken the checks or modify that inherited artifact.
-- Run: https://github.com/pl2n/DataMate/actions/runs/44564104588
-- The current documentation-only correction commit `bc01731c4e445841bbff72ab32b74bbcc18dfb6e` was pushed after that run; check its Actions result before further code changes.
+- GitHub Actions run `44565561293` on `5a6085264796a9a2c413a1323cba5e96b5f9e0a7`: 272 tests; 270 passed.
+- All feature tests passed. The only two failures are inherited `CODEX PROGRESS` repository-hygiene checks (large-file limit and a secret-like-pattern false positive). Do not weaken the checks or modify that inherited artifact.
+- Run: https://github.com/pl2n/DataMate/actions/runs/44565561293
+- The subsequent checkpoint commit `c1b3b4cea609d52d29620ee41a798d260e99dfe6` only adds documentation; no CI run for that commit was visible at the time of this handoff.
 - No local checkout or local test execution is available in this workflow.
 
 ## Active next step — confirm real input contract
