@@ -184,6 +184,10 @@ class FactJoinContractTests(unittest.TestCase):
                 self.fact, self.orders, ("order_id", "order_id"), (2, 3), (0, 1),
                 "many_to_one", False,
             ),
+            RelationshipPathHop(
+                self.fact, self.orders, ("order_id",), (2,), (0,),
+                [], False,
+            ),
         )
 
         for hop in malformed_hops:
