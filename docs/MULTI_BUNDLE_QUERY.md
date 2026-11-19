@@ -82,11 +82,9 @@ Component candidates, execution reasons, and evidence remain in the trace.
 
 ## Next stages
 
-1. Define a versioned business-rule evidence contract with source provenance and validation status.
-2. Represent alternative revenue source shapes without flattening direct-line and detail-to-order paths.
-3. Represent payment source-role requirements and the policy for optional/missing payment status.
-4. Bind rule profiles to verified business evidence before default bundles can become available.
-5. Add synthetic tests for each accepted and rejected evidence shape.
+1. Cross-check every accepted evidence assertion against the active split rulebook and the exact executor behavior.
+2. Verify recorded source digests using controlled, known source locations; never follow arbitrary paths from evidence payloads.
+3. Extend source-shape or metric support only with new versioned contracts, tests, and reviewed business-rule evidence.
 
 Do not add automatic joins, arbitrary conjunction splitting, derived metrics, or partial composite answers until their evidence contracts are explicit.
 
@@ -190,10 +188,10 @@ amount, payment date, and payment status. The status field is mandatory for
 composite capability so the executor can apply its successful-only policy. Revenue has no flat
 required-field list yet because its executor accepts alternative source shapes
 (direct line facts or a detail-to-order path); pretending those are one
-same-table field set would be inaccurate. Both default bundles remain
-unavailable through the gate until source-role and business-rule evidence is
-modeled and validated. Structural header mapping does not prove that an amount
-is eligible revenue or that a payment status means settled.
+same-table field set would be inaccurate. Both default bundles remain unavailable unless the business supplies reviewed
+source-role and business-rule evidence. Structural header mapping alone does
+not prove that an amount is eligible revenue or that a payment status means
+settled.
 
 No join is executed and no existing metric calculation changes. See
 docs/BUNDLE_CAPABILITY_RESOLUTION.md.
@@ -201,7 +199,7 @@ docs/BUNDLE_CAPABILITY_RESOLUTION.md.
 ### Bundle capability resolution CI
 
 GitHub Actions run 44554164419 executed 241 tests: 239 passed and the same two inherited CODEX PROGRESS hygiene checks failed. The new resolver and planner-gating tests passed; no feature-test failures were reported.
-The production entry point now builds and caches a BusinessSchemaCatalog per business and supplies it to CompositePlanner. Revenue intentionally has no flat field tuple until its alternative direct-line/detail-to-order source shapes are represented. Collection requires payment-event amount and payment date; payment-role and status policy remain unverified.
+The production entry point now builds and caches a BusinessSchemaCatalog per business and supplies it to CompositePlanner. Revenue intentionally has no flat field tuple until its alternative direct-line/detail-to-order source shapes are represented. Collection requires payment-event amount, payment date, and payment status. Its payment-role and successful-only policy claims must be verified and scoped to the same table.
 
 
 ## Production runtime capability gate

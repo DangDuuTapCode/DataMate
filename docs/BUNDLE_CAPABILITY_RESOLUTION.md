@@ -2,55 +2,53 @@
 
 ## Purpose
 
-The BundleRegistry describes which metric bundles are allowlisted. A bundle can
-declare exact canonical fields and validated relationship shapes required by
-its implementation. BundleCapabilityResolver checks those declarations
-against a BusinessSchemaCatalog; it does not execute queries or joins.
+The BundleRegistry describes allowlisted metric bundles. BundleCapabilityResolver checks structural requirements against BusinessSchemaCatalog and reviewed business-rule claims against BusinessRuleEvidence. It never performs joins or infers business meaning from column names or sample values.
 
-## Resolution contract
+## Structural requirements
 
-A resolution is available only when all declared structural requirements pass:
-
+A resolution is available only when:
 - every required canonical field has an unambiguous exact semantic mapping;
 - all required fields are co-located in at least one source table;
-- every required relationship has a validated status and the declared cardinality;
+- every declared relationship has validated status and the required cardinality;
 - no required relationship is rejected or ambiguous.
 
-The result reports missing fields, ambiguous fields, field-group co-location
-conflicts, missing relationships, rejected relationships, unverified business
-capabilities, and reason codes. Fields found in unrelated tables cannot be
-combined to satisfy a single bundle's same-table field requirement.
+The result distinguishes missing/ambiguous fields, field-group conflicts, missing/rejected relationships, unverified/rejected business capabilities, and the rule-profile version.
 
-## Important boundary
+## Business-rule evidence
 
-A schema catalog proves structural observations, not business meaning. A
-mapped payment_status column does not prove which values count as settled.
-The collection executor currently requires a payment-role table, payment-event
-amount, and payment date; status is optional in its current source discovery,
-so the business policy for absent/present status remains unverified.
+The v1 contract is defined in `schemas/business_rule_evidence.v1.schema.json` and read by `src/datamate/rule_evidence.py`. A business supplies an optional file at:
 
-Revenue has deliberately not been assigned a flat required-field list. Its
-executor supports either a direct line-grain source (date, line amount, and
-product identity) or a detail-to-order path (line amount and line identity
-linked to a dated/statused order table). A flat same-table tuple would misstate
-that contract. A future schema contract must represent these alternatives and
-their validated relationship path before revenue can be marked available.
+`data/<business_id>/business_rule_evidence.json`
 
-Existing default financial bundles therefore retain unverified source-role
-and business-rule capability labels. Until a separately reviewed evidence
-source validates them, the resolver reports the bundle as unavailable.
+Every verified claim is scoped to exact `table_name` and `source` identities and carries source type/reference, SHA-256, reviewer, and timezone-aware review timestamp. The runtime rejects unknown/malformed claims, wrong business IDs, and scope mismatches. SHA-256 is recorded and format-checked, but this version does not reopen arbitrary references to recompute the digest.
 
-The current revenue and collection calculations remain unchanged. No automatic
-joins are introduced. A bundle with no unverified rule capabilities can be
-resolved as available from exact field/relationship evidence alone.
-## Production integration
+## Revenue source alternatives
 
-The pipeline entry point builds a BusinessSchemaCatalog once per business and
-passes it to that business's CompositePlanner. Thus catalog-gated capability
-resolution is active in production planning, not merely exposed as an optional
-test-only API.
+Revenue supports:
+- `direct_line`: evidence scope must identify exactly one table.
+- `detail_to_order`: evidence scope must list the line table first and order table second. The schema catalog must contain a validated many-to-one `order_id` relationship from the first table to the second.
 
+Revenue amount, period, and status claims must be scoped within the declared source-shape tables. The executor remains the final guard for actual source columns and data quality.
 
-## Runtime evidence
+## Collection requirements
 
-The runtime loads `data/<business_id>/business_rule_evidence.json` per business. Missing or invalid evidence blocks composite planning and is recorded in trace; ordinary single-metric execution remains available. Collection requires canonical payment amount, date, and status fields in one table. Revenue detail-to-order evidence requires a validated many-to-one `order_id` relationship.
+The composite collection bundle requires three exact canonical fields co-located in one payment table:
+- `payment_event_amount`
+- `payment_date`
+- `payment_status`
+
+The `payment_source_role` and `settled_payment_status_policy` claims must both be verified and scoped to the same single table. The accepted policy is `successful_status_only`.
+
+The executor recognizes grouped payment amount/date/status headers and prefers the explicit payment-status column. A legacy generic-status fallback is retained for ordinary single-metric queries, but it cannot satisfy the composite capability gate.
+
+## Runtime behavior
+
+`main.run` loads evidence per business and passes it to CompositePlanner and BundleCapabilityResolver. Missing or invalid evidence blocks composite planning and is recorded in the trace as `missing` or `invalid`; capability-resolution details explain the block. The ordinary single-metric path remains available.
+
+No default evidence file is generated. A bundle becomes available only when structural requirements and all required reviewed claims pass. No automatic join is authorized by a validated relationship.
+
+## Verification
+
+GitHub Actions run `44558398515` executed 256 tests; 254 passed. All feature tests passed. The only two failures are inherited repository-hygiene checks against the upstream `CODEX PROGRESS` artifact.
+
+Run: https://github.com/pl2n/DataMate/actions/runs/44558398515
