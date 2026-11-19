@@ -137,6 +137,14 @@ def execute_fact_join_contract(tables, contract):
         != contract.measure_field.strip()
     ):
         return None
+    fact_rows = []
+    for row in fact.rows:
+        if (
+            not isinstance(row, (list, tuple))
+            or contract.measure_column_index >= len(row)
+        ):
+            return None
+        fact_rows.append(tuple(row))
 
     schemas = {identity: map_table_schema(table) for identity, table in table_map.items()}
     hops = contract.path_hops
@@ -206,7 +214,7 @@ def execute_fact_join_contract(tables, contract):
 
     # Each table's rows remain aligned to the original fact rows. This avoids
     # flattening colliding column names and makes multi-hop lookups explicit.
-    aligned_rows = {contract.fact_table: list(fact.rows)}
+    aligned_rows = {contract.fact_table: fact_rows}
     for hop in hops:
         target_table = table_map[hop.to_table]
         source_rows = aligned_rows.get(hop.from_table)
