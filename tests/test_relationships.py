@@ -57,6 +57,24 @@ class RelationshipDiscoveryTests(unittest.TestCase):
         self.assertTrue(all(item.status == "validated" for item in relationships))
         self.assertTrue(all(item.cardinality == "many_to_one" for item in relationships))
 
+    def test_relationship_identity_distinguishes_same_named_sheets_by_source(self):
+        details = Table(
+            "Sheet1", ["Mã đơn"], [["A1"], ["A1"], ["A2"]], "details.xlsx"
+        )
+        orders = Table(
+            "Sheet1", ["Mã đơn"], [["A1"], ["A2"]], "orders.xlsx"
+        )
+
+        [relationship] = discover_relationships([details, orders])
+
+        self.assertEqual(relationship.from_table, "Sheet1")
+        self.assertEqual(relationship.from_source, "details.xlsx")
+        self.assertEqual(relationship.to_table, "Sheet1")
+        self.assertEqual(relationship.to_source, "orders.xlsx")
+        self.assertEqual(relationship.status, "validated")
+        self.assertEqual(relationship.cardinality, "many_to_one")
+        self.assertEqual(relationship.to_dict()["to_source"], "orders.xlsx")
+
     def test_unmatched_child_key_is_rejected(self):
         details = Table("details", ["Mã đơn"], [["A1"], ["A1"], ["A3"]], "details.csv")
         orders = Table("orders", ["Mã đơn"], [["A1"], ["A2"]], "orders.csv")
