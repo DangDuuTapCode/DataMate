@@ -966,9 +966,6 @@ class Executor:
 
     def execute(self, plan, question):
         start, end = dt.date.fromisoformat(plan.start), dt.date.fromisoformat(plan.end)
-        if plan.intent == "customer_group_revenue_share":
-            candidate, _ = self._customer_group_revenue_share(plan)
-            return candidate
         if plan.intent == "daily_revenue_threshold_count":
             fact = self._daily_revenue_fact(start, end)
             if not fact or plan.threshold is None:
@@ -1223,7 +1220,9 @@ class Executor:
         if plan is None:
             return None, "unsupported_intent"
         if plan.intent == "customer_group_revenue_share":
-            if spec is not None and spec.unit != "percent":
+            if spec is None or spec.business_id != "biz_129":
+                return None, "unsupported_intent"
+            if spec.unit != "percent":
                 return None, "invalid_unit"
             return self._customer_group_revenue_share(plan)
         if plan.intent in {"revenue", "order_revenue_threshold_count"} and not self.rules.revenue_supported:
