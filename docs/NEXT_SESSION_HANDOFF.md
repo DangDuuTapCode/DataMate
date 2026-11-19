@@ -6,7 +6,7 @@
 - This is the user's fork. Do not modify upstream `DangDuuTapCode/DataMate` and do not create a PR unless explicitly requested.
 - Work is performed through GitHub APIs; there is no local checkout. Do not claim a local `git status` or local test execution.
 - Commit completed milestones frequently and update this handoff/checkpoint.
-- Current branch head: `c1b3b4cea609d52d29620ee41a798d260e99dfe6`.
+- Last previously verified documentation head: `48e5c60f3a3802984fb4cdc6c87e358f14ee96e9`. New continuation commits are listed below; fetch the branch head before the next code change.
 - Latest implementation baseline: `a6eade98f01e55326ae53bf6423800868b6f77b3`; continuation commits since then are documentation/checkpoint-only.
 
 ## Completed implementation
@@ -42,17 +42,33 @@
 - The subsequent checkpoint commit `c1b3b4cea609d52d29620ee41a798d260e99dfe6` only adds documentation; no CI run for that commit was visible at the time of this handoff.
 - No local checkout or local test execution is available in this workflow.
 
-## Active next step — confirm real input contract
+## Contest archive received — 2026-11-19
 
-The repository's `data/` directory is for mounted competition input and is gitignored (except `data/README.md`). The actual runtime bundle is not available through the GitHub repository. No exact data-dictionary or operator-attestation filename/placement is documented by the checked-in input contract.
+The user supplied `Contest.zip` (approximately 192 MB). It was inspected without adding the archive to the repository.
 
-Before expanding the provenance allowlist:
-1. Obtain the actual business input directory listing or the relevant input-contract files.
-2. Confirm exact filenames and placement for any data dictionary or operator attestation.
-3. Add only explicitly confirmed names to the allowlist and tests.
-4. Inspect the actual mounted `rulebook.md` to determine whether its collection policy clause matches the parser's supported rule.
+- `Contest/train/`: 30 business directories (`biz_101`–`biz_130`), 3,000 questions, answer labels, `calendar.csv`, and its own `rulebook.md`.
+- `Contest/public_test/`: 14 business directories (`dev_001`–`dev_014`), 1,000 questions, `calendar.csv`, and a distinct `rulebook.md`.
+- Both split roots match the runtime layout: root rulebook/questions/calendar plus `data/<business_id>/`.
+- Each inspected business directory has a `README.md` documenting file roles, columns, table grain, relationships, and shop conventions. No separate `data_dictionary.*` or `operator_attestation.json` was found in those business directories.
+- Train and public-test rulebooks differ. Public test adds cash-by-shift semantics, weekday averages, additional rankings, and rules for mother-and-baby, vehicle-repair, and phone-shop domains. Run each split with its own root; do not merge them under one rulebook.
+- Neither rulebook has the explicit successful-payment-only clause parsed by `SplitRules`. `collection_status_policy` therefore remains unsupported for this archive. Payment tables/columns do not prove the settlement policy.
 
-Do not guess filenames, broaden to arbitrary paths, or enable bundles from synthetic tests alone. If the actual bundle cannot be provided, leave the allowlist unchanged and record the blocker.
+## Changes made after receiving the archive
+
+- `src/datamate/rule_evidence.py`: exact business-local `README.md` is now accepted as a schema/documentation provenance source under the existing `data_dictionary` type. All existing digest, path, symlink, and scope checks remain in force.
+- `tests/test_rule_evidence.py`: added a regression test for `README.md` digest verification.
+- `docs/BUSINESS_RULE_EVIDENCE.md` and `docs/IMPLEMENTATION_PROGRESS.md`: documented actual split layout, README provenance boundary, rulebook differences, and the collection-policy limitation.
+- These changes were committed sequentially:
+  - `47649aa3ba70ddaaa363986d7beb2a81ba0a8a5f` — README provenance allowlist.
+  - `fa402eae2862463f30a0d3403e7d0c7f82e5c819` — README provenance regression test.
+  - `a33ccdd32355f163069c47872e42acdb87b79489` — evidence contract documentation.
+  - `7edf33b418cce8ed782cc64282c8b7376f08ce40` — implementation progress and benchmark findings.
+
+## Next engineering step
+
+Use the 14 public-test businesses and 1,000 public-test questions as a coverage map. Prioritize representative multi-source cases and add small synthetic fixtures for them; do not commit the 192 MB archive or its full business data. Focus on source-role and relationship contracts, not a universal join. Extend only with explicit README/rulebook evidence. Keep collection unavailable until a supported settlement policy is present.
+
+Verification baseline before these changes: Actions run `44565561293` on `5a6085264796a9a2c413a1323cba5e96b5f9e0a7`, 272 tests, 270 passed, two inherited `CODEX PROGRESS` hygiene failures. The new code/test changes do not yet have a verified CI result. There is no local checkout or local test execution in this workflow.
 
 ## Useful files
 
