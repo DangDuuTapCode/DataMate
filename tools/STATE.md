@@ -144,3 +144,16 @@ Next: audit public-test questions against the 14 input shapes, then build minima
 - The only two failures remain `test_no_large_files` and `test_no_secret_like_strings`, both reporting the pre-existing `CODEX PROGRESS` artifact.
 - Run: https://github.com/pl2n/DataMate/actions/runs/44581612778
 - Existing PR #1 remains open against upstream `main`, head updated with this branch. GitHub reports `mergeable=false`; no merge or PR mutation was performed.
+
+
+## Post-merge continuation — 2026-11-20
+
+- PR #1 was merged by the repository owner. GitHub reports `state=closed`, `merged=true`, merged at `2026-11-19T17:53:39Z`.
+- Upstream merge commit: `99478a179919a7b5121b00072f90522c50117aba`. Comparing upstream `main` with that commit returns `identical`.
+- The merged PR head was `15430b417d650e6145ed4e64cb637ebe2a00677c`.
+- Created a clean continuation branch on the fork: `feature/query-specific-join-execution`, based on the merged PR head. Continue only on this new fork branch; do not amend the merged branch or modify upstream directly.
+- Hardened `FactJoinContract` structural validation to require exactly one reported candidate, immutable typed hops, exact nonblank source-qualified identities, unique canonical keys, valid tuple-shaped physical indices, strict non-fanout boolean, and safe handling of unsupported join-type inputs.
+- Added regression tests for forged candidate counts, malformed identities, duplicate key declarations, and non-string join-type inputs.
+- Commits: `5c04d9b8498133e28170108ed3ba7fe8ec58301a` (implementation), `783631e99ed584fee284564c126b1275ca453edf` (tests).
+- No new Actions result is verified for this continuation yet. The old checked baseline remains run `44581612778` on `77460ea68fcb1750b8a534e87727cb7e99d8e52f` (310 tests, 308 passed; two inherited `CODEX PROGRESS` hygiene failures). No local checkout or local test execution was used.
+- The fact-join contract remains structural only. Do not connect it to Planner/Executor until one real query family has explicit, reviewed evidence for fact grain, measure semantics, additive behavior, join path, keys, and aggregation stage.
