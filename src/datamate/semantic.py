@@ -119,6 +119,16 @@ _EXACT_ALIASES = {
     },
 }
 
+# These labels are only meaningful when the README-documented source role is
+# known. Keep them out of global aliases to avoid guessing what a generic
+# voucher/transaction number represents in unrelated files.
+_SOURCE_CONTEXT_ALIASES = (
+    ("chi tiet don", {"so ct": "order_id"}),
+    ("don hang", {"so phieu": "order_id"}),
+    ("thanh toan", {"ma giao dich": "order_id"}),
+)
+
+
 _CONTEXTUAL_ALIASES = {
     ("thanh toan", "gia tri"): "payment_event_amount",
     ("lich su thanh toan", "gia tri"): "payment_event_amount",
@@ -138,7 +148,7 @@ _CONTEXTUAL_ALIASES = {
 }
 
 
-def _resolve_header(header):
+def _resolve_header(header, table=None):
     """Return (candidate field, confidence, evidence) without fuzzy matching."""
     raw = str(header or "")
     if " / " in raw:
@@ -158,6 +168,11 @@ def _resolve_header(header):
         return None, 0.0, ("no_exact_alias",)
 
     normalized = fold(raw)
+    if table is not None:
+        source_context = fold(f"{table.name} {table.source}")
+        for source_marker, aliases in _SOURCE_CONTEXT_ALIASES:
+            if source_marker in source_context and normalized in aliases:
+                return aliases[normalized], 0.98, ("exact_source_context_alias",)
     matches = [
         canonical for canonical, aliases in _EXACT_ALIASES.items()
         if normalized in aliases
@@ -171,7 +186,7 @@ def map_table_schema(table):
     """Map unambiguous exact aliases; collisions and unknown labels fail closed."""
     provisional = []
     for index, header in enumerate(table.headers):
-        candidate, confidence, evidence = _resolve_header(header)
+        candidate, confidence, evidence = _resolve_header(header, table=table)
         provisional.append({
             "source_index": index,
             "source_header": str(header),
