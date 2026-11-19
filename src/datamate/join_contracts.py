@@ -85,10 +85,13 @@ def build_fact_join_contract(
     if hops[0].from_table != fact_table or hops[-1].to_table != target_table:
         return None
 
+    visited_tables = {fact_table}
     for index, hop in enumerate(hops):
         if (
             hop.fanout
+            or hop.cardinality not in {"many_to_one", "one_to_one"}
             or not hop.canonical_keys
+            or any(not isinstance(key, str) or not key.strip() for key in hop.canonical_keys)
             or len(hop.canonical_keys) != len(hop.from_column_indices)
             or len(hop.canonical_keys) != len(hop.to_column_indices)
             or not hop.from_column_indices
@@ -100,6 +103,9 @@ def build_fact_join_contract(
             return None
         if index and hops[index - 1].to_table != hop.from_table:
             return None
+        if hop.to_table in visited_tables:
+            return None
+        visited_tables.add(hop.to_table)
 
     # Validated relationships currently require complete key coverage and no
     # blank keys. The contract remains structural and does not execute joins.
