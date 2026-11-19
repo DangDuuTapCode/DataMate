@@ -28,7 +28,7 @@ The semantic catalog and relationship discovery currently recognize these exact 
 - branch IDs: `branch_id`;
 - device IMEIs: `imei`.
 
-The alias list is deliberately exact. Generic labels such as `STT`, `Mã tham chiếu`, `Mã`, and generic amount/date/status headers are not treated as keys. Identifier values are compared as exact strings; leading zeroes are preserved. Relationship results still require overlap and safe cardinality evidence. A detected or validated relationship is not an instruction to execute a join.
+The alias list is deliberately exact. Generic labels such as `STT`, `Mã tham chiếu`, `Mã`, and generic amount/date/status headers are not treated as keys. Identifier values are compared as exact strings; leading zeroes are preserved. Relationship evidence stores both table names and source filenames, so repeated worksheet names such as `Sheet1` remain distinct. Capability checks use the full `(table_name, source)` identity. Relationship results still require overlap and safe cardinality evidence. A detected or validated relationship is not an instruction to execute a join.
 
 ## Business-rule evidence
 
