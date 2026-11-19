@@ -93,7 +93,7 @@ class CustomerGroupRevenueShareTests(unittest.TestCase):
         candidate, reason = self.run_query()
         self.assertIsNone(reason)
         self.assertEqual(candidate["answer"], 44.44)
-        self.assertEqual(candidate["type"], "number")
+        self.assertEqual(candidate["type"], "percent")
         self.assertIn("left_join_preserves_guest_revenue", candidate["evidence"])
 
     def test_guest_only_period_contributes_zero_to_group_numerator(self):
