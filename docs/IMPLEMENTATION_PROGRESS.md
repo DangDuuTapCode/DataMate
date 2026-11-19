@@ -185,3 +185,14 @@ Important limitation: this resolver is discovery-only and is not yet connected t
 - The only two failures remain `test_no_large_files` and `test_no_secret_like_strings`, both reporting the pre-existing `CODEX PROGRESS` artifact.
 - Run: https://github.com/pl2n/DataMate/actions/runs/44581612778
 - Existing PR #1 remains open against upstream `main`, head updated with this branch. GitHub reports `mergeable=false`; no merge or PR mutation was performed.
+
+
+## Post-merge continuation — 2026-11-20
+
+- PR #1 merged successfully into upstream `main` at `99478a179919a7b5121b00072f90522c50117aba`; upstream main compares identical to the merge commit.
+- New fork branch: `feature/query-specific-join-execution`, based on merged PR head `15430b417d650e6145ed4e64cb637ebe2a00677c`.
+- Hardened the structural FactJoinContract builder against forged unique-path metadata and malformed hop records. It now requires exactly one candidate, immutable typed hops, exact source-qualified endpoints, unique nonblank canonical keys, valid physical key-index tuples, literal false fanout, and safe join-type input validation.
+- Added regression coverage for forged candidate count, malformed identities, duplicate key declarations, and invalid join-type values.
+- Commits: `5c04d9b8498133e28170108ed3ba7fe8ec58301a`, `783631e99ed584fee284564c126b1275ca453edf`.
+- CI for the new branch has not yet been verified. No local checkout or local test execution was used.
+- Runtime wiring remains blocked pending a representative real query family with reviewed source evidence for fact grain, measure semantics, additive behavior, exact path/keys, and aggregation stage.
