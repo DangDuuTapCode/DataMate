@@ -312,7 +312,7 @@ class BundleCapabilityResolverTests(unittest.TestCase):
         bundle = default_bundle_registry().resolve("revenue")
 
         valid = self.resolver.resolve(
-            bundle, build_schema_catalog([details, orders], business_id="biz_synthetic"),
+            bundle, build_schema_catalog([orders, details], business_id="biz_synthetic"),
             evidence, split_rules=_reviewed_split_rules(),
         )
         self.assertTrue(valid.available)
