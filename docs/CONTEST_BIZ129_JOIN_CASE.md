@@ -59,9 +59,13 @@ Consequences:
 
 The current relationship validator previously rejected the customer edge solely because of blank source keys. The new `validated_left_join` evidence state distinguishes this safe non-fanout relationship from a fully matched relationship. The path resolver propagates a `left_join_required` status, and `FactJoinContract` refuses to build the path as an inner join.
 
-## Implementation boundary
+## Runtime implementation boundary
 
-This case is a structural and semantic test fixture, not permission to enable arbitrary runtime joins. The contract still does not execute the join, apply order-status/date predicates, or calculate the percentage. Runtime wiring remains blocked until the executor can apply the exact join sequence and preserve the separate numerator/denominator semantics. No payment event is joined into this sales-line fact path.
+The query-specific runtime slice is now implemented for `customer_group_revenue_share` on business `biz_129` only. It builds a two-hop detail → order → customer contract from the exact README-scoped source roles, executes the LEFT JOIN while preserving fact rows, then applies the rulebook's order-date and order-status semantics and computes the requested percentage.
+
+The numerator includes eligible sales lines whose joined customer dimension has the requested group. The denominator includes all eligible shop sales lines, including guest orders with blank customer IDs and customers in other groups. Exact duplicate rows within one order are deduplicated under rulebook §8. Returned and cancelled orders are excluded in full; in-transit orders remain eligible. Payment events are never joined into this sales-line fact path.
+
+This is not a generic JOIN feature. Unknown group labels, other business IDs, missing fields, unmatched nonblank keys, ambiguous paths, unknown statuses, invalid amounts, and missing rulebook semantics fail closed.
 
 
 ## Independent archive calculation checks
