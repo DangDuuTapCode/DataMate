@@ -26,7 +26,7 @@
 - Revenue source shape must be explicitly reviewed as `direct_line` or `detail_to_order`; detail-to-order requires a validated `order_id` relationship.
 - Collection requires payment-event amount/date/status in the exact single table scoped by both source-role and settlement-policy claims.
 - Collection remains unavailable unless the active rulebook explicitly states the supported successful-payment-only policy.
-- Provenance allowlist remains narrow: input-root `rulebook.md`; business-local `data_dictionary.csv/.xlsx/.md`; business-local `operator_attestation.json`.
+- Provenance allowlist remains narrow: input-root `rulebook.md`; business-local `data_dictionary.csv/.xlsx/.md` or `README.md`; business-local `operator_attestation.json`. README is treated as schema documentation only and never auto-generates evidence.
 - SHA-256 proves byte correspondence only; it does not authenticate reviewer identity or provide a signature.
 - No arbitrary path access, automatic joins, fuzzy inference, arbitrary conjunction splitting, or new metrics.
 
@@ -37,10 +37,20 @@
 - Two docs-only commits followed that run; inspect their Actions results before further code edits.
 - Never weaken or modify the inherited hygiene artifact to hide those failures.
 
-## Active blocker / next step
+## Contest archive and current blocker
 
-The actual mounted business input files are not in the GitHub repository. `data/` is gitignored except for `data/README.md`. The repository does not establish the exact real filenames or placement for a data dictionary or operator attestation.
+The user supplied `Contest.zip`, inspected on 2026-11-19:
+- Train root: 30 businesses, 3,000 questions, answers, calendar, and train rulebook.
+- Public-test root: 14 businesses, 1,000 questions, calendar, and a separate public-test rulebook.
+- Both roots match the runtime's expected directory layout. Every inspected business has a local `README.md` with source/column/table-grain documentation; separate data dictionaries and operator attestations are absent.
+- Train and public-test rulebooks differ; each split must be run with its own root.
+- Neither rulebook contains the explicit successful-payment-only policy clause. Collection remains unavailable.
 
-Obtain the actual input directory listing/input contract and mounted `rulebook.md`. Only then may exact additional filenames or parser support be added. Until then, keep the allowlist narrow and both default financial bundles evidence-gated.
+Committed after archive inspection:
+- `47649aa3ba70ddaaa363986d7beb2a81ba0a8a5f` README provenance allowlist.
+- `fa402eae2862463f30a0d3403e7d0c7f82e5c819` README digest regression test.
+- `a33ccdd32355f163069c47872e42acdb87b79489` evidence documentation.
+- `7edf33b418cce8ed782cc64282c8b7376f08ce40` implementation progress update.
+- `f5c73cdef1de583c094507344e270966f3044129` handoff update.
 
-See `docs/NEXT_SESSION_HANDOFF.md` for the continuation checklist and `docs/IMPLEMENTATION_PROGRESS.md` for milestone history.
+Next: audit public-test questions against the 14 input shapes, then build minimal synthetic fixtures for representative multi-source queries. Do not add the full archive to Git. The new code/test commits still need a verified Actions result. No local checkout or local test run is available.
