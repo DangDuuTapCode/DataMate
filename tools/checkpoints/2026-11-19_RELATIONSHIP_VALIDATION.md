@@ -28,3 +28,10 @@ A structurally validated relationship does not establish business meaning or aut
 1. Run CI and inspect test results.
 2. Add relationship metadata to a stable registry only after this candidate contract is reviewed.
 3. Keep relationship discovery separate from metric calculation and business rule interpretation.
+
+
+## CI result
+
+GitHub Actions run `44546976679` executed 210 tests. All seven relationship discovery tests passed; 208 tests passed overall. The only failures are the two pre-existing repository-hygiene assertions against `CODEX PROGRESS` (size limit and secret-like regex). No hygiene checks were weakened.
+
+Run: https://github.com/pl2n/DataMate/actions/runs/44546976679

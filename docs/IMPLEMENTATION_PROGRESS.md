@@ -570,3 +570,10 @@ Review package: work/submission-build/public-test-submission-2026-11-15. JSONL S
 - The module is metadata-only and does not perform joins.
 - Added synthetic tests for many-to-one, unmatched keys, duplicate parents, partial overlap, blank keys, unmapped labels, and leading-zero preservation.
 - Checkpoint: `tools/checkpoints/2026-11-19_RELATIONSHIP_VALIDATION.md`.
+
+
+### CI result — relationship validation
+
+- GitHub Actions run `44546976679` executed 210 tests. All relationship discovery tests passed; 208 tests passed overall.
+- The only two failures remain pre-existing hygiene assertions on tracked `CODEX PROGRESS` (size limit and secret-like regex). No security checks were weakened.
+- Run: https://github.com/pl2n/DataMate/actions/runs/44546976679

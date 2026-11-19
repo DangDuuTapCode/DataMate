@@ -535,3 +535,10 @@ The Public Submissions JSONL candidate is prepared and structurally verified, bu
 - Read `tools/checkpoints/2026-11-19_RELATIONSHIP_VALIDATION.md`.
 - `relationships.py` compares only exact values under shared, unambiguous canonical key fields. It reports cardinality and evidence but never performs joins.
 - Preserve leading zeroes. Do not relax full child-key coverage or unique-parent requirements without explicit source evidence and regressions.
+
+
+### CI result — relationship validation
+
+- Run `44546976679` executed 210 tests; all new relationship tests passed and 208 tests passed overall.
+- Two existing repository-hygiene checks still fail on `CODEX PROGRESS`. Do not bypass them.
+- Run: https://github.com/pl2n/DataMate/actions/runs/44546976679

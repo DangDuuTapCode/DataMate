@@ -575,3 +575,10 @@ python qstats.py public_test/ 15
 - GitHub Actions run `44546168818`: 203 tests executed; 201 passed. The four semantic mapping tests passed.
 - Two pre-existing repository-hygiene failures remain on tracked `CODEX PROGRESS` (size > 1 MB and secret-like regex match). Do not bypass the checks.
 - Run: https://github.com/pl2n/DataMate/actions/runs/44546168818
+
+
+## 2026-11-19 — relationship validation CI result
+
+- GitHub Actions run `44546976679`: 210 tests executed; 208 passed. All relationship discovery tests passed.
+- Two pre-existing repository-hygiene failures remain on tracked `CODEX PROGRESS` (size > 1 MB and secret-like regex match).
+- Run: https://github.com/pl2n/DataMate/actions/runs/44546976679

@@ -94,3 +94,10 @@ Component candidates, execution reasons, and evidence remain in the trace.
 ## Regression requirements
 
 Test component ordering, shared context, unchanged single-metric behavior, implicit time abstention, unresolved entities, unsupported breakdowns, all-or-nothing failure, evidence preservation, table output schema, and the existing regression suite.
+
+
+## Relationship evidence before bundle composition
+
+The initial relationship validator lives in `src/datamate/relationships.py`. It requires shared, unambiguous canonical key mappings and exact key-value overlap. It reports cardinality and refuses partial child-key coverage, blank child keys, and many-to-many join risks. It does not execute joins.
+
+This is a prerequisite for future multi-bundle plans, not an authorization to join tables automatically. Metric-specific business rules and query-specific join approval remain mandatory.
