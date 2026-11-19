@@ -3,11 +3,11 @@ name: Python tests
 on:
   push:
     branches:
-      - feature/multi-bundle-query
+      - 'feature/**'
   pull_request:
     branches:
       - main
-      - feature/multi-bundle-query
+      - 'feature/**'
   workflow_dispatch:
 
 jobs:
