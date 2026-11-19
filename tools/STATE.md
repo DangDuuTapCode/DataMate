@@ -638,3 +638,15 @@ python qstats.py public_test/ 15
 - The file is 2,058,368 bytes, causing the existing 1 MB hygiene limit to fail.
 - The configured secret-like regex has one match inside a Google search URL's `mstk` query parameter in that file; the surrounding context identifies it as a search URL parameter, not an API-key field. The other configured credential patterns have no matches.
 - No credential value is copied into this note. The file and hygiene tests were not changed because this is an inherited upstream artifact, not part of the feature work.
+
+## 2026-11-19 — bundle capability resolver milestone
+
+- Added structured required canonical fields and required relationship shapes to BundleDefinition.
+- Added src/datamate/bundle_capabilities.py with a fail-closed BundleCapabilityResolver.
+- Optional BusinessSchemaCatalog gating is now available in CompositePlanner.
+- Resolver distinguishes missing fields, ambiguous fields, required-field co-location conflicts, missing relationships, rejected relationships, and unverified business-rule capabilities.
+- Required fields must co-occur in at least one source table; unrelated tables cannot collectively satisfy one bundle.
+- Default revenue/collection bundles are structurally declared but remain unavailable under catalog-gated planning until a reviewed rulebook validates the required business semantics. This is intentional; header presence alone is insufficient.
+- No joins, executor calculations, parser behavior, or upstream repository content changed.
+- Tests added in tests/test_bundle_capabilities.py. CI pending for this milestone.
+- Design note: docs/BUNDLE_CAPABILITY_RESOLUTION.md.

@@ -636,3 +636,14 @@ The Public Submissions JSONL candidate is prepared and structurally verified, bu
 - The file is 2,058,368 bytes, causing the existing 1 MB hygiene limit to fail.
 - The configured secret-like regex has one match inside a Google search URL's `mstk` query parameter in that file; the surrounding context identifies it as a search URL parameter, not an API-key field. The other configured credential patterns have no matches.
 - No credential value is copied into this note. The file and hygiene tests were not changed because this is an inherited upstream artifact, not part of the feature work.
+
+## 2026-11-19 — active continuation: bundle capability resolution
+
+- Current branch: pl2n/DataMate / feature/multi-bundle-query. Upstream remains untouched.
+- Implemented BundleDefinition required canonical fields and RequiredRelationship declarations; added BundleCapabilityResolver and optional CompositePlanner schema-catalog gate.
+- Resolver reports missing/ambiguous fields, same-table field-group conflicts, missing/rejected relationships, and unverified business-rule capabilities.
+- Required fields must co-occur in one table. The resolver does not combine unrelated table columns to satisfy a bundle.
+- Default revenue/collection bundles intentionally remain unavailable under catalog-gated planning until eligible-sales, sale-period, order-status, and settled-payment semantics have separate rulebook evidence. Header presence alone is not enough.
+- No joins, executor changes, parser cues, or arbitrary natural-language splitting.
+- Tests: tests/test_bundle_capabilities.py. Checkpoint: tools/checkpoints/2026-11-19_BUNDLE_CAPABILITY_RESOLUTION.md. CI pending.
+- Next: inspect executor source-column discovery and existing rule profiles, then design a versioned rule-evidence contract. Do not infer business semantics from header names or sample values.

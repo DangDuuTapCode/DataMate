@@ -171,3 +171,26 @@ Before creating component plans, the composite planner now rejects populated fil
 - The file is 2,058,368 bytes, causing the existing 1 MB hygiene limit to fail.
 - The configured secret-like regex has one match inside a Google search URL's `mstk` query parameter in that file; the surrounding context identifies it as a search URL parameter, not an API-key field. The other configured credential patterns have no matches.
 - No credential value is copied into this note. The file and hygiene tests were not changed because this is an inherited upstream artifact, not part of the feature work.
+
+## Bundle capability resolution
+
+Bundle definitions now declare exact canonical fields and optional required
+relationship shapes. BundleCapabilityResolver checks these against
+BusinessSchemaCatalog and reports missing/ambiguous fields, field co-location
+conflicts, missing/rejected relationships, and business-rule capabilities that
+remain unverified.
+
+Required fields must co-occur in at least one source table. The resolver does
+not assemble a bundle from unrelated columns spread across different tables;
+future multi-table bundles must declare and validate their relationship path
+explicitly.
+
+CompositePlanner can be given a schema catalog. When supplied, it refuses to
+compile if any component bundle is not available. The default revenue and
+collection bundles deliberately remain unavailable through this gate until
+their business-rule evidence is separately validated. Structural header
+mapping does not prove that an amount is eligible revenue or that a payment
+status means settled.
+
+No join is executed and no existing metric calculation changes. See
+docs/BUNDLE_CAPABILITY_RESOLUTION.md.

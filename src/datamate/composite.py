@@ -6,6 +6,7 @@ remain the source of truth for each component.
 """
 from dataclasses import dataclass, replace
 
+from .bundle_capabilities import BundleCapabilityResolver
 from .requirements import (
     MetricRequirement,
     RequirementExtractor,
@@ -39,11 +40,16 @@ class CompositeQueryPlan:
 class CompositePlanner:
     """Build a composite plan only for explicitly supported combinations."""
 
-    def __init__(self, rule_planner, bundle_registry=None, composite_rule_registry=None):
+    def __init__(
+        self, rule_planner, bundle_registry=None, composite_rule_registry=None,
+        schema_catalog=None,
+    ):
         self.rule_planner = rule_planner
         self.requirement_extractor = RequirementExtractor(
             bundle_registry, composite_rule_registry
         )
+        self.schema_catalog = schema_catalog
+        self.capability_resolver = BundleCapabilityResolver()
 
     def plan(self, spec: QuerySpec | None) -> CompositeQueryPlan | None:
         if spec is None:
@@ -99,6 +105,10 @@ class CompositePlanner:
             bundle = self.requirement_extractor.bundle_registry.resolve(requirement.metric)
             if bundle is None or not bundle.supports_period:
                 return None
+            if self.schema_catalog is not None:
+                resolution = self.capability_resolver.resolve(bundle, self.schema_catalog)
+                if not resolution.available:
+                    return None
             if spec.entity is not None and not bundle.supports_entity:
                 return None
             component_spec = replace(

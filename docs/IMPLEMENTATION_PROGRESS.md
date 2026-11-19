@@ -692,3 +692,16 @@ Review package: work/submission-build/public-test-submission-2026-11-15. JSONL S
 - The file is 2,058,368 bytes, causing the existing 1 MB hygiene limit to fail.
 - The configured secret-like regex has one match inside a Google search URL's `mstk` query parameter in that file; the surrounding context identifies it as a search URL parameter, not an API-key field. The other configured credential patterns have no matches.
 - No credential value is copied into this note. The file and hygiene tests were not changed because this is an inherited upstream artifact, not part of the feature work.
+
+## 2026-11-19 — bundle capability resolution
+
+- Extended bundle definitions with exact required canonical fields and declarative required relationship shapes.
+- Added BundleCapabilityResolver to check mapped fields, ambiguous mappings, missing/rejected relationships, and unverified business-rule capability labels against BusinessSchemaCatalog.
+- Required fields must co-occur in at least one source table; unrelated tables cannot collectively satisfy one bundle's field set.
+- CompositePlanner accepts an optional schema catalog and fails closed when any required bundle capability is unavailable.
+- Default revenue and collection bundles now declare their structural fields. They remain unavailable under catalog-gated planning until the separate business-rule evidence (eligible sales, sale-period meaning, order-status semantics, settled-payment semantics) is verified; column presence alone is not treated as proof.
+- No automatic joins or changes to existing metric calculations.
+- Added synthetic tests for available/missing/ambiguous/co-location field checks, validated/missing/rejected relationships, planner gating, and unverified default rule capabilities.
+- Design note: docs/BUNDLE_CAPABILITY_RESOLUTION.md.
+- Checkpoint: tools/checkpoints/2026-11-19_BUNDLE_CAPABILITY_RESOLUTION.md.
+- CI pending at checkpoint creation.

@@ -3,6 +3,20 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
+class RequiredRelationship:
+    """A validated relationship shape a bundle needs before it can be used."""
+
+    canonical_key: str
+    cardinality: str = "many_to_one"
+
+    def __post_init__(self):
+        if not self.canonical_key:
+            raise ValueError("relationship canonical key must be non-empty")
+        if self.cardinality not in {"one_to_one", "one_to_many", "many_to_one"}:
+            raise ValueError("unsupported required relationship cardinality")
+
+
+@dataclass(frozen=True)
 class BundleDefinition:
     bundle_id: str
     metric_id: str
@@ -12,6 +26,8 @@ class BundleDefinition:
     rule_profile: str = ""
     supports_period: bool = True
     supports_entity: bool = True
+    required_fields: tuple[str, ...] = ()
+    required_relationships: tuple[RequiredRelationship, ...] = ()
 
 
 class BundleRegistry:
@@ -29,6 +45,8 @@ class BundleRegistry:
                 raise ValueError(f"duplicate bundle definition: {definition.bundle_id}")
             if definition.output_type not in {"number", "percent", "date", "string", "table", "list"}:
                 raise ValueError(f"unsupported bundle output type: {definition.output_type}")
+            if len(set(definition.required_fields)) != len(definition.required_fields):
+                raise ValueError("required fields must be unique")
             self._by_metric[definition.metric_id] = definition
             bundle_ids.add(definition.bundle_id)
 
@@ -61,17 +79,15 @@ def default_bundle_registry():
                 "sale_period",
                 "order_status_semantics",
             ),
+            required_fields=("order_total_after_discount", "order_date", "order_status"),
             rule_profile="revenue_rules",
         ),
         BundleDefinition(
             bundle_id="collection",
             metric_id="collected_amount",
             executor_intent="collected_amount",
-            required_capabilities=(
-                "payment_event_amount",
-                "payment_date",
-                "settled_payment_status",
-            ),
+            required_capabilities=("settled_payment_status",),
+            required_fields=("payment_event_amount", "payment_date", "payment_status"),
             rule_profile="collection_rules",
         ),
     ))
