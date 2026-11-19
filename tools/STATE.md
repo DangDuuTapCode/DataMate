@@ -240,3 +240,10 @@ Next: audit public-test questions against the 14 input shapes, then build minima
 - Independent archive audit references: October 2025 = 20.31%; June 2025 = 19.79%. Raw contest rows are not committed.
 - GitHub Actions run `44594130571` on code/test commit `59a7444cb530801e59018149f653bcbdfd76b4e7`: **352 tests passed**.
 - PR #2 remains open as a draft and has not been merged.
+
+
+### Verified branch tip after runtime integration
+
+- Branch tip: `0cd8fb90fe0c197752f84b847537763b09217e2c`.
+- GitHub Actions run `44594377793` on that exact tip: **352 tests passed**.
+- PR #2 remains open, draft, mergeable, and unmerged.
