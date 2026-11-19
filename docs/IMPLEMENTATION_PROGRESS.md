@@ -210,3 +210,13 @@ Important limitation: this resolver is discovery-only and is not yet connected t
 - Updated the Python test workflow to run for pushes to any `feature/**` branch and PRs targeting `main` or `feature/**`.
 - Commit: `e74d43413c3966d7d80e6fbe8f985fb5b6ac4de9`.
 - No Actions run/status was surfaced for this push; CI remains unverified.
+
+
+## Contest-backed LEFT JOIN validation — 2026-11-20
+
+- Inspected the re-uploaded Contest archive and selected the README/rulebook-backed `biz_129` customer-group revenue query family.
+- Measured 145,479 sales lines, 38,499 orders, 220 customers, and 38,072 payment events. All detail order keys match; 23,309 nonblank order customer IDs match the catalog, while 15,190 orders have blank customer IDs.
+- Identified required semantics: guest orders are excluded from customer groups but included in total-shop revenue. The full fact path therefore requires LEFT JOIN to preserve blank-customer orders. Payment events must remain a separate fact because up to four payment rows can exist per order.
+- Added source-context semantic aliases, `validated_left_join` relationship evidence, `left_join_required` path status, and contract enforcement that rejects INNER JOIN for these paths.
+- Added a synthetic README-shaped integration test and `docs/CONTEST_BIZ129_JOIN_CASE.md`.
+- No contest source data was committed. Runtime wiring remains disabled. CI is not yet verified and no local tests were run.
