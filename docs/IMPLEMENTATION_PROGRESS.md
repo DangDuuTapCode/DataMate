@@ -126,3 +126,11 @@ Run: https://github.com/pl2n/DataMate/actions/runs/44561508605
 - Executor enforces the reviewed revenue shape: `direct_line` selects only direct facts; `detail_to_order` skips direct-candidate selection and executes the existing detail/order path.
 - End-to-end regression adds unreviewed competing sales/payment tables and verifies that the approved tables alone supply the result.
 - Added a pipeline regression proving a detail-to-order claim cannot be replaced by a direct order-summary candidate.
+
+
+## Controlled provenance digest verification — 2026-11-19
+
+- Added runtime SHA-256 verification for every evidence claim against exact file bytes.
+- Strict allowlist: input-root `rulebook.md`; business-scoped `data_dictionary.csv/.xlsx/.md`; business-scoped `operator_attestation.json`.
+- Citation fragments after `#` are ignored for path resolution. Arbitrary paths, traversal, URLs, unknown names, missing files, files resolving outside the input root, and digest mismatches invalidate the evidence.
+- Added unit tests for valid local digest, mismatch, traversal, and external URL rejection, plus a runner regression proving a digest mismatch blocks composite planning.

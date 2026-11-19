@@ -24,7 +24,11 @@ Capability resolution checked exact reviewed table identities, but the runtime s
 
 ## Verification
 
-CI pending for this checkpoint commit. The previous CI run `44561793925` executed 264 tests; 262 passed, with only the two inherited `CODEX PROGRESS` hygiene failures. No local checkout or local test execution is available.
+GitHub Actions run `44562435501` on commit `65dfee3e3e184e2f04eaaea68782c2d7470de756` executed 265 tests; 263 passed. All feature tests passed. The only two failures are inherited `CODEX PROGRESS` size and secret-like-pattern hygiene checks.
+
+Run: https://github.com/pl2n/DataMate/actions/runs/44562435501
+
+No local checkout or local test execution is available.
 
 ## Next
 

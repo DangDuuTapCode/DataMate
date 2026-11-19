@@ -5,6 +5,7 @@ never inferred from column names or sample values.
 """
 from dataclasses import dataclass
 from datetime import datetime
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -270,3 +271,72 @@ def validate_business_rule_evidence_payload(payload, *, expected_business_id=Non
                 return f"provenance reviewed_at must include a timezone for {capability}"
 
     return None
+
+
+
+def verify_business_rule_evidence_provenance(evidence, data_root, business_dir):
+    """Verify claim digests against a small allowlist of local input files.
+
+    References may include a fragment such as rulebook.md#section, but paths,
+    URLs, traversal, and arbitrary filenames are never followed. All resolved
+    files must remain inside the supplied input root.
+    """
+    root = Path(data_root).resolve()
+    business_path = Path(business_dir).resolve()
+    try:
+        business_path.relative_to(root)
+    except ValueError as error:
+        raise RuleEvidenceError("business evidence directory is outside the input root") from error
+
+    allowlists = {
+        "rulebook": {"rulebook.md": root},
+        "data_dictionary": {
+            "data_dictionary.csv": business_path,
+            "data_dictionary.xlsx": business_path,
+            "data_dictionary.md": business_path,
+        },
+        "operator_attestation": {
+            "operator_attestation.json": business_path,
+        },
+    }
+
+    verified_files = {}
+    for profile in evidence.profiles:
+        for claim in profile.evidence:
+            reference = claim.provenance.reference
+            filename = reference.split("#", 1)[0]
+            if (
+                not filename
+                or filename in {".", ".."}
+                or "/" in filename
+                or "\\" in filename
+            ):
+                raise RuleEvidenceError(
+                    f"unsafe provenance reference for {claim.capability_id}"
+                )
+            base = allowlists.get(claim.provenance.source_type, {})
+            if filename not in base:
+                raise RuleEvidenceError(
+                    f"provenance reference is not allowlisted for {claim.capability_id}"
+                )
+            candidate = base[filename] / filename
+            cache_key = (str(candidate), claim.provenance.sha256)
+            if cache_key in verified_files:
+                continue
+            try:
+                resolved = candidate.resolve(strict=True)
+                resolved.relative_to(root)
+                if not resolved.is_file():
+                    raise OSError("not a regular file")
+                actual_digest = hashlib.sha256(resolved.read_bytes()).hexdigest()
+            except (OSError, ValueError, RuntimeError) as error:
+                raise RuleEvidenceError(
+                    f"cannot safely verify provenance source for {claim.capability_id}"
+                ) from error
+            if actual_digest != claim.provenance.sha256:
+                raise RuleEvidenceError(
+                    f"provenance SHA-256 mismatch for {claim.capability_id}"
+                )
+            verified_files[cache_key] = True
+
+    return True

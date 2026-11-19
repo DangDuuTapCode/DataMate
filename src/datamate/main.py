@@ -9,7 +9,11 @@ from .ingest import read_business, read_questions
 from .metrics import Executor
 from .output import write_record
 from .query_schema import query_spec_payload
-from .rule_evidence import BusinessRuleEvidence, RuleEvidenceError
+from .rule_evidence import (
+    BusinessRuleEvidence,
+    RuleEvidenceError,
+    verify_business_rule_evidence_provenance,
+)
 from .schema_catalog import build_schema_catalog
 from .split_rules import RulebookError, SplitRules
 from .timeparse import SolarLunarCalendar
@@ -67,11 +71,16 @@ def run(data_root, output, log_directory=None, business_filter=None):
                     rule_evidence = None
                     if evidence_path.exists():
                         try:
-                            rule_evidence = BusinessRuleEvidence.read(
+                            candidate_evidence = BusinessRuleEvidence.read(
                                 evidence_path, expected_business_id=question.business_id
                             )
+                            verify_business_rule_evidence_provenance(
+                                candidate_evidence, root, data_dir
+                            )
+                            rule_evidence = candidate_evidence
                             evidence_states[question.business_id] = {"status": "loaded"}
                         except RuleEvidenceError as evidence_error:
+                            rule_evidence = None
                             evidence_states[question.business_id] = {
                                 "status": "invalid",
                                 "error": str(evidence_error),

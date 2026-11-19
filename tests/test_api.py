@@ -1,4 +1,5 @@
 import unittest
+import hashlib
 import json
 import tempfile
 from pathlib import Path
@@ -34,6 +35,10 @@ def _write_test_calendar(root):
 
 
 def _write_complete_business_rule_evidence(data_dir):
+    rulebook_digest = hashlib.sha256(
+        (data_dir.parent.parent / "rulebook.md").read_bytes()
+    ).hexdigest()
+
     def claim(capability_id, assertion, table_name, source):
         return {
             "capability_id": capability_id,
@@ -43,7 +48,7 @@ def _write_complete_business_rule_evidence(data_dir):
             "provenance": {
                 "source_type": "rulebook",
                 "reference": "rulebook.md#reviewed-financial-policy",
-                "sha256": "a" * 64,
+                "sha256": rulebook_digest,
                 "reviewed_by": "synthetic-reviewer",
                 "reviewed_at": "2026-11-19T10:00:00+07:00",
             },
@@ -232,6 +237,48 @@ class ApiTests(unittest.TestCase):
                 components[1]["table_scope"],
                 [["payments", "payments.csv"]],
             )
+
+    def test_runner_rejects_business_rule_evidence_digest_mismatch(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            _write_test_rulebook(root)
+            data = root / "data" / "biz"
+            data.mkdir(parents=True)
+            (data / "sales.csv").write_text(
+                "Ngày đặt,Tên sản phẩm,Thành tiền,Trạng thái\n"
+                "2026-03-01,Trà,42,Hoàn thành\n",
+                encoding="utf-8",
+            )
+            (data / "payments.csv").write_text(
+                "Thanh toán / Giá trị,Thanh toán / Ngày,Thanh toán / Trạng thái\n"
+                "30,2026-03-01,Thành công\n",
+                encoding="utf-8",
+            )
+            _write_complete_business_rule_evidence(data)
+            evidence_path = data / "business_rule_evidence.json"
+            payload = json.loads(evidence_path.read_text(encoding="utf-8"))
+            payload["profiles"][0]["evidence"][0]["provenance"]["sha256"] = "b" * 64
+            evidence_path.write_text(json.dumps(payload), encoding="utf-8")
+            (root / "questions.jsonl").write_text(
+                json.dumps({
+                    "id": "q",
+                    "business_id": "biz",
+                    "question": "doanh thu và tiền thực thu tháng này",
+                    "as_of_date": "2026-03-02",
+                }) + "\n",
+                encoding="utf-8",
+            )
+            output, logs = root / "result" / "submission.jsonl", root / "result" / "logs"
+            run(root, output, logs)
+
+            self.assertEqual(
+                output.read_text(encoding="utf-8"),
+                '{"id":"q","type":"abstain"}' + "\n",
+            )
+            trace = json.loads((logs / "trace.jsonl").read_text(encoding="utf-8"))
+            self.assertEqual(trace["business_rule_evidence"]["status"], "invalid")
+            self.assertIn("SHA-256 mismatch", trace["business_rule_evidence"]["error"])
+            self.assertNotIn("composite_query_plan", trace)
 
     def test_runner_rejects_invalid_business_rule_evidence_without_crashing(self):
         with tempfile.TemporaryDirectory() as directory:

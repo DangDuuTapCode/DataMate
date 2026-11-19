@@ -79,3 +79,12 @@
 - New regression adds unreviewed competing sales and payment tables.
 - Previous CI run `44561508605`: 264 tests, 262 passed; only two inherited hygiene failures.
 - Next: verify SHA-256 only against allowlisted files under the input root.
+
+
+## Controlled evidence digest verification
+
+- Runtime recomputes SHA-256 from exact bytes for each claim.
+- Allowlist only: input-root rulebook.md; business-scoped data_dictionary.csv/.xlsx/.md; business-scoped operator_attestation.json.
+- No arbitrary paths, path traversal, external fetch, unknown filenames, or symlink escape outside input root.
+- Digest mismatch or missing source invalidates evidence and blocks composite planning.
+- Next: inspect CI and add symlink-escape regression if needed.

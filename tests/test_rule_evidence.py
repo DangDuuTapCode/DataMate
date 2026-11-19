@@ -8,6 +8,7 @@ from datamate.rule_evidence import (
     BusinessRuleEvidence,
     RuleEvidenceError,
     validate_business_rule_evidence_payload,
+    verify_business_rule_evidence_provenance,
 )
 from datamate.schema_catalog import build_schema_catalog
 from datamate.types import Table
@@ -111,6 +112,93 @@ class BusinessRuleEvidenceTests(unittest.TestCase):
         payload = _payload()
         payload["profiles"][0]["evidence"][0]["provenance"]["reviewed_at"] = "2026-11-19T10:00:00"
         self.assertIn("timezone", validate_business_rule_evidence_payload(payload))
+
+    def test_provenance_verification_hashes_only_allowlisted_local_sources(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            business_dir = root / "data" / "biz-1"
+            business_dir.mkdir(parents=True)
+            rulebook = root / "rulebook.md"
+            rulebook.write_bytes(b"reviewed rulebook bytes")
+            payload = _payload()
+            payload["profiles"][0]["evidence"][0]["provenance"]["sha256"] = (
+                hashlib.sha256(rulebook.read_bytes()).hexdigest()
+            )
+            evidence = BusinessRuleEvidence.from_dict(payload)
+            self.assertTrue(
+                verify_business_rule_evidence_provenance(evidence, root, business_dir)
+            )
+
+    def test_provenance_verification_rejects_digest_mismatch_and_unsafe_paths(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            business_dir = root / "data" / "biz-1"
+            business_dir.mkdir(parents=True)
+            (root / "rulebook.md").write_bytes(b"actual bytes")
+            evidence = BusinessRuleEvidence.from_dict(_payload())
+            with self.assertRaisesRegex(RuleEvidenceError, "SHA-256 mismatch"):
+                verify_business_rule_evidence_provenance(evidence, root, business_dir)
+
+            payload = _payload()
+            payload["profiles"][0]["evidence"][0]["provenance"]["reference"] = "../rulebook.md#section"
+            unsafe = BusinessRuleEvidence.from_dict(payload)
+            with self.assertRaisesRegex(RuleEvidenceError, "unsafe provenance"):
+                verify_business_rule_evidence_provenance(unsafe, root, business_dir)
+
+    def test_provenance_verification_supports_only_named_business_sources(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            business_dir = root / "data" / "biz-1"
+            business_dir.mkdir(parents=True)
+            dictionary = business_dir / "data_dictionary.csv"
+            attestation = business_dir / "operator_attestation.json"
+            dictionary.write_bytes(b"column dictionary")
+            attestation.write_bytes(b'{"reviewed": true}')
+            payload = _payload()
+            first, second = payload["profiles"][0]["evidence"]
+            first["provenance"].update({
+                "source_type": "data_dictionary",
+                "reference": "data_dictionary.csv#payments",
+                "sha256": hashlib.sha256(dictionary.read_bytes()).hexdigest(),
+            })
+            second["provenance"].update({
+                "source_type": "operator_attestation",
+                "reference": "operator_attestation.json",
+                "sha256": hashlib.sha256(attestation.read_bytes()).hexdigest(),
+            })
+            evidence = BusinessRuleEvidence.from_dict(payload)
+            self.assertTrue(
+                verify_business_rule_evidence_provenance(evidence, root, business_dir)
+            )
+
+    def test_provenance_verification_rejects_symlink_escape(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "input"
+            business_dir = root / "data" / "biz-1"
+            business_dir.mkdir(parents=True)
+            outside = Path(directory) / "outside.md"
+            outside.write_bytes(b"outside the input root")
+            (root / "rulebook.md").symlink_to(outside)
+            payload = _payload()
+            payload["profiles"][0]["evidence"][0]["provenance"]["sha256"] = (
+                hashlib.sha256(outside.read_bytes()).hexdigest()
+            )
+            evidence = BusinessRuleEvidence.from_dict(payload)
+            with self.assertRaisesRegex(RuleEvidenceError, "cannot safely verify"):
+                verify_business_rule_evidence_provenance(evidence, root, business_dir)
+
+    def test_provenance_verification_rejects_external_urls(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            business_dir = root / "data" / "biz-1"
+            business_dir.mkdir(parents=True)
+            payload = _payload()
+            payload["profiles"][0]["evidence"][0]["provenance"]["reference"] = (
+                "https://example.invalid/rulebook.md"
+            )
+            evidence = BusinessRuleEvidence.from_dict(payload)
+            with self.assertRaisesRegex(RuleEvidenceError, "unsafe provenance"):
+                verify_business_rule_evidence_provenance(evidence, root, business_dir)
 
     def test_read_rejects_invalid_json_and_writes_no_implicit_defaults(self):
         with tempfile.TemporaryDirectory() as directory:

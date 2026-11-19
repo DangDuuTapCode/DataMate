@@ -66,3 +66,8 @@ The collection executor uses a dedicated payment-status classifier, separate fro
 The resolver returns the exact approved table identities and, for revenue, the reviewed source shape. CompositePlanner carries these into each QueryComponent. At runtime, main creates a component-specific Executor over only those exact tables. Revenue's direct-line and detail-to-order assertions are also enforced by the Executor; a detail-to-order claim disables the direct-candidate shortcut and uses the existing validated detail/order path.
 
 This prevents a second, unreviewed candidate table from being selected after the capability gate has approved a different table. Missing scope identities fail closed.
+
+
+## Provenance verification
+
+Runtime recomputes SHA-256 from exact bytes of allowlisted files only. Rulebooks resolve to the input-root `rulebook.md`; data dictionaries and operator attestations resolve to fixed filenames inside the business directory. Path traversal, external URLs, unknown names, missing files, symlink escapes, and digest mismatches fail closed.

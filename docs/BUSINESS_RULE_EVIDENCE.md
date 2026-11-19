@@ -86,3 +86,13 @@ The executor now classifies payment statuses independently from order statuses. 
 ## Execution uses the approved source scope
 
 The resolver now returns exact approved table identities. CompositePlanner stores that scope on each component, and main creates a component-specific Executor over only those tables. The reviewed revenue source shape is also passed to Executor, so `detail_to_order` cannot silently fall back to a direct-line candidate. This closes the gap between capability validation and actual table selection.
+
+
+## Provenance digest verification
+
+At runtime, every evidence claim's SHA-256 is recomputed from exact file bytes. References are resolved only through a strict local allowlist:
+- `rulebook.md` at the input root;
+- `data_dictionary.csv`, `data_dictionary.xlsx`, or `data_dictionary.md` inside the business data directory;
+- `operator_attestation.json` inside the business data directory.
+
+An optional fragment after `#` is treated only as a citation anchor; it is never interpreted as a path. Absolute paths, separators, traversal, URLs, unknown filenames, missing files, files resolving outside the input root, and digest mismatches invalidate the evidence. No external URL is fetched.
