@@ -72,6 +72,8 @@ class CustomerGroupRevenueShareTests(unittest.TestCase):
 | Doanh thu một đơn | tổng thành tiền các dòng hàng (đã trừ giảm giá trên từng dòng) |
 | Hai dòng của cùng một đơn giống nhau ở mọi ô | lỗi xuất file, tính một lần |
 | Bán chạy | theo doanh thu |
+| Tỉ lệ đơn huỷ trong kỳ | phần trăm đơn huỷ trong mọi đơn đặt trong kỳ |
+- Bằng nhau: hai đối tượng bằng nhau ở tiêu chí câu hỏi thì xếp theo mã tăng dần (không có mã thì theo tên).
 """
         parsed = SplitRules.from_text(rule_text)
         self.assertTrue(parsed.revenue_supported)
