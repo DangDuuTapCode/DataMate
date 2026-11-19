@@ -203,3 +203,13 @@ Next: audit public-test questions against the 14 input shapes, then build minima
 - Inspected the tracked `CODEX PROGRESS` artifact: it was a 2,026,779-character historical conversation transcript, exceeded the 1 MB repository limit, and contained one sensitive-looking token-pattern match. Replaced its current contents with a short pointer to maintained handoff docs; no token-like text was copied into the replacement.
 - Follow-up Actions run `44586527843` on commit `4f7077120f19b29717f5be46f1c53fe9d80d01f4` completed successfully: **318 tests, OK**. This is a GitHub Actions result, not a local test run.
 - PR #2 is open as a draft: https://github.com/DangDuuTapCode/DataMate/pull/2. It has not been merged.
+
+
+## Explicit multi-hop join executor — 2026-11-20
+
+- Added `src/datamate/join_executor.py` with `execute_fact_join_contract(tables, contract)`.
+- The executor consumes only an explicit `FactJoinContract`; it revalidates source-qualified table identities, semantic key-to-column mappings, allowed cardinality, non-fanout hops, target key uniqueness, and reachable nonblank source-key matches.
+- It enforces LEFT JOIN when a hop requires it, preserves one aligned output row per original fact row, retains duplicate fact lines, and represents unmatched dimension rows as `None`. Keys are exact trimmed text; leading zeroes and case are not coerced.
+- Added tests for a two-hop detail → order → customer join, guest-row preservation, duplicate fact lines, duplicate target keys, reachable unmatched keys, malformed rows/contracts, schema-index mismatch, and missing/duplicate source identities.
+- GitHub Actions run `44587842656` on commit `6a0bc0b7ad4aef0cb510b234d05b5455a73eb8db`: **328 tests passed**.
+- The executor is not wired into `Executor.execute` or `RulePlanner`; it performs no date/status/group filters, aggregation, or ratio calculation.
