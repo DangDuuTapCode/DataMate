@@ -29,3 +29,10 @@ Synthetic tests cover resolved two-requirement extraction, single/unknown intent
 1. Run CI and inspect all failures.
 2. Add an explicit serialized composite-query schema for the requirement contract.
 3. Expand requirement extraction only with separate cue-level regressions and an explicit supported-combination policy.
+
+
+## Requirement extraction CI result
+
+The first workflow run found a stale type annotation after moving the requirement model; it was fixed in commit `45330bc6accdc30e38eff31217422c3f01121253`. Follow-up run `44548881088` executed 222 tests with no code/test errors; 220 passed. The only failures are the two pre-existing repository-hygiene checks against `CODEX PROGRESS`.
+
+Run: https://github.com/pl2n/DataMate/actions/runs/44548881088

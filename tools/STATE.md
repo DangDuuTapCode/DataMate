@@ -602,3 +602,10 @@ python qstats.py public_test/ 15
 - GitHub Actions run `44548265235`: 219 tests executed; 217 passed. New schema catalog integration tests passed.
 - Two pre-existing repository-hygiene failures remain on tracked `CODEX PROGRESS` (size and secret-like regex). No bypass was made.
 - Run: https://github.com/pl2n/DataMate/actions/runs/44548265235
+
+
+## 2026-11-19 — requirement extraction CI result
+
+- Initial run found a stale `QueryRequirement` type reference after the model moved to `requirements.py`; fixed in commit `45330bc`.
+- Follow-up run `44548881088`: 222 tests executed, no code/test errors, 220 passed. Two pre-existing `CODEX PROGRESS` hygiene checks remain red.
+- Run: https://github.com/pl2n/DataMate/actions/runs/44548881088

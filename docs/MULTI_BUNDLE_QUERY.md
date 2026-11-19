@@ -133,3 +133,8 @@ CI run `44548265235`: 219 tests, 217 passed. The only two failures are pre-exist
 `src/datamate/requirements.py` separates requirement extraction from plan compilation. The initial allowlisted rule translates the already-recognized `financial_metric_comparison` QuerySpec into two independent requirements: `revenue` and `collected_amount`.
 
 The composite planner consumes these requirements, resolves each through `BundleRegistry`, and creates separate existing executor plans. Single intents and unknown/unresolved requirements do not enter the composite path. Arbitrary conjunction splitting remains explicitly unsupported.
+
+
+## Requirement extraction status
+
+The requirement model and extraction layer are now separate from composite plan compilation. The first rule remains limited to the parser's existing `financial_metric_comparison` intent. Follow-up CI run `44548881088` executed 222 tests with no code/test errors; 220 passed, while the two pre-existing `CODEX PROGRESS` hygiene assertions remain failing.

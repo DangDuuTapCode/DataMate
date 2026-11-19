@@ -583,3 +583,10 @@ The Public Submissions JSONL candidate is prepared and structurally verified, bu
 - Read `tools/checkpoints/2026-11-19_REQUIREMENT_EXTRACTION.md`.
 - `RequirementExtractor` translates the existing `financial_metric_comparison` QuerySpec into two independent metric requirements.
 - It does not split arbitrary conjunctions or enable other metric combinations yet.
+
+
+### CI result — requirement extraction
+
+- A stale annotation found by the first run was corrected in `45330bc`.
+- Follow-up run `44548881088`: 222 tests, no code/test errors; 220 passed. Only two existing `CODEX PROGRESS` hygiene checks fail.
+- Run: https://github.com/pl2n/DataMate/actions/runs/44548881088
