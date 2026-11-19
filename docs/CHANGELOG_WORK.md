@@ -324,3 +324,11 @@
 - Added synthetic integration coverage and a documented case study.
 - Kept runtime execution disabled; payment events remain separate from sales-line facts to avoid join multiplication.
 - CI has not yet been verified.
+
+
+### CI and hygiene follow-up
+
+- Corrected the two new tests identified by initial CI.
+- Replaced the oversized historical `CODEX PROGRESS` transcript with a handoff pointer.
+- Actions run `44586527843`: 318 tests passed on commit `4f7077120f19b29717f5be46f1c53fe9d80d01f4`.
+- Draft PR #2 remains open and unmerged.
