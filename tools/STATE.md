@@ -3,6 +3,7 @@
 ## Repository
 
 - Work only in fork `pl2n/DataMate`, branch `feature/multi-bundle-query`.
+- Current branch head after this continuation: `4103dc2f741274d5c0e5e118823302dfa29144c2`.
 - Do not modify upstream `DangDuuTapCode/DataMate`; do not create a PR unless requested.
 - GitHub API workflow only; no local checkout, local git status, or local test execution.
 - Latest implementation baseline: `a6eade98f01e55326ae53bf6423800868b6f77b3`.
