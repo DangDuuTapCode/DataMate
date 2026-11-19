@@ -69,3 +69,8 @@ A nonblank-key relationship can be structurally non-fanout even when some source
 - The existing `validated` status remains unchanged for relationships with complete source keys. The bundle capability resolver does not treat `validated_left_join` as ordinary `validated` evidence.
 
 This behavior is covered by relationship, path, contract, and README-shaped integration tests. See [CONTEST_BIZ129_JOIN_CASE.md](CONTEST_BIZ129_JOIN_CASE.md) for the motivating dataset profile and rulebook-backed query family.
+
+
+## Execution primitive
+
+The contract can be consumed by the low-level `execute_fact_join_contract` function. That function revalidates source-qualified table identities, semantic key indices, target uniqueness, reachable source-key coverage, and LEFT JOIN requirements while preserving the original fact row count. It does not aggregate or apply business filters. See [FACT_JOIN_EXECUTOR.md](FACT_JOIN_EXECUTOR.md).
