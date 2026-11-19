@@ -11,7 +11,7 @@ from .types import QueryPlan, QuerySpec, SortSpec, TemporalScope
 
 
 class Planner(Protocol):
-    def plan(self, question, as_of_date) -> QueryPlan | None: ...
+    def plan(self, question, as_of_date, business_id=None) -> QueryPlan | None: ...
 
 
 class RulePlanner:
@@ -199,13 +199,19 @@ class RulePlanner:
     def _customer_group_filter(question):
         """Resolve only the reviewed group label supported by this query slice."""
         q = fold(question)
-        if any(phrase in q for phrase in (
-            "nhom than thiet",
-            "khach hang than thiet",
-            "khach hang trong nhom than thiet",
-            "khach hang thuoc nhom than thiet",
-        )):
-            return "thân thiết"
+        groups = (
+            ("thân thiết", (
+                "nhom than thiet",
+                "khach hang than thiet",
+                "khach hang trong nhom than thiet",
+                "khach hang thuoc nhom than thiet",
+            )),
+            ("lẻ", ("nhom le",)),
+            ("sỉ", ("nhom si",)),
+        )
+        for label, phrases in groups:
+            if any(phrase in q for phrase in phrases):
+                return label
         return None
 
     @staticmethod
@@ -459,6 +465,7 @@ class RulePlanner:
         executable = (
             intent in self.EXECUTABLE
             and scope.kind == "period"
+            and (intent != "customer_group_revenue_share" or business_id == "biz_129")
             and not unresolved_entity
             and not unsupported_breakdown
             and not unsupported_monthly_output
@@ -507,9 +514,9 @@ class RulePlanner:
             unsupported_reason=unsupported_reason,
         )
 
-    def plan(self, question, as_of_date):
+    def plan(self, question, as_of_date, business_id=None):
         """Compile only the allowlisted executable subset into an engine plan."""
-        spec = self.interpret(question, as_of_date)
+        spec = self.interpret(question, as_of_date, business_id)
         if spec is None or not spec.executable or spec.time is None:
             return None
         return QueryPlan(
