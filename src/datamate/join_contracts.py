@@ -130,9 +130,6 @@ def build_fact_join_contract(
     if hops[0].from_table != fact_table or hops[-1].to_table != target_table:
         return None
 
-    if any(hop.requires_left_join for hop in hops) and join_type != "left":
-        return None
-
     visited_tables = {fact_table}
     for index, hop in enumerate(hops):
         if not _valid_hop(hop):
@@ -142,6 +139,9 @@ def build_fact_join_contract(
         if hop.to_table in visited_tables:
             return None
         visited_tables.add(hop.to_table)
+
+    if any(hop.requires_left_join for hop in hops) and join_type != "left":
+        return None
 
     # Source-side blank keys are permitted only when the path explicitly
     # requires LEFT JOIN, preserving otherwise-unmatched fact rows.
