@@ -106,6 +106,41 @@ Commits:
 - `d16c67a7a26e7e4431a66524f4c105ccc8e2727f` — relationship identity documentation.
 - `6e3af74a27e0a477f4597b6e800c93f8d8ac20a5` — progress update.
 
+## Rulebook-aware composite order-line relationships
+
+The POS SQLite input exposed a relationship that cannot be safely represented by one key:
+- `chi_tiet_don_lo` references `chi_tiet_don` by `(MaHoaDon, SoThuTu)`.
+- Single `MaHoaDon` overlaps at order grain and is many-to-many between the two detail tables.
+- The rulebook explicitly states that exact duplicate rows within the same order are export errors and count once.
+- The inspected POS database has 72,411 `chi_tiet_don` rows; 1,350 exact duplicate rows are removed only for relationship profiling, leaving 71,061 unique order-line keys. The lot allocation table has 72,710 rows; all composite order-line keys are covered by the deduplicated detail table. Multiple lot rows per line are expected.
+
+Implemented:
+- `SplitRules.deduplicate_identical_order_lines` parses the exact rulebook clause; absent clause defaults to false.
+- Exact aliases for `Số thứ tự` and `No.` map to `order_line_number`; generic `STT` stays unmapped.
+- Relationship discovery now emits a composite `order_id+order_line_number` candidate, with key component names and all column indices.
+- Exact duplicate rows are removed from composite-key profiling only when the active rulebook explicitly authorizes it.
+- `main.py` passes the active rulebook flag into `build_schema_catalog`.
+- Schema catalog version is `1.1.0`.
+- This is still discovery only: no source table mutation and no join execution.
+
+Commits:
+- `107216e39994fe7aa846dd47e55350f086e0ba73` — parse exact duplicate-line rule.
+- `64c426cef3e51a20fd80202d4f0b385279cee352` — order-line sequence alias.
+- `01e54b3dbc05629c2e48a4ca6edd6484086a465e` — composite relationship discovery.
+- `bd2b1f6f9eb80d208cedc16d1975a328439306cf` — catalog policy parameter.
+- `0f120e9c49a6f4c9f36c19712d8b7073f5c066f1` — runtime policy wiring.
+- `3191b7a6559178daf303246251606810113e19d0` — normalized clause matching correction.
+- `7016a6007ba15f18eb3a519be5dfaa7746ad6ab6` — semantic test update.
+- `ef200e29f93393afbb5969a1f6648ef22fc34963` — composite relationship tests.
+- `06a579f1fa474ac1664bbb1e1cf398614e1382f6` — catalog test.
+- `d0d75b9941f440fd4cb4f13027ccb60845e2fb75` — split-rule tests.
+- `4f6def6851ddff74ffeeba4079a6ca31d2c27369` — catalog schema version 1.1.0.
+- `6ae52b0479b14da76d4b3d873925589339042c7f` — schema version test.
+- `a6da9e40fb57a95d4c0924005aad81d142460b97` — partial-overlap test expectation.
+- `4e17cd94e1f01ecb3e75ae1911916d0c8b8887cc` — relationship documentation.
+- `3741d341d3709df8f9193e8e9c8599952e03b4f9` — duplicate-line rule documentation.
+- `aa6e746425f1e77b05c7e1837e18202cb67b7477` — progress update.
+
 ## Next engineering step
 
 Use the 14 public-test businesses and 1,000 public-test questions as a coverage map. Prioritize representative multi-source cases and add small synthetic fixtures for them; do not commit the 192 MB archive or its full business data. Focus on source-role and relationship contracts, not a universal join. Extend only with explicit README/rulebook evidence. Keep collection unavailable until a supported settlement policy is present.
