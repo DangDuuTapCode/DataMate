@@ -361,3 +361,10 @@ CI is still unverified: GitHub queries returned no workflow runs/statuses for th
 - Current branch tip: `e95608eb8b34281ac5327ecf67d58f16dbab5e38`.
 - Actions run `44588291394` on that exact commit: **328 tests passed**.
 - PR #2 remains an open draft; do not merge without the user's instruction.
+
+
+### Join executor hardening
+
+- The executor now rejects blank fact-grain declarations and has coverage for fully matched INNER JOINs and exact identifier matching (leading zeroes are not numerically coerced).
+- Latest code/test commit: `647f6a40bc23aef80f26180214342848e86eb576`.
+- Actions run `44588678999`: **331 tests passed**.
