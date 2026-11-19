@@ -60,6 +60,9 @@ _EXACT_ALIASES = {
         "ma don", "ma don hang", "ma hoa don", "ma bill", "don so", "so don",
         "order id", "order code", "invoice id", "invoice number",
     },
+    "order_line_number": {
+        "so thu tu", "no", "no.", "line no", "line number", "item no", "item number",
+    },
     "customer_id": {
         "ma kh", "ma kh mua", "ma khach", "ma khach hang", "ma khach mua",
         "ma khach le si", "customer id", "customer code",
