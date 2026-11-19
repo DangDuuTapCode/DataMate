@@ -600,3 +600,13 @@ Review package: work/submission-build/public-test-submission-2026-11-15. JSONL S
 - GitHub Actions run `44547696247` executed 216 tests. All bundle registry and composite tests passed; 214 tests passed overall.
 - Two existing repository-hygiene checks still fail against tracked `CODEX PROGRESS` (size limit and secret-like regex). No test was disabled.
 - Run: https://github.com/pl2n/DataMate/actions/runs/44547696247
+
+
+## 2026-11-19 — business schema catalog
+
+- Added `src/datamate/schema_catalog.py` to combine table-level semantic mappings and relationship evidence into a versioned catalog.
+- Duplicate table names can be resolved by source file; ambiguous lookups return no result.
+- Catalog serialization retains per-column mapping evidence and relationship cardinality/coverage evidence.
+- No joins or metric execution are performed.
+- Added synthetic integration tests for mapped fields, validated relationships, duplicate table names, and generic-label abstention.
+- Checkpoint: `tools/checkpoints/2026-11-19_SCHEMA_CATALOG.md`.

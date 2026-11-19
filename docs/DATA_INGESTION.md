@@ -133,3 +133,12 @@ A structurally validated key relationship is necessary but not sufficient to com
 `src/datamate/bundles.py` defines an explicit allowlist from metric IDs to logical bundle IDs, executor intents, output types, required capabilities, and rule-profile labels. The initial registry contains only the already-supported `revenue` and `collected_amount` components.
 
 The registry is declarative. It does not infer source tables or replace the existing metric executors.
+
+
+## Business schema catalog
+
+`src/datamate/schema_catalog.py` combines per-table semantic mappings and relationship candidates into one versioned, serializable business-level catalog.
+
+- Table schemas are addressed by both table name and source file; duplicate table names across workbooks/files are not silently collapsed.
+- Relationship entries retain their own key, cardinality, coverage, and evidence metadata.
+- The catalog is metadata-only. It does not mutate source tables, execute joins, or enable metrics.

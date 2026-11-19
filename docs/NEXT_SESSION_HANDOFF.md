@@ -562,3 +562,10 @@ The Public Submissions JSONL candidate is prepared and structurally verified, bu
 
 - Latest registry/composite test run `44547696247`: 216 tests; 214 passed, including all new tests.
 - Only the two pre-existing `CODEX PROGRESS` hygiene checks fail.
+
+
+## Resume — 2026-11-19 — business schema catalog
+
+- Read `tools/checkpoints/2026-11-19_SCHEMA_CATALOG.md`.
+- `build_schema_catalog()` composes semantic column mappings and relationship evidence. It is metadata-only and does not join data.
+- Use both table name and source file to resolve duplicate table names.
