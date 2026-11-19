@@ -656,3 +656,12 @@ The Public Submissions JSONL candidate is prepared and structurally verified, bu
 - CI: https://github.com/pl2n/DataMate/actions/runs/44554164419
 - Follow-up executor inspection: revenue supports either direct line-grain facts or a detail-to-order source path, so it intentionally has no flat required-field tuple yet. Collection requires payment-event amount and payment date; payment source role and status policy remain unverified.
 - Production integration: main.py builds one BusinessSchemaCatalog per business and passes it to the corresponding CompositePlanner. Catalog-gated planning is now wired into the pipeline.
+
+
+## Current verified continuation — 2026-11-19
+
+- Current branch head: `c06e7c42befd1500d743219ab1a3ec3883213ef8` on `pl2n/DataMate/feature/multi-bundle-query`.
+- Production runtime now builds one schema catalog per business and passes it to that business's composite planner. This closes the earlier optional-catalog bypass.
+- CI run `44555242526`: 242 tests; 240 passed; the only failures are the two inherited repository-hygiene checks against `CODEX PROGRESS`. The new runner-gating regression passed.
+- Next action: model source-role and business-rule evidence (revenue source alternatives, eligible-sales policy, collection source role, settled-payment policy) in a versioned contract. Do not infer these semantics from column names or sample values.
+- No local checkout exists in this session; a literal local `git status` is unavailable. Remote refs/commits/trees were inspected.

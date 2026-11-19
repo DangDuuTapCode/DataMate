@@ -60,3 +60,10 @@ BusinessSchemaCatalog once per business and supplies it to that business's
 CompositePlanner, activating the gate in production.
 
 CI for this correction is pending.
+
+
+## Source-shape refinement
+
+Executor inspection confirmed that revenue supports two alternative source shapes (direct line-grain facts or detail-to-order), so no flat required-field tuple is declared for revenue yet. Collection requires payment-event amount and payment date; payment source role and settled-payment policy remain unverified. The resolver therefore keeps both default bundles unavailable under catalog-gated planning.
+
+Latest runtime CI run `44555242526`: 242 tests, 240 passed; the only failures are the two inherited repository-hygiene checks. The runtime-gating regression passed.

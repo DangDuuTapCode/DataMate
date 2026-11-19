@@ -22,3 +22,10 @@ No joins, new metrics, rule inference, or parser expansion. The ordinary single-
 ## Verification
 
 Pending GitHub Actions for the commit containing this slice.
+
+
+## CI result — runtime wiring
+
+GitHub Actions run `44555207826` on commit `c2f965d9ff0f06c14a68ed212660a92b50d1754a` executed 242 tests. The runtime-gating regression passed; 240 tests passed overall. The only two failures were the inherited `CODEX PROGRESS` size-limit and secret-like-pattern checks. Follow-up documentation commit: `c06e7c42befd1500d743219ab1a3ec3883213ef8`.
+
+Run: https://github.com/pl2n/DataMate/actions/runs/44555207826

@@ -713,3 +713,12 @@ Review package: work/submission-build/public-test-submission-2026-11-15. JSONL S
 - No import/runtime errors or feature-test failures were reported. The new bundle capability and planner integration tests passed.
 - Run: https://github.com/pl2n/DataMate/actions/runs/44554164419
 - Executor inspection corrected the initial bundle declarations: revenue has no flat required-field list yet because the executor accepts direct line-grain and detail-to-order source shapes. Collection requires payment-event amount and payment date; payment-role and status policy remain unverified. The production pipeline now builds a per-business BusinessSchemaCatalog and passes it to CompositePlanner.
+
+
+## Latest verified multi-bundle state — 2026-11-19
+
+- Branch head: `c06e7c42befd1500d743219ab1a3ec3883213ef8`.
+- Runtime integration is complete: `main.run` builds a `BusinessSchemaCatalog` per business from the exact tables used by its executor and passes it to that business's `CompositePlanner`.
+- Runner regression `test_runner_gates_composite_queries_on_business_schema_capabilities` passed. Structurally mapped headers do not bypass unverified source-role/business-rule requirements.
+- Latest CI run `44555242526`: 242 tests; 240 passed. Only the two inherited `CODEX PROGRESS` repository-hygiene checks failed. No feature test failures.
+- Next: inspect executor source discovery and rulebook representation; define a versioned business-rule evidence contract before any default financial bundle can become available. Preserve fail-closed behavior.

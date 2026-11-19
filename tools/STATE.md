@@ -658,3 +658,13 @@ python qstats.py public_test/ 15
 - No hygiene checks were disabled and no upstream files were changed.
 - Executor source inspection corrected the default declarations: revenue has no flat field list because direct-line and detail-to-order source shapes are alternatives; collection requires payment-event amount and payment date. Payment table role and status policy remain unverified.
 - src/datamate/main.py now builds a BusinessSchemaCatalog once per business and supplies it to that business's CompositePlanner, so the capability gate is active in the production pipeline rather than only in tests.
+
+
+## Active GitHub feature-branch state — 2026-11-19
+
+- Current branch head: `c06e7c42befd1500d743219ab1a3ec3883213ef8` (`pl2n/DataMate`, `feature/multi-bundle-query`).
+- Multi-bundle capability resolution is wired into `main.run`: one `BusinessSchemaCatalog` is built per business and supplied to its `CompositePlanner`.
+- Latest CI: run `44555242526`, 242 tests / 240 passed. The only two failures are inherited `CODEX PROGRESS` hygiene checks; the new runtime-gating test passed.
+- Default financial bundles remain unavailable until their source-role and business-rule capabilities are evidenced by a versioned contract.
+- Next: design and test that rule-evidence contract. Do not add fuzzy semantic inference, automatic joins, or new executable metrics.
+- No local checkout was available; no local `git status` was run. The remote branch ref and committed tree were checked.
