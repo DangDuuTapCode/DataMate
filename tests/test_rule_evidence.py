@@ -171,6 +171,22 @@ class BusinessRuleEvidenceTests(unittest.TestCase):
                 verify_business_rule_evidence_provenance(evidence, root, business_dir)
             )
 
+    def test_provenance_verification_rejects_internal_symlink_sources(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "input"
+            business_dir = root / "data" / "biz-1"
+            business_dir.mkdir(parents=True)
+            actual = root / "actual-rulebook.md"
+            actual.write_bytes(b"rulebook bytes")
+            (root / "rulebook.md").symlink_to(actual)
+            payload = _payload()
+            digest = hashlib.sha256(actual.read_bytes()).hexdigest()
+            for claim in payload["profiles"][0]["evidence"]:
+                claim["provenance"]["sha256"] = digest
+            evidence = BusinessRuleEvidence.from_dict(payload)
+            with self.assertRaisesRegex(RuleEvidenceError, "cannot safely verify"):
+                verify_business_rule_evidence_provenance(evidence, root, business_dir)
+
     def test_provenance_verification_rejects_symlink_escape(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "input"

@@ -151,7 +151,7 @@ Next: inspect the new CI result, then implement safe digest verification for kno
 
 - Runtime now recomputes every evidence claim SHA-256 from exact bytes.
 - Only allowlisted local references are resolved: root `rulebook.md`, business-scoped data_dictionary CSV/XLSX/MD, and business-scoped `operator_attestation.json`.
-- Path separators/traversal, external URLs, unknown filenames, missing files, paths resolving outside the input root, and digest mismatches fail closed.
+- Path separators/traversal, external URLs, unknown filenames, missing files, symlink sources, paths resolving outside the input root, and digest mismatches fail closed.
 - Citation fragments are not interpreted as paths.
 - New tests cover valid digest, mismatch, traversal, external URL, and runner-level mismatch abstention.
 

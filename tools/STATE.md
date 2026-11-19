@@ -85,7 +85,7 @@
 
 - Runtime recomputes SHA-256 from exact bytes for each claim.
 - Allowlist only: input-root rulebook.md; business-scoped data_dictionary.csv/.xlsx/.md; business-scoped operator_attestation.json.
-- No arbitrary paths, path traversal, external fetch, unknown filenames, or symlink escape outside input root.
+- No arbitrary paths, path traversal, external fetch, unknown filenames, symlink sources, or paths resolving outside input root.
 - Digest mismatch or missing source invalidates evidence and blocks composite planning.
 - Next: inspect CI and add symlink-escape regression if needed.
 

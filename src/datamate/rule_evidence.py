@@ -324,11 +324,17 @@ def verify_business_rule_evidence_provenance(evidence, data_root, business_dir):
             if cache_key in verified_files:
                 continue
             try:
+                if candidate.is_symlink():
+                    raise OSError("symlink provenance sources are not allowed")
                 resolved = candidate.resolve(strict=True)
                 resolved.relative_to(root)
                 if not resolved.is_file():
                     raise OSError("not a regular file")
-                actual_digest = hashlib.sha256(resolved.read_bytes()).hexdigest()
+                digest = hashlib.sha256()
+                with resolved.open("rb") as source:
+                    for chunk in iter(lambda: source.read(1024 * 1024), b""):
+                        digest.update(chunk)
+                actual_digest = digest.hexdigest()
             except (OSError, ValueError, RuntimeError) as error:
                 raise RuleEvidenceError(
                     f"cannot safely verify provenance source for {claim.capability_id}"
