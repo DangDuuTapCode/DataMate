@@ -157,6 +157,13 @@ def execute_customer_group_revenue_share(tables, rules, start, end, customer_gro
     numerator = Decimal(0)
     eligible_rows = 0
     wanted_group = fold(customer_group)
+    known_groups = {
+        fold(value)
+        for value in joined_groups
+        if value is not None and str(value).strip()
+    }
+    if wanted_group not in known_groups:
+        return None, "unresolved_filter"
 
     for index, fact_row in enumerate(fact.rows):
         if fact_amount >= len(fact_row):
