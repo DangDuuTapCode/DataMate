@@ -55,7 +55,10 @@ def _valid_hop(hop):
         return False
     if hop.from_table == hop.to_table or hop.fanout is not False:
         return False
-    if hop.cardinality not in {"many_to_one", "one_to_one"}:
+    if (
+        not isinstance(hop.cardinality, str)
+        or hop.cardinality not in {"many_to_one", "one_to_one"}
+    ):
         return False
     if (
         not isinstance(hop.canonical_keys, tuple)
