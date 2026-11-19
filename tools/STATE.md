@@ -95,3 +95,15 @@ Next: audit public-test questions against the 14 input shapes, then build minima
 - CI run `44577298652`: 286 tests, 284 passed; all feature tests pass. Two inherited failures remain for the existing `CODEX PROGRESS` artifact in repository hygiene tests.
 - Relevant commits: `c00cd0e`, `11cbcb0`, `ea7f156`, `9b20c0b`, `5e05f2b`, `d926cae`, `09cef43`, `004306d`, `72e94d6`, `3ae9966`, `f3a8bd4`, `059b931`, `21469c4`, plus documentation checkpoints `61e9430`, `705f016`, `7cd271a`.
 - This is a narrow revenue detail-to-order contract, not a general join planner. Composite keys, polymorphic references, multi-hop paths, and arbitrary dimension joins remain unsupported.
+
+
+## Multi-hop relationship path discovery (2026-11-20)
+
+- Added `src/datamate/relationship_paths.py` and `tests/test_relationship_paths.py`.
+- Discovery-only graph resolver; not wired into planner/Executor.
+- Exact source-qualified table identity; validated edges only; carries composite canonical keys and endpoint column indices.
+- Cardinality-aware traversal: many-to-one and one-to-one preserve source grain; one-to-many is `fanout_risk`.
+- Unique path only; multiple paths ambiguous; no heuristic ranking.
+- CI run `44578825930`: 293 tests, 291 passed; all feature tests pass. Two inherited hygiene failures remain for `CODEX PROGRESS`.
+- Implementation commit: `68564ac356af305e63aabe1703ce76d98aadb08f`.
+- Next: query-specific execution contract including fact grain, aggregation stage, exact path and fanout policy. Do not enable arbitrary multi-hop joins.
