@@ -194,3 +194,12 @@ Next: audit public-test questions against the 14 input shapes, then build minima
 - Added `docs/CONTEST_BIZ129_JOIN_CASE.md` with the rulebook-backed query family, observed structural counts, and payment-fanout warning.
 - Runtime Executor/Planner wiring remains disabled. The contract is still structural; it does not execute joins or calculate the group-share numerator/denominator.
 - CI has not surfaced a workflow run or commit status for this continuation branch. No local checkout or local test run was used. Obtain CI through a draft/normal PR before treating tests as passed.
+
+
+### CI and repository hygiene follow-up
+
+- Initial run `44586101398` executed 318 tests and exposed two fixture expectation mistakes plus two hygiene failures.
+- Corrected the README-shaped fixture to include repeated orders for one customer (so the relationship is many-to-one), and corrected the partial-overlap test to expect `candidate` rather than `rejected`.
+- Inspected the tracked `CODEX PROGRESS` artifact: it was a 2,026,779-character historical conversation transcript, exceeded the 1 MB repository limit, and contained one sensitive-looking token-pattern match. Replaced its current contents with a short pointer to maintained handoff docs; no token-like text was copied into the replacement.
+- Follow-up Actions run `44586527843` on commit `4f7077120f19b29717f5be46f1c53fe9d80d01f4` completed successfully: **318 tests, OK**. This is a GitHub Actions result, not a local test run.
+- PR #2 is open as a draft: https://github.com/DangDuuTapCode/DataMate/pull/2. It has not been merged.
