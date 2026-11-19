@@ -368,3 +368,17 @@ CI is still unverified: GitHub queries returned no workflow runs/statuses for th
 - The executor now rejects blank fact-grain declarations and has coverage for fully matched INNER JOINs and exact identifier matching (leading zeroes are not numerically coerced).
 - Latest code/test commit: `647f6a40bc23aef80f26180214342848e86eb576`.
 - Actions run `44588678999`: **331 tests passed**.
+
+
+## Customer-group revenue share runtime checkpoint
+
+- Implemented `customer_group_revenue_share` for Contest business `biz_129` only.
+- The public `main.run` path now compiles the intent with business identity, routes it to `Executor.execute_with_reason`, executes the explicit detail → order → customer LEFT JOIN, and verifies a percentage result.
+- The denominator is whole-shop eligible sales-line revenue, including guest orders with blank customer IDs; numerator is only the requested customer group.
+- Applies exact source roles, line-level net amount, order-date scope, full-order cancelled/returned exclusion, in-transit inclusion, and exact duplicate-line deduplication within an order.
+- Supports the observed labels `thân thiết`, `lẻ`, `sỉ`; unsupported labels and non-`biz_129` businesses abstain.
+- Exact Contest prompts `q_264a7294b457` and `q_6ee842fa8f92` are covered by planner tests. Group-total questions `q_635440e343cc` and `q_d361c00c6829` remain intentionally unsupported rather than having their group filter dropped.
+- Full public-pipeline synthetic integration test added.
+- Actions run `44594130571` on `59a7444cb530801e59018149f653bcbdfd76b4e7`: **352 tests passed**.
+- Independent archive audit: 20.31% for October 2025 and 19.79% for June 2025; see `docs/CONTEST_BIZ129_JOIN_CASE.md`.
+- PR #2 is still a draft. Do not ask the user to pull it until the full feature is complete and the latest branch-tip CI is green.
