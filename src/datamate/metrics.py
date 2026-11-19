@@ -1194,13 +1194,29 @@ class Executor:
             filters = dict(plan.filters)
         except (TypeError, ValueError):
             return None, "unresolved_filter"
-        return execute_customer_group_revenue_share(
+        candidate, reason = execute_customer_group_revenue_share(
             self.tables,
             self.rules,
             plan.start,
             plan.end,
             filters.get("customer_group"),
         )
+        reason_codes = {
+            "unresolved_filter": "ambiguous_entity",
+            "temporal_scope_not_executable": "missing_time_range",
+            "source_scope_mismatch": "join_unsafe",
+            "missing_required_fields": "missing_column",
+            "relationship_not_validated": "join_unsafe",
+            "join_contract_invalid": "join_unsafe",
+            "join_execution_failed": "join_unsafe",
+            "join_result_incomplete": "insufficient_evidence",
+            "malformed_fact_row": "parse_failure",
+            "invalid_order_date": "parse_failure",
+            "unverified_order_status": "unknown_order_status",
+            "invalid_revenue_amount": "parse_failure",
+            "no_eligible_revenue": "no_data",
+        }
+        return candidate, reason_codes.get(reason, reason)
 
     def execute_with_reason(self, plan, question, *, spec=None):
         """Run the allowlisted executor and return an internal abstention reason."""
