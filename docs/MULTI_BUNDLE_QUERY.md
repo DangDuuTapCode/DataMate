@@ -143,3 +143,8 @@ The requirement model and extraction layer are now separate from composite plan 
 ## Versioned requirement payload
 
 The output of `RequirementExtractor` is serialized and validated against `schemas/requirement_extraction.v1.schema.json` before plan compilation. The contract enforces typed requirement fields, unique metric IDs and requirement IDs, and consistency between resolved/unresolved status and failure reason. Invalid payloads fail closed.
+
+
+## Versioned requirement contract status
+
+The composite requirement payload is versioned at `1.0.0` and validated before component planning. CI run `44549585604` executed 226 tests with no code/test errors; 224 passed. Only two pre-existing repository-hygiene checks against `CODEX PROGRESS` remain failing.

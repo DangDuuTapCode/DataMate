@@ -31,3 +31,10 @@ Synthetic tests cover valid resolved payloads, duplicate metric rejection, unres
 1. Run CI and inspect all failures.
 2. Add a plan-level schema only if it contributes additional validation beyond the requirement contract.
 3. Generalize supported requirement combinations with explicit cue and compatibility tests.
+
+
+## CI result
+
+GitHub Actions run `44549585604` executed 226 tests with no code/test errors; 224 tests passed. The only two failures are the pre-existing repository-hygiene assertions against tracked `CODEX PROGRESS` (size limit and secret-like regex). No hygiene checks were disabled.
+
+Run: https://github.com/pl2n/DataMate/actions/runs/44549585604

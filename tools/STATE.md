@@ -609,3 +609,10 @@ python qstats.py public_test/ 15
 - Initial run found a stale `QueryRequirement` type reference after the model moved to `requirements.py`; fixed in commit `45330bc`.
 - Follow-up run `44548881088`: 222 tests executed, no code/test errors, 220 passed. Two pre-existing `CODEX PROGRESS` hygiene checks remain red.
 - Run: https://github.com/pl2n/DataMate/actions/runs/44548881088
+
+
+## 2026-11-19 — requirement schema CI result
+
+- GitHub Actions run `44549585604`: 226 tests executed; no code/test errors; 224 passed.
+- Two pre-existing repository-hygiene failures remain on tracked `CODEX PROGRESS` (size and secret-like regex). No bypass was made.
+- Run: https://github.com/pl2n/DataMate/actions/runs/44549585604

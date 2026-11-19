@@ -645,3 +645,10 @@ Review package: work/submission-build/public-test-submission-2026-11-15. JSONL S
 - Composite planning now validates the requirement contract before compiling component plans.
 - Added tests for valid payloads, duplicate metrics, unresolved payloads, and status/reason mismatch.
 - Checkpoint: `tools/checkpoints/2026-11-19_REQUIREMENT_SCHEMA.md`.
+
+
+### CI result — versioned requirement schema
+
+- GitHub Actions run `44549585604` executed 226 tests with no code/test errors. 224 passed.
+- The only two failures remain pre-existing hygiene assertions against tracked `CODEX PROGRESS` (size limit and secret-like regex). No checks were disabled.
+- Run: https://github.com/pl2n/DataMate/actions/runs/44549585604

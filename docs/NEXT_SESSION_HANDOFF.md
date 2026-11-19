@@ -597,3 +597,9 @@ The Public Submissions JSONL candidate is prepared and structurally verified, bu
 - Read `tools/checkpoints/2026-11-19_REQUIREMENT_SCHEMA.md`.
 - Requirement extraction payloads are versioned at `1.0.0` and validated before composite plan compilation.
 - Preserve unique requirement IDs/metrics and status/reason invariants.
+
+
+### CI result — requirement schema
+
+- Run `44549585604`: 226 tests, no code/test errors; 224 passed. Only the two pre-existing `CODEX PROGRESS` hygiene checks fail.
+- Run: https://github.com/pl2n/DataMate/actions/runs/44549585604
