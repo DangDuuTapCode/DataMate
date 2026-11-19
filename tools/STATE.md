@@ -81,3 +81,16 @@ Next: audit public-test questions against the 14 input shapes, then build minima
 - Main runtime passes the active rulebook flag into schema catalog construction; catalog schema version 1.1.0.
 - Relevant commits: `107216e`, `64c426c`, `01e54b3`, `bd2b1f6`, `0f120e9`, `3191b7a`, `7016a60`, `ef200e2`, `06a579f`, `d0d75b9`, `4f6def6`, `6ae52b0`, `a6da9e4`, `4e17cd9`, `3741d34`, `aa6e746`, `ea5fb27`.
 - This change set has no verified Actions result yet; no local checkout or local test run is available.
+
+
+## Exact approved revenue join contract
+
+- Detail-to-order revenue no longer relies only on a relationship check followed by independent executor header guessing in the composite path.
+- `RevenueJoinContract` stores exact line/order table identities, source filenames, canonical key set, and physical key-column indices.
+- Resolver emits it only for one exact validated source-qualified `order_id` relationship with safe cardinality; direction is normalized even if catalog order is reversed.
+- Composite planner carries the contract and main passes it to the scoped Executor. Executor enforces exact table identity and key-column indices.
+- Joined duplicate line rows are deduplicated only with explicit active rulebook authorization; otherwise execution abstains.
+- Latest implementation commit before docs: `21469c4be7a3d93e5bd2befb879315f3c9c36afd`.
+- CI run `44577298652`: 286 tests, 284 passed; all feature tests pass. Two inherited failures remain for the existing `CODEX PROGRESS` artifact in repository hygiene tests.
+- Relevant commits: `c00cd0e`, `11cbcb0`, `ea7f156`, `9b20c0b`, `5e05f2b`, `d926cae`, `09cef43`, `004306d`, `72e94d6`, `3ae9966`, `f3a8bd4`, `059b931`, `21469c4`, plus documentation checkpoints `61e9430`, `705f016`, `7cd271a`.
+- This is a narrow revenue detail-to-order contract, not a general join planner. Composite keys, polymorphic references, multi-hop paths, and arbitrary dimension joins remain unsupported.
