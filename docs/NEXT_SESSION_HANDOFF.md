@@ -236,3 +236,15 @@ Next: wait for CI on the current branch head. If feature tests pass, design (but
 - The existing upstream PR #1 is open from `pl2n/DataMate:feature/multi-bundle-query` into `DangDuuTapCode/DataMate:main`. It was not created or modified in this work item. GitHub currently reports `mergeable=false`; this should be rechecked before any merge decision.
 
 Next: check PR #1 mergeability and CI after any subsequent pushes, but do not merge without the user's explicit direction. Keep multi-hop execution disabled until a query-specific grain/aggregation contract is designed and validated.
+
+
+## Fact join contract structural prototype (2026-11-20)
+
+- Added `src/datamate/join_contracts.py` with `FactJoinContract` and a fail-closed builder over a unique validated relationship path.
+- Contract records exact source-qualified fact/target tables, declared fact grain, measure field and physical measure index, aggregation stage, join type, and exact path hops/key indices.
+- Builder rejects fanout, unknown cardinality, ambiguous paths, endpoint mismatch, disconnected/repeated nodes, malformed composite key indices, invalid measure index, missing grain/measure declarations, unsupported join types, and pre-join aggregation.
+- Added synthetic tests in `tests/test_join_contracts.py` and documentation in `docs/FACT_JOIN_CONTRACT.md`.
+- This is a structural prototype only. It is not wired into planner/Executor and does not execute joins or enable a new metric. Grain/measure meaning still requires reviewed query-specific evidence.
+- Code commits: `bad2dcda57a71d8c78d7e49a2c84b969e3008071`, `2136219d904b5ce99671e3c3d285d5b60a638aae`, `f5b476972f779b5abe02bf14f8ca438ac143c90f`, `085284c1562af575d55bf12f80715de6b331e3b3`.
+- Documentation commit: `d87b325e158da97ab11f21380cb177e36d3ed680`.
+- CI verification pending. No local checkout or local test execution was used.
