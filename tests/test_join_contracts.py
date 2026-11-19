@@ -139,5 +139,57 @@ class FactJoinContractTests(unittest.TestCase):
         self.assertIsNone(self.build(measure_field=" "))
 
 
+    def test_rejects_unknown_cardinality_even_if_path_flag_claims_safe(self):
+        from datamate.relationship_paths import (
+            RelationshipPathHop, RelationshipPathResolution,
+        )
+
+        malformed = RelationshipPathResolution(
+            "unique_safe",
+            hops=(RelationshipPathHop(
+                self.fact, self.orders, ("order_id",), (2,), (0,),
+                "many_to_many", False,
+            ),),
+            candidate_count=1,
+        )
+
+        self.assertIsNone(build_fact_join_contract(
+            malformed, self.fact, self.orders,
+            fact_grain="order line", measure_field="amount",
+            measure_column_index=4,
+        ))
+
+    def test_rejects_repeated_table_in_manually_constructed_path(self):
+        from datamate.relationship_paths import (
+            RelationshipPathHop, RelationshipPathResolution,
+        )
+
+        malformed = RelationshipPathResolution(
+            "unique_safe",
+            hops=(
+                RelationshipPathHop(
+                    self.fact, self.orders, ("order_id",), (2,), (0,),
+                    "many_to_one", False,
+                ),
+                RelationshipPathHop(
+                    self.orders, self.fact, ("order_id",), (0,), (2,),
+                    "many_to_one", False,
+                ),
+                RelationshipPathHop(
+                    self.fact, self.customers, ("customer_id",), (1,), (1,),
+                    "many_to_one", False,
+                ),
+            ),
+            candidate_count=1,
+        )
+
+        self.assertIsNone(build_fact_join_contract(
+            malformed, self.fact, self.customers,
+            fact_grain="order line", measure_field="amount",
+            measure_column_index=4,
+        ))
+
+
+
 if __name__ == "__main__":
     unittest.main()
