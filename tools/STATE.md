@@ -227,3 +227,16 @@ Next: audit public-test questions against the 14 input shapes, then build minima
 - Added explicit fact-grain validation and tests for complete INNER JOIN paths and exact identifier matching (including leading zeroes).
 - Latest code/test commit: `647f6a40bc23aef80f26180214342848e86eb576`.
 - Actions run `44588678999` on that commit: **331 tests passed**.
+
+
+## Customer-group revenue share runtime — 2026-11-20
+
+- Added `src/datamate/customer_group_revenue.py`, a query-specific executor for Contest business `biz_129` only.
+- Wired `customer_group_revenue_share` through `RulePlanner`, `QueryPlan.filters`, `Executor.execute_with_reason`, verification, and `main.run`.
+- Source scope is exact: `chi_tiet_don.csv` → `don_hang.csv` → `khach_hang.csv`. The order → customer hop uses LEFT JOIN so blank customer IDs keep their sales in the whole-shop denominator.
+- Applies rulebook semantics: net line amounts, order-date period, whole-order exclusion for cancelled/returned, include in-transit, deduplicate exact duplicate lines within the same order, and keep guest orders out of every customer group including `lẻ`.
+- Planner recognizes the observed customer groups `thân thiết`, `lẻ`, and `sỉ`; it will not enable the intent for other business IDs or unknown group labels.
+- Added exact Contest-question planner tests, rulebook-policy tests, failure/abstention tests, and a full `main.run` integration test.
+- Independent archive audit references: October 2025 = 20.31%; June 2025 = 19.79%. Raw contest rows are not committed.
+- GitHub Actions run `44594130571` on code/test commit `59a7444cb530801e59018149f653bcbdfd76b4e7`: **352 tests passed**.
+- PR #2 remains open as a draft and has not been merged.
