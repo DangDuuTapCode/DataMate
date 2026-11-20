@@ -185,3 +185,73 @@ Important limitation: this resolver is discovery-only and is not yet connected t
 - The only two failures remain `test_no_large_files` and `test_no_secret_like_strings`, both reporting the pre-existing `CODEX PROGRESS` artifact.
 - Run: https://github.com/pl2n/DataMate/actions/runs/44581612778
 - Existing PR #1 remains open against upstream `main`, head updated with this branch. GitHub reports `mergeable=false`; no merge or PR mutation was performed.
+
+
+## Post-merge continuation — 2026-11-20
+
+- PR #1 merged successfully into upstream `main` at `99478a179919a7b5121b00072f90522c50117aba`; upstream main compares identical to the merge commit.
+- New fork branch: `feature/query-specific-join-execution`, based on merged PR head `15430b417d650e6145ed4e64cb637ebe2a00677c`.
+- Hardened the structural FactJoinContract builder against forged unique-path metadata and malformed hop records. It now requires exactly one candidate, immutable typed hops, exact source-qualified endpoints, unique nonblank canonical keys, valid physical key-index tuples, literal false fanout, and safe join-type input validation.
+- Added regression coverage for forged candidate count, malformed identities, duplicate key declarations, and invalid join-type values.
+- Commits: `5c04d9b8498133e28170108ed3ba7fe8ec58301a`, `783631e99ed584fee284564c126b1275ca453edf`.
+- CI for the new branch has not yet been verified. No local checkout or local test execution was used.
+- Runtime wiring remains blocked pending a representative real query family with reviewed source evidence for fact grain, measure semantics, additive behavior, exact path/keys, and aggregation stage.
+
+
+### Malformed-cardinality follow-up
+
+- Added an explicit string-type check before cardinality membership validation and a regression for an unhashable list value.
+- Latest code/test commits: `101a5089d1bd71c45b17516f5753a2e01f06f151`, `4e073e4f1a35a216179094ff0d63389f27829775`.
+- Branch head verified at `4e073e4f1a35a216179094ff0d63389f27829775`; no Actions run is available yet.
+
+
+### CI branch coverage
+
+- Updated the Python test workflow to run for pushes to any `feature/**` branch and PRs targeting `main` or `feature/**`.
+- Commit: `e74d43413c3966d7d80e6fbe8f985fb5b6ac4de9`.
+- No Actions run/status was surfaced for this push; CI remains unverified.
+
+
+## Contest-backed LEFT JOIN validation — 2026-11-20
+
+- Inspected the re-uploaded Contest archive and selected the README/rulebook-backed `biz_129` customer-group revenue query family.
+- Measured 145,479 sales lines, 38,499 orders, 220 customers, and 38,072 payment events. All detail order keys match; 23,309 nonblank order customer IDs match the catalog, while 15,190 orders have blank customer IDs.
+- Identified required semantics: guest orders are excluded from customer groups but included in total-shop revenue. The full fact path therefore requires LEFT JOIN to preserve blank-customer orders. Payment events must remain a separate fact because up to four payment rows can exist per order.
+- Added source-context semantic aliases, `validated_left_join` relationship evidence, `left_join_required` path status, and contract enforcement that rejects INNER JOIN for these paths.
+- Added a synthetic README-shaped integration test and `docs/CONTEST_BIZ129_JOIN_CASE.md`.
+- No contest source data was committed. Runtime wiring remains disabled. CI is not yet verified and no local tests were run.
+
+
+### Contest LEFT JOIN CI follow-up
+
+- Corrected two new regression-test issues found by the first Actions run.
+- Replaced the oversized historical `CODEX PROGRESS` transcript with a short handoff pointer; the old file breached the repository size check and matched a sensitive-looking token pattern.
+- GitHub Actions run `44586527843`, commit `4f7077120f19b29717f5be46f1c53fe9d80d01f4`: **318 tests passed**.
+- Draft PR #2 is open and remains unmerged: https://github.com/DangDuuTapCode/DataMate/pull/2.
+
+
+### Multi-hop join execution primitive
+
+- Added a low-level executor for explicit `FactJoinContract` objects. It revalidates semantic key mappings and source identities, rejects duplicate target keys and reachable unmatched nonblank source keys, honors required LEFT JOINs, and preserves fact-row count/duplicates.
+- Added synthetic tests for two-hop sales-detail → order → customer joins, guest rows, malformed contracts, and data drift.
+- Actions run `44587842656`, commit `6a0bc0b7ad4aef0cb510b234d05b5455a73eb8db`: **328 tests passed**.
+- This primitive is not yet connected to the public query pipeline and performs no business filtering or aggregation.
+
+
+### Customer-group revenue share query family
+
+- Added a biz_129-only query family from the Contest README/rulebook: sales-line fact → order metadata → customer dimension.
+- The planner extracts the requested customer group and period, carries the filter into `QueryPlan`, and only enables this intent for business ID `biz_129`.
+- The query executor uses the explicit `FactJoinContract` and row-preserving LEFT JOIN; it applies order-date and status policies, exact duplicate-line deduplication, and computes group numerator / whole-shop denominator.
+- Guest orders remain in the denominator but have no group; this prevents the common incorrect inner-join denominator.
+- The result is emitted as a numeric percentage rounded to two decimal places and passed through the standard verifier.
+- Added full `main.run` integration coverage plus exact-question, rulebook, status, duplicate, unmatched-key, missing-field, and business-scope tests.
+- CI run `44594130571`, commit `59a7444cb530801e59018149f653bcbdfd76b4e7`: **352 tests passed**.
+- Independent archive audit baselines: October 2025 20.31%, June 2025 19.79%. No contest rows are committed.
+- Separate customer-group revenue-total questions remain unsupported for now; the planner abstains rather than discarding the requested group filter.
+
+
+### Branch-tip verification after runtime integration
+
+- Latest branch tip `0cd8fb90fe0c197752f84b847537763b09217e2c` completed GitHub Actions run `44594377793`: **352 tests passed**.
+- PR #2 remains an open draft and is ready for user review; no merge was performed.

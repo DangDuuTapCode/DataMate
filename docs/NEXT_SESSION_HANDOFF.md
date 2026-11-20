@@ -257,3 +257,135 @@ Next: check PR #1 mergeability and CI after any subsequent pushes, but do not me
 - The only two failures remain `test_no_large_files` and `test_no_secret_like_strings`, both reporting the pre-existing `CODEX PROGRESS` artifact.
 - Run: https://github.com/pl2n/DataMate/actions/runs/44581612778
 - Existing PR #1 remains open against upstream `main`, head updated with this branch. GitHub reports `mergeable=false`; no merge or PR mutation was performed.
+
+
+## Post-merge continuation — 2026-11-20
+
+PR #1 has now been merged by the repository owner:
+- PR: https://github.com/DangDuuTapCode/DataMate/pull/1
+- Merge commit: `99478a179919a7b5121b00072f90522c50117aba`
+- Upstream `main` compares identical to that merge commit.
+- Merged PR head: `15430b417d650e6145ed4e64cb637ebe2a00677c`.
+
+A new continuation branch was created on the fork from that merged PR head:
+- Repository: `pl2n/DataMate`
+- Branch: `feature/query-specific-join-execution`
+- Continue on this branch. Do not amend the merged branch and do not modify upstream directly.
+
+Latest continuation commits:
+- `5c04d9b8498133e28170108ed3ba7fe8ec58301a` — harden FactJoinContract structural validation.
+- `783631e99ed584fee284564c126b1275ca453edf` — add malformed/forged path regressions.
+
+The builder now requires candidate_count=1, typed immutable hops, exact nonblank source-qualified identities, unique canonical keys, valid physical index tuples, literal false fanout, and safe join-type input validation. This is still structural validation only; it does not authorize or execute a JOIN.
+
+No new Actions run is verified for this branch yet. Do not claim local tests or local git status. Before any runtime wiring, inspect a representative real query and its exact source README/rulebook evidence. Require reviewed fact grain, measure semantics, additive behavior, exact join path/key(s), and aggregation stage. If the archive/source evidence is unavailable, keep runtime fail-closed and continue with structural tests only.
+
+
+### Final malformed-cardinality guard
+
+- Added a type check before cardinality set membership, preventing malformed unhashable values from raising.
+- Added a list-valued cardinality regression.
+- Latest commits: `101a5089d1bd71c45b17516f5753a2e01f06f151`, `4e073e4f1a35a216179094ff0d63389f27829775`.
+- Current branch head verified at `4e073e4f1a35a216179094ff0d63389f27829775`; Actions has no run for this commit yet.
+
+
+### Feature-branch CI trigger
+
+- `.github/workflows/tests.yml` now triggers on pushes to `feature/**` and pull requests targeting `main` or `feature/**`.
+- Commit: `e74d43413c3966d7d80e6fbe8f985fb5b6ac4de9`.
+- No workflow run/status was surfaced for this push by the available GitHub queries. CI remains unverified; do not claim success. A subsequent PR targeting `main` will also trigger the workflow.
+
+
+### Current checkpoint pointer
+
+- Latest verified fork branch head: `ee45d81a81ee044bb8d05d103b5c5a255bc5a519`.
+- This head includes the contract hardening, regression tests, CI trigger update, and synchronized progress/handoff documentation.
+- PR #1 remains merged; no new PR has been opened for this continuation branch.
+
+
+## Contest archive and LEFT JOIN continuation — 2026-11-20
+
+The user re-uploaded `Contest.zip`. It was inspected directly from the upload path; it has 308 entries and was not added to GitHub.
+
+### Chosen real case: biz_129 customer-group revenue
+
+Read:
+- `Contest/train/data/biz_129/README.md`
+- `Contest/train/rulebook.md`
+- `Contest/train/questions.jsonl`
+
+Relevant questions: `q_264a7294b457`, `q_6ee842fa8f92`, `q_635440e343cc`, `q_d361c00c6829`.
+
+Observed counts:
+- `chi_tiet_don.csv`: 145,479 sales lines.
+- `don_hang.csv`: 38,499 orders, unique order key.
+- `khach_hang.csv`: 220 unique customer keys.
+- `thanh_toan.csv`: 38,072 payment events, 37,748 distinct order IDs, max 4 events/order.
+- 23,309 orders have a nonblank customer ID and all match the catalog; 15,190 orders have blank customer IDs.
+
+Business semantics: the rulebook says guest orders belong to no customer group but still count in whole-shop revenue. Therefore a full sales-line → order → customer path must preserve guest rows with LEFT JOIN. Payment events must not be joined directly to sales lines because multiple events per order can multiply revenue.
+
+### Code added on `feature/query-specific-join-execution`
+
+- Source-scoped exact aliases for `Số CT`, `Số phiếu`, and `Mã giao dịch`, only in the README-documented source roles.
+- Relationship status `validated_left_join` for safe many-to-one/one-to-one patterns with blank source keys but complete matching of all nonblank source keys.
+- Path status `left_join_required` and per-hop metadata; fact join contract rejects inner joins when any hop requires LEFT JOIN.
+- Synthetic integration test mirroring biz_129 headers/roles and the guest-customer case; no contest records copied.
+- Case study: `docs/CONTEST_BIZ129_JOIN_CASE.md`.
+
+Runtime join execution remains off. Before wiring, design explicit handling for status/date filters, customer-group numerator vs all-shop denominator, and separate payment-grain calculations.
+
+CI is still unverified: GitHub queries returned no workflow runs/statuses for the latest commits. Do not claim tests passed or run locally.
+
+
+### Latest CI checkpoint
+
+- First CI run `44586101398`: 318 tests, 4 failures (two new test expectation/fixture issues and two repository-hygiene failures).
+- Fixed the test fixture to model multiple orders for the same customer and changed the partial-overlap expectation to `candidate`.
+- Replaced the oversized `CODEX PROGRESS` historical transcript with a short pointer to current handoff documents. The old tracked file exceeded 1 MB and matched one sensitive-looking token pattern; the replacement does not retain that text.
+- Follow-up GitHub Actions run `44586527843` on `4f7077120f19b29717f5be46f1c53fe9d80d01f4`: **318 tests passed, workflow conclusion success**.
+- Draft PR #2: https://github.com/DangDuuTapCode/DataMate/pull/2. Do not merge without the user's instruction.
+
+
+## Explicit join executor checkpoint
+
+- Added `src/datamate/join_executor.py` and `tests/test_join_executor.py`.
+- `execute_fact_join_contract` executes only a supplied explicit contract. It revalidates semantic key mappings and table identities, checks target uniqueness and reachable source matches, requires LEFT JOIN for blank source keys, and preserves fact row count and duplicate fact rows.
+- Added `docs/FACT_JOIN_EXECUTOR.md`.
+- GitHub Actions run `44587842656` on `6a0bc0b7ad4aef0cb510b234d05b5455a73eb8db`: **328 tests passed**.
+- Runtime integration remains intentionally absent. The executor does not apply the revenue date/status filters, customer-group predicate, numerator/denominator calculation, or payment aggregation.
+
+
+### Latest branch verification
+
+- Current branch tip: `e95608eb8b34281ac5327ecf67d58f16dbab5e38`.
+- Actions run `44588291394` on that exact commit: **328 tests passed**.
+- PR #2 remains an open draft; do not merge without the user's instruction.
+
+
+### Join executor hardening
+
+- The executor now rejects blank fact-grain declarations and has coverage for fully matched INNER JOINs and exact identifier matching (leading zeroes are not numerically coerced).
+- Latest code/test commit: `647f6a40bc23aef80f26180214342848e86eb576`.
+- Actions run `44588678999`: **331 tests passed**.
+
+
+## Customer-group revenue share runtime checkpoint
+
+- Implemented `customer_group_revenue_share` for Contest business `biz_129` only.
+- The public `main.run` path now compiles the intent with business identity, routes it to `Executor.execute_with_reason`, executes the explicit detail → order → customer LEFT JOIN, and verifies a percentage result.
+- The denominator is whole-shop eligible sales-line revenue, including guest orders with blank customer IDs; numerator is only the requested customer group.
+- Applies exact source roles, line-level net amount, order-date scope, full-order cancelled/returned exclusion, in-transit inclusion, and exact duplicate-line deduplication within an order.
+- Supports the observed labels `thân thiết`, `lẻ`, `sỉ`; unsupported labels and non-`biz_129` businesses abstain.
+- Exact Contest prompts `q_264a7294b457` and `q_6ee842fa8f92` are covered by planner tests. Group-total questions `q_635440e343cc` and `q_d361c00c6829` remain intentionally unsupported rather than having their group filter dropped.
+- Full public-pipeline synthetic integration test added.
+- Actions run `44594130571` on `59a7444cb530801e59018149f653bcbdfd76b4e7`: **352 tests passed**.
+- Independent archive audit: 20.31% for October 2025 and 19.79% for June 2025; see `docs/CONTEST_BIZ129_JOIN_CASE.md`.
+- PR #2 is still a draft. Do not ask the user to pull it until the full feature is complete and the latest branch-tip CI is green.
+
+
+### Verified runtime-integrated branch tip
+
+- Branch tip: `0cd8fb90fe0c197752f84b847537763b09217e2c`.
+- Actions run `44594377793` on the exact branch tip: **352 tests passed**.
+- PR #2 remains open as a draft, mergeable, and unmerged. The customer-group revenue-share slice for biz_129 is ready for user review; do not merge without instruction.

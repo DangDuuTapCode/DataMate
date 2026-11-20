@@ -60,6 +60,43 @@ class SemanticMappingTests(unittest.TestCase):
         self.assertEqual(schema.mappings[11].status, "unmapped")
         self.assertEqual(schema.mappings[12].status, "unmapped")
 
+    def test_source_context_aliases_map_documented_order_keys_only(self):
+        details = Table(
+            "chi_tiet_don",
+            ["Số CT", "Mã hàng bán"],
+            [],
+            "chi_tiet_don.csv",
+        )
+        orders = Table(
+            "don_hang",
+            ["Số phiếu", "Mã khách mua"],
+            [],
+            "don_hang.csv",
+        )
+        payments = Table(
+            "thanh_toan",
+            ["Mã giao dịch", "Mã GD"],
+            [],
+            "thanh_toan.csv",
+        )
+        unrelated = Table(
+            "receipts",
+            ["Số phiếu"],
+            [],
+            "purchase_receipts.csv",
+        )
+
+        self.assertEqual(map_table_schema(details).mapped_fields, {
+            "order_id": 0, "product_id": 1,
+        })
+        self.assertEqual(map_table_schema(orders).mapped_fields, {
+            "order_id": 0, "customer_id": 1,
+        })
+        self.assertEqual(map_table_schema(payments).mapped_fields, {
+            "order_id": 0, "payment_transaction_id": 1,
+        })
+        self.assertEqual(map_table_schema(unrelated).mapped_fields, {})
+
     def test_generic_amount_and_total_labels_are_not_guessed(self):
         table = Table(
             "payment_history",

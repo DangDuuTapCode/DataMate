@@ -15,6 +15,7 @@ class RelationshipPathHop:
     to_column_indices: tuple[int, ...]
     cardinality: str
     fanout: bool
+    requires_left_join: bool = False
 
     def to_dict(self):
         return {
@@ -25,6 +26,7 @@ class RelationshipPathHop:
             "to_column_indices": list(self.to_column_indices),
             "cardinality": self.cardinality,
             "fanout": self.fanout,
+            "requires_left_join": self.requires_left_join,
         }
 
 
@@ -37,7 +39,7 @@ class RelationshipPathResolution:
 
     @property
     def available(self):
-        return self.status == "unique_safe"
+        return self.status in {"unique_safe", "left_join_required"}
 
     def to_dict(self):
         return {
@@ -55,7 +57,7 @@ def _identity(table_name, source):
 
 def _edge_hops(relationship):
     """Return both directions, retaining whether traversal multiplies rows."""
-    if relationship.status != "validated":
+    if relationship.status not in {"validated", "validated_left_join"}:
         return ()
     keys = tuple(relationship.canonical_keys or (relationship.canonical_key,))
     left_indices = tuple(
@@ -85,10 +87,12 @@ def _edge_hops(relationship):
         RelationshipPathHop(
             left, right, keys, left_indices, right_indices,
             cardinality, left_fanout,
+            relationship.from_blank_keys > 0,
         ),
         RelationshipPathHop(
             right, left, keys, right_indices, left_indices,
             cardinality, right_fanout,
+            relationship.to_blank_keys > 0,
         ),
     )
 
@@ -175,6 +179,14 @@ def resolve_relationship_path(
         return RelationshipPathResolution(
             "fanout_risk", hops=path, candidate_count=1,
             reasons=("path_contains_one_to_many_traversal",),
+        )
+    if any(hop.requires_left_join for hop in path):
+        return RelationshipPathResolution(
+            "left_join_required", hops=path, candidate_count=1,
+            reasons=(
+                "unique_non_fanout_path",
+                "blank_source_keys_require_left_join_to_preserve_fact_rows",
+            ),
         )
     return RelationshipPathResolution(
         "unique_safe", hops=path, candidate_count=1,

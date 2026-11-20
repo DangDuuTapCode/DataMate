@@ -11,7 +11,7 @@ from .types import QueryPlan, QuerySpec, SortSpec, TemporalScope
 
 
 class Planner(Protocol):
-    def plan(self, question, as_of_date) -> QueryPlan | None: ...
+    def plan(self, question, as_of_date, business_id=None) -> QueryPlan | None: ...
 
 
 class RulePlanner:
@@ -20,6 +20,7 @@ class RulePlanner:
     EXECUTABLE = {
         "revenue", "collected_amount", "quantity", "order_count", "cancellation_rate",
         "sales_ranking", "daily_revenue_threshold_count", "order_revenue_threshold_count",
+        "customer_group_revenue_share",
     }
     RANKING_INTENTS = {
         "sales_ranking", "customer_ranking", "debt_ranking", "period_ranking",
@@ -195,6 +196,25 @@ class RulePlanner:
         return None, len(matches) > 1
 
     @staticmethod
+    def _customer_group_filter(question):
+        """Resolve only the reviewed group label supported by this query slice."""
+        q = fold(question)
+        groups = (
+            ("thân thiết", (
+                "nhom than thiet",
+                "khach hang than thiet",
+                "khach hang trong nhom than thiet",
+                "khach hang thuoc nhom than thiet",
+            )),
+            ("lẻ", ("nhom le",)),
+            ("sỉ", ("nhom si",)),
+        )
+        for label, phrases in groups:
+            if any(phrase in q for phrase in phrases):
+                return label
+        return None
+
+    @staticmethod
     def _intent(question):
         q = fold(question)
         has_percent_mark = "%" in str(question)
@@ -284,6 +304,17 @@ class RulePlanner:
             return "seller_ranking", ("seller",), "seller_revenue"
         if ranking and any(term in q for term in ("nha cung cap", "ncc")):
             return "supplier_ranking", ("supplier",), "supplier_purchase_amount"
+        customer_group = RulePlanner._customer_group_filter(question)
+        group_revenue_cue = any(term in q for term in (
+            "doanh thu", "doanh so", "dthu", "revenue", "tien ban",
+        ))
+        group_share_cue = any(term in q for term in (
+            "chiem", "dong gop", "ti trong", "ty trong", "co cau",
+            "phan tram", "ti le", "ty le", "%",
+        ))
+        if customer_group and group_revenue_cue and group_share_cue:
+            return "customer_group_revenue_share", ("customer_group",), "customer_group_revenue_share"
+
         day_question = re.search(r"\bngay nao(?:f)?\b", q)
         if day_question and any(term in q for term in ("tien", "doanh thu", "doanh so", "dthu", "revenue", "ban duoc")) and ranking:
             return "best_sales_day", ("date",), "daily_revenue"
@@ -418,7 +449,13 @@ class RulePlanner:
             scope = TemporalScope(kind="as_of", as_of=as_of_date)
         entity, entity_ambiguous = self._resolve_entity(question, entity_catalog)
         explicit_entity_filter = self._has_unresolved_entity_filter(question)
-        unresolved_entity = entity_ambiguous or (explicit_entity_filter and entity is None)
+        customer_group_filter = (
+            self._customer_group_filter(question)
+            if intent == "customer_group_revenue_share" else None
+        )
+        unresolved_entity = entity_ambiguous or (
+            explicit_entity_filter and entity is None and customer_group_filter is None
+        )
         unsupported_breakdown = self._has_unimplemented_breakdown(question)
         unsupported_monthly_output = self._has_unimplemented_monthly_output(question)
         threshold = (
@@ -428,6 +465,7 @@ class RulePlanner:
         executable = (
             intent in self.EXECUTABLE
             and scope.kind == "period"
+            and (intent != "customer_group_revenue_share" or business_id == "biz_129")
             and not unresolved_entity
             and not unsupported_breakdown
             and not unsupported_monthly_output
@@ -443,6 +481,8 @@ class RulePlanner:
         filters = (("revenue_gte", threshold),) if threshold is not None and intent in {
             "daily_revenue_threshold_count", "order_revenue_threshold_count",
         } else ()
+        if customer_group_filter is not None:
+            filters = (("customer_group", customer_group_filter),)
         unsupported_reason = None
         if not executable:
             unsupported_reason = (
@@ -465,15 +505,18 @@ class RulePlanner:
             entity=entity,
             metric=metric,
             filters=filters,
-            unit=self._explicit_unit(question),
+            unit=(
+                "percent" if intent == "customer_group_revenue_share"
+                else self._explicit_unit(question)
+            ),
             sort=SortSpec(metric, "desc") if intent in self.RANKING_INTENTS else None,
             ambiguity_flags=tuple(ambiguity_flags),
             unsupported_reason=unsupported_reason,
         )
 
-    def plan(self, question, as_of_date):
+    def plan(self, question, as_of_date, business_id=None):
         """Compile only the allowlisted executable subset into an engine plan."""
-        spec = self.interpret(question, as_of_date)
+        spec = self.interpret(question, as_of_date, business_id)
         if spec is None or not spec.executable or spec.time is None:
             return None
         return QueryPlan(
@@ -487,6 +530,7 @@ class RulePlanner:
             compare_start=spec.time.comparison_start,
             compare_end=spec.time.comparison_end,
             threshold=dict(spec.filters).get("revenue_gte"),
+            filters=spec.filters,
         )
 
 

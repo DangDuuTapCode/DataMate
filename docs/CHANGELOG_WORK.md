@@ -292,3 +292,67 @@
 - The only two failures remain `test_no_large_files` and `test_no_secret_like_strings`, both reporting the pre-existing `CODEX PROGRESS` artifact.
 - Run: https://github.com/pl2n/DataMate/actions/runs/44581612778
 - Existing PR #1 remains open against upstream `main`, head updated with this branch. GitHub reports `mergeable=false`; no merge or PR mutation was performed.
+
+
+## 2026-11-20 — PR merge and FactJoinContract hardening
+
+- Confirmed upstream PR #1 merged at `99478a179919a7b5121b00072f90522c50117aba`; upstream `main` is identical to the merge commit.
+- Created fork continuation branch `feature/query-specific-join-execution` from merged PR head `15430b417d650e6145ed4e64cb637ebe2a00677c`.
+- Hardened `build_fact_join_contract` against forged candidate counts and malformed path-hop structures; added four focused regression cases.
+- Commits: `5c04d9b8498133e28170108ed3ba7fe8ec58301a`, `783631e99ed584fee284564c126b1275ca453edf`.
+- No runtime JOIN behavior was enabled. CI verification is pending for this continuation branch.
+
+
+### Follow-up
+
+- Hardened malformed cardinality handling and added a list-valued cardinality regression.
+- Commits: `101a5089d1bd71c45b17516f5753a2e01f06f151`, `4e073e4f1a35a216179094ff0d63389f27829775`.
+
+
+### CI trigger coverage
+
+- Expanded the Python test workflow to cover all `feature/**` push branches and PRs targeting `main` or `feature/**`.
+- Commit: `e74d43413c3966d7d80e6fbe8f985fb5b6ac4de9`.
+- Workflow result not yet verified.
+
+
+## 2026-11-20 — Contest-backed LEFT JOIN contract
+
+- Analyzed Contest `biz_129` sales, orders, customers, and payment-event sources.
+- Added source-context exact aliases for documented order keys.
+- Added a distinct `validated_left_join` relationship state for blank source keys with complete nonblank-key coverage; propagated the requirement through relationship paths and enforced LEFT JOIN in FactJoinContract.
+- Added synthetic integration coverage and a documented case study.
+- Kept runtime execution disabled; payment events remain separate from sales-line facts to avoid join multiplication.
+- CI has not yet been verified.
+
+
+### CI and hygiene follow-up
+
+- Corrected the two new tests identified by initial CI.
+- Replaced the oversized historical `CODEX PROGRESS` transcript with a handoff pointer.
+- Actions run `44586527843`: 318 tests passed on commit `4f7077120f19b29717f5be46f1c53fe9d80d01f4`.
+- Draft PR #2 remains open and unmerged.
+
+
+### Explicit join executor
+
+- Added a contract-driven multi-hop join executor with source/schema revalidation, target uniqueness checks, LEFT JOIN enforcement, and fact-row preservation.
+- Added synthetic executor tests covering guest rows and failure cases.
+- Actions run `44587842656`: 328 tests passed.
+- Public query/runtime integration remains deferred.
+
+
+### Customer-group revenue share runtime
+
+- Implemented the `customer_group_revenue_share` intent for `biz_129` through the public question pipeline.
+- Added source-scoped semantic aliases for line amount, order date/status, and customer group.
+- Added group parsing for observed labels `thân thiết`, `lẻ`, and `sỉ`, with business-ID scoping and fail-closed unknown groups.
+- Added rulebook-driven order filters, duplicate line handling, and whole-shop denominator semantics that retain guest orders through LEFT JOIN.
+- Added synthetic and full-main integration tests; Actions run `44594130571` reports 352 passing tests on commit `59a7444cb530801e59018149f653bcbdfd76b4e7`.
+- Added independent biz_129 archive audit values in `docs/CONTEST_BIZ129_JOIN_CASE.md`.
+
+
+### Branch-tip verification
+
+- Latest branch tip `0cd8fb90fe0c197752f84b847537763b09217e2c` passed Actions run `44594377793`: 352 tests.
+- PR #2 remains draft and unmerged.

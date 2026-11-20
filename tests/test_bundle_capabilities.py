@@ -151,6 +151,22 @@ class BundleCapabilityResolverTests(unittest.TestCase):
         self.assertTrue(result.available)
         self.assertEqual(result.missing_relationships, ())
 
+    def test_left_join_only_relationship_does_not_enable_ordinary_bundle(self):
+        details = Table(
+            "details", ["Mã đơn"], [["A1"], ["A1"], [None]], "details.csv"
+        )
+        orders = Table("orders", ["Mã đơn"], [["A1"]], "orders.csv")
+        bundle = BundleDefinition(
+            "detail_metric", "detail_metric", "detail_metric",
+            required_relationships=(RequiredRelationship("order_id", "many_to_one"),),
+        )
+
+        result = self.resolver.resolve(bundle, build_schema_catalog([details, orders]))
+
+        self.assertFalse(result.available)
+        self.assertEqual(len(result.missing_relationships), 1)
+        self.assertEqual(result.reasons, ("missing_required_relationships",))
+
     def test_rejected_relationship_blocks_bundle(self):
         details = Table(
             "details", ["Mã đơn"], [["A1"], ["A1"], ["A3"]], "details.csv"

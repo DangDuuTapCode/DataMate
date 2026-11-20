@@ -7,7 +7,7 @@ evidence before a planner may use the contract.
 """
 from dataclasses import dataclass
 
-from .relationship_paths import RelationshipPathResolution
+from .relationship_paths import RelationshipPathHop, RelationshipPathResolution
 
 
 @dataclass(frozen=True)
@@ -40,6 +40,51 @@ class FactJoinContract:
         }
 
 
+def _valid_identity(value):
+    return (
+        isinstance(value, tuple)
+        and len(value) == 2
+        and all(isinstance(part, str) and part.strip() for part in value)
+    )
+
+
+def _valid_hop(hop):
+    if not isinstance(hop, RelationshipPathHop):
+        return False
+    if not _valid_identity(hop.from_table) or not _valid_identity(hop.to_table):
+        return False
+    if (
+        hop.from_table == hop.to_table
+        or hop.fanout is not False
+        or not isinstance(hop.requires_left_join, bool)
+    ):
+        return False
+    if (
+        not isinstance(hop.cardinality, str)
+        or hop.cardinality not in {"many_to_one", "one_to_one"}
+    ):
+        return False
+    if (
+        not isinstance(hop.canonical_keys, tuple)
+        or not hop.canonical_keys
+        or any(not isinstance(key, str) or not key.strip() for key in hop.canonical_keys)
+        or len(set(hop.canonical_keys)) != len(hop.canonical_keys)
+    ):
+        return False
+    if (
+        not isinstance(hop.from_column_indices, tuple)
+        or not isinstance(hop.to_column_indices, tuple)
+        or len(hop.canonical_keys) != len(hop.from_column_indices)
+        or len(hop.canonical_keys) != len(hop.to_column_indices)
+    ):
+        return False
+    indices = hop.from_column_indices + hop.to_column_indices
+    return all(
+        isinstance(column, int) and not isinstance(column, bool) and column >= 0
+        for column in indices
+    )
+
+
 def build_fact_join_contract(
     path_resolution,
     fact_table,
@@ -57,16 +102,16 @@ def build_fact_join_contract(
     higher-level reviewed query profile; this function does not infer or
     authenticate their business meaning.
     """
-    valid_identity = lambda value: (
-        isinstance(value, tuple)
-        and len(value) == 2
-        and all(isinstance(part, str) and part.strip() for part in value)
-    )
     if (
         not isinstance(path_resolution, RelationshipPathResolution)
         or not path_resolution.available
-        or not valid_identity(fact_table)
-        or not valid_identity(target_table)
+        or not isinstance(path_resolution.candidate_count, int)
+        or isinstance(path_resolution.candidate_count, bool)
+        or path_resolution.candidate_count != 1
+        or not isinstance(path_resolution.hops, tuple)
+        or not path_resolution.hops
+        or not _valid_identity(fact_table)
+        or not _valid_identity(target_table)
         or fact_table == target_table
         or not isinstance(fact_grain, str)
         or not fact_grain.strip()
@@ -76,8 +121,8 @@ def build_fact_join_contract(
         or isinstance(measure_column_index, bool)
         or measure_column_index < 0
         or aggregation_stage != "after_join"
+        or not isinstance(join_type, str)
         or join_type not in {"inner", "left"}
-        or not path_resolution.hops
     ):
         return None
 
@@ -87,19 +132,7 @@ def build_fact_join_contract(
 
     visited_tables = {fact_table}
     for index, hop in enumerate(hops):
-        if (
-            hop.fanout
-            or hop.cardinality not in {"many_to_one", "one_to_one"}
-            or not hop.canonical_keys
-            or any(not isinstance(key, str) or not key.strip() for key in hop.canonical_keys)
-            or len(hop.canonical_keys) != len(hop.from_column_indices)
-            or len(hop.canonical_keys) != len(hop.to_column_indices)
-            or not hop.from_column_indices
-            or any(
-                not isinstance(column, int) or isinstance(column, bool) or column < 0
-                for column in hop.from_column_indices + hop.to_column_indices
-            )
-        ):
+        if not _valid_hop(hop):
             return None
         if index and hops[index - 1].to_table != hop.from_table:
             return None
@@ -107,8 +140,11 @@ def build_fact_join_contract(
             return None
         visited_tables.add(hop.to_table)
 
-    # Validated relationships currently require complete key coverage and no
-    # blank keys. The contract remains structural and does not execute joins.
+    if any(hop.requires_left_join for hop in hops) and join_type != "left":
+        return None
+
+    # Source-side blank keys are permitted only when the path explicitly
+    # requires LEFT JOIN, preserving otherwise-unmatched fact rows.
     return FactJoinContract(
         fact_table=fact_table,
         target_table=target_table,

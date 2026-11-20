@@ -59,6 +59,27 @@ class RelationshipPathTests(unittest.TestCase):
         )
         self.assertFalse(any(hop.fanout for hop in result.hops))
 
+    def test_blank_source_keys_require_left_join_but_remain_non_fanout(self):
+        relationship = edge(
+            self.orders, self.customers, "customer_id", "many_to_one",
+            status="validated_left_join",
+        )
+        relationship = RelationshipCandidate(
+            **{**relationship.__dict__, "from_blank_keys": 3}
+        )
+
+        result = resolve_relationship_path(
+            [edge(self.fact, self.orders, "order_id", "many_to_one"), relationship],
+            self.fact,
+            self.customers,
+            max_hops=2,
+        )
+
+        self.assertTrue(result.available)
+        self.assertEqual(result.status, "left_join_required")
+        self.assertTrue(result.hops[-1].requires_left_join)
+        self.assertIn("blank_source_keys_require_left_join_to_preserve_fact_rows", result.reasons)
+
     def test_one_to_many_traversal_is_rejected_as_fanout_risk(self):
         relationships = [
             edge(self.fact, self.orders, "order_id", "many_to_one"),

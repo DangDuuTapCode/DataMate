@@ -67,6 +67,7 @@ class QueryPlan:
     compare_start: str | None = None
     compare_end: str | None = None
     threshold: str | None = None
+    filters: tuple[tuple[str, str], ...] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True)

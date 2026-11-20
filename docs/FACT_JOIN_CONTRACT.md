@@ -40,3 +40,37 @@ This is a structural prototype, not a runtime feature:
 Synthetic tests cover a unique two-hop many-to-one chain, exact source/key-index serialization, fan-out rejection, ambiguous path rejection, endpoint mismatch, aggregation-stage rejection, invalid measure indices, unsupported join types, missing declarations, unknown cardinality, and manually constructed cyclic paths.
 
 The next step is to connect this contract to one real, rulebook-backed query family only after its source grain and measure semantics are explicitly established. Do not generalize this prototype into arbitrary JOIN execution.
+
+
+## Validation hardening — 2026-11-20
+
+The builder now independently checks the path-resolution envelope rather than trusting only its `unique_safe` status:
+
+- The resolution must report exactly one candidate path.
+- The hop collection must be an immutable tuple of typed path-hop records.
+- Every hop must contain valid, distinct source-qualified endpoints.
+- Canonical key names must be nonblank and unique, with tuple-shaped physical index lists of matching lengths.
+- The fanout flag must be the literal boolean `False`; cardinality must be a supported string value.
+- Unsupported or malformed join-type values return unavailable instead of raising a type error.
+
+This is defense in depth for manually constructed or malformed resolution objects. It does not broaden join execution or establish business semantics.
+
+
+A final malformed-input regression also covers a non-string cardinality value. The validator rejects it without raising, matching the fail-closed behavior for malformed join-type values.
+
+
+## LEFT JOIN requirements for blank source keys
+
+A nonblank-key relationship can be structurally non-fanout even when some source rows have no key. Those rows cannot match a target row, but a LEFT JOIN preserves them at the original fact grain. To keep this distinct from a fully matched relationship:
+
+- Relationship discovery emits `validated_left_join` only when the target key is unique and every nonblank source key matches; any unmatched nonblank source key still rejects the relationship.
+- Path resolution propagates `left_join_required` and marks the affected hop.
+- The contract builder accepts that path only with `join_type="left"`; an inner join is rejected because it would discard blank-key fact rows.
+- The existing `validated` status remains unchanged for relationships with complete source keys. The bundle capability resolver does not treat `validated_left_join` as ordinary `validated` evidence.
+
+This behavior is covered by relationship, path, contract, and README-shaped integration tests. See [CONTEST_BIZ129_JOIN_CASE.md](CONTEST_BIZ129_JOIN_CASE.md) for the motivating dataset profile and rulebook-backed query family.
+
+
+## Execution primitive
+
+The contract can be consumed by the low-level `execute_fact_join_contract` function. That function revalidates source-qualified table identities, semantic key indices, target uniqueness, reachable source-key coverage, and LEFT JOIN requirements while preserving the original fact row count. It does not aggregate or apply business filters. See [FACT_JOIN_EXECUTOR.md](FACT_JOIN_EXECUTOR.md).
